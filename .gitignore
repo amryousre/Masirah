@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Spec Kit workflow catalog cache (re-fetched on demand)
+.specify/workflows/.cache/
+
+# Node
+node_modules/
+.next/
+dist/
+build/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Word lock files
+~$*.docx
