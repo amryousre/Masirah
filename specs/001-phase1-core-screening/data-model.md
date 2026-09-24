@@ -99,7 +99,7 @@ An original uploaded document, retained unchanged and always viewable per FR-012
 | id | uuid | |
 | organisation_id | uuid | Tenant |
 | candidate_id | uuid | Nullable until extraction identifies a person |
-| storage_path | text | Location in Supabase Storage |
+| storage_path | text | Location in Supabase Storage: a file below `organisations/{organisation_id}/cv/{id}/`, with no empty, `.` or `..` segment and no backslash |
 | original_filename | text | |
 | mime_type | text | |
 | byte_size | integer | |

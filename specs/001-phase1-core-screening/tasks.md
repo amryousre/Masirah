@@ -234,7 +234,7 @@ Every table below carries `organisation_id` and has row level security enabled w
 ### Implementation for User Story 4
 
 - [ ] T099 [US4] Write activity rows on every access to and export of candidate data in `web/lib/adapters/activity.ts`, covering `candidate.viewed`, `candidate.exported` and `application.rejected` (FR-074)
-- [ ] T100 [US4] Scheduled retention purge in `supabase/migrations/0012_retention.sql` and `pipeline/src/masirah_pipeline/jobs/purge.py`, removing candidate identity fields, the stored original file and the profile content once the organisation's `retention_months` elapses. Scores and activity survive so retention does not destroy the audit trail (NFR-10)
+- [ ] T100 [US4] Scheduled retention purge in `supabase/migrations/0013_retention.sql` and `pipeline/src/masirah_pipeline/jobs/purge.py`, removing candidate identity fields, the stored original file and the profile content once the organisation's `retention_months` elapses. Scores and activity survive so retention does not destroy the audit trail (NFR-10)
 - [ ] T101 [US4] `DELETE /api/candidates/{id}` in `web/app/api/candidates/[id]/route.ts` removing the same set on demand within 30 days, writing an activity row recording what was removed and when (FR-076)
 - [ ] T102 [US4] Settings page at `web/app/[lang]/settings/page.tsx` exposing the retention period, interface language and deletion request
 

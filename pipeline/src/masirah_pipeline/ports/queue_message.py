@@ -109,7 +109,7 @@ def _cv_processing(raw: dict[Any, Any]) -> CvProcessingMessage:
     cv_file_id = _uuid(raw, "cv_file_id")
     storage_path = _text(raw, "storage_path")
     folder = f"organisations/{organisation_id}/cv/{cv_file_id}/"
-    if not storage_path.startswith(folder) or storage_path == folder:
+    if not _is_file_inside(storage_path, folder):
         raise MalformedMessageError(f"storage_path is not a file inside {folder}")
     return CvProcessingMessage(
         organisation_id=organisation_id,
@@ -130,6 +130,13 @@ def _cv_rescoring(raw: dict[Any, Any]) -> CvRescoringMessage:
         locale=_locale(raw),
         enqueued_at=_timestamp(raw),
     )
+
+
+def _is_file_inside(path: str, folder: str) -> bool:
+    """Every segment below the folder must name something: no empty, "." or ".." segment."""
+    if not path.startswith(folder) or "\\" in path:
+        return False
+    return all(segment not in ("", ".", "..") for segment in path[len(folder) :].split("/"))
 
 
 def _text(raw: dict[Any, Any], field: str) -> str:

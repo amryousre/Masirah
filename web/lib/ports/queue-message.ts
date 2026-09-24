@@ -55,10 +55,19 @@ export interface CvRescoringInput {
   enqueuedAt: Date;
 }
 
+/** Every segment below the folder must name something: no empty, "." or ".." segment. */
+function isFileInside(path: string, folder: string): boolean {
+  if (!path.startsWith(folder) || path.includes("\\")) return false;
+  return path
+    .slice(folder.length)
+    .split("/")
+    .every((segment) => segment !== "" && segment !== "." && segment !== "..");
+}
+
 /** A file outside its own tenant folder is a producer bug, refused before it reaches a queue. */
 export function cvProcessingMessage(input: CvProcessingInput): CvProcessingMessage {
   const folder = `organisations/${input.organisationId}/cv/${input.cvFileId}/`;
-  if (!input.storagePath.startsWith(folder) || input.storagePath === folder) {
+  if (!isFileInside(input.storagePath, folder)) {
     throw new Error(`storage_path is not a file inside ${folder}`);
   }
   return {

@@ -76,13 +76,34 @@ def test_failed_file_records_its_reason(cur: Cursor, tenant: Tenant) -> None:
     assert cur.rowcount == 1
 
 
-def test_a_file_is_stored_only_inside_its_own_tenant_folder(cur: Cursor, tenant: Tenant) -> None:
-    elsewhere = f"organisations/{uuid.uuid4()}/cv/{tenant.row_ids['cv_file']}/cv.pdf"
+@pytest.mark.parametrize(
+    "path",
+    [
+        "organisations/{other}/cv/{cv}/cv.pdf",
+        "organisations/{org}/cv/{cv}/",
+        "organisations/{org}/cv/{cv}/../../../{other}/cv/{cv}/cv.pdf",
+        "organisations/{org}/cv/{cv}/./cv.pdf",
+        "organisations/{org}/cv/{cv}//cv.pdf",
+        "organisations/{org}/cv/{cv}/scans/",
+        "organisations/{org}/cv/{cv}/..\\cv.pdf",
+    ],
+    ids=[
+        "another-organisation",
+        "the-folder-itself",
+        "traversal",
+        "dot-segment",
+        "empty-segment",
+        "trailing-slash",
+        "backslash",
+    ],
+)
+def test_a_file_is_stored_only_inside_its_own_tenant_folder(
+    cur: Cursor, tenant: Tenant, path: str
+) -> None:
+    cv_file_id = tenant.row_ids["cv_file"]
+    path = path.format(org=tenant.organisation_id, other=uuid.uuid4(), cv=cv_file_id)
     with pytest.raises(psycopg.errors.CheckViolation):
-        cur.execute(
-            "update public.cv_file set storage_path = %s where id = %s",
-            (elsewhere, tenant.row_ids["cv_file"]),
-        )
+        cur.execute("update public.cv_file set storage_path = %s where id = %s", (path, cv_file_id))
 
 
 def test_only_one_profile_version_is_current(cur: Cursor, tenant: Tenant) -> None:
@@ -213,10 +234,10 @@ def test_members_cannot_delete_stored_originals(cur: Cursor, tenant: Tenant) -> 
     assert cur.fetchone() == (1,)
 
 
-def test_every_foreign_key_has_a_covering_index(cur: Cursor) -> None:
-    """Every policy filters by organisation, and deleting a referenced row scans its referrers.
+def unindexed_foreign_keys(cur: Cursor) -> list[str]:
+    """An index covers a foreign key when its leading key columns are exactly the key's columns.
 
-    An index covers a foreign key when its leading columns are exactly the key's columns.
+    INCLUDE columns are not key columns, and a partial index leaves some referencing rows out.
     """
     cur.execute(
         "select c.conrelid::regclass::text || ' ' || c.conname"
@@ -225,9 +246,30 @@ def test_every_foreign_key_has_a_covering_index(cur: Cursor) -> None:
         " and not exists ("
         "   select 1 from pg_index i"
         "   where i.indrelid = c.conrelid"
+        "   and i.indnkeyatts >= cardinality(c.conkey)"
+        "   and i.indpred is null"
         "   and (i.indkey::int2[])[0:cardinality(c.conkey) - 1] @> c.conkey"
         "   and (i.indkey::int2[])[0:cardinality(c.conkey) - 1] <@ c.conkey"
         " )"
         " order by 1"
     )
-    assert [row[0] for row in cur.fetchall()] == []
+    return [row[0] for row in cur.fetchall()]
+
+
+def test_every_foreign_key_has_a_covering_index(cur: Cursor) -> None:
+    """Every policy filters by organisation, and deleting a referenced row scans its referrers."""
+    assert unindexed_foreign_keys(cur) == []
+
+
+@pytest.mark.parametrize(
+    "substitute",
+    [
+        "create index on public.application (organisation_id) include (job_id)",
+        "create index on public.application (organisation_id, job_id) where decided_by is null",
+    ],
+    ids=["included-column", "partial-index"],
+)
+def test_an_index_that_does_not_cover_the_key_is_caught(cur: Cursor, substitute: str) -> None:
+    cur.execute("drop index public.application_job_idx")
+    cur.execute(substitute)
+    assert [name.split()[0] for name in unindexed_foreign_keys(cur)] == ["application"]

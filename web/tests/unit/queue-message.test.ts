@@ -64,12 +64,16 @@ describe("queue message contract", () => {
     },
   );
 
-  it.each(["storage_path_outside_organisation", "storage_path_for_another_file"])(
-    "refuses to produce a message whose file sits outside its own folder (%s)",
-    (name) => {
-      const example = examples.malformed.find((e) => e.name === name);
-      if (example === undefined) throw new Error(`missing example ${name}`);
-      expect(() => rebuild(example.message)).toThrow(/storage_path/);
+  const storagePathExamples = examples.malformed.filter((e) => e.name.startsWith("storage_path_"));
+
+  it("has storage path examples to refuse", () => {
+    expect(storagePathExamples.length).toBeGreaterThanOrEqual(7);
+  });
+
+  it.each(storagePathExamples.map((e) => [e.name, e.message] as const))(
+    "refuses to produce a message whose storage_path is not a file in its own folder (%s)",
+    (_, message) => {
+      expect(() => rebuild(message)).toThrow(/storage_path/);
     },
   );
 });

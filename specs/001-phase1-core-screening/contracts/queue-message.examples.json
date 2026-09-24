@@ -167,6 +167,76 @@
       }
     },
     {
+      "name": "storage_path_is_the_folder",
+      "message": {
+        "schema_version": 1,
+        "job_type": "cv_processing",
+        "organisation_id": "3f2a5c1e-8b4d-4c6a-9e1f-2d7b6a5c4e3d",
+        "cv_file_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+        "job_id": null,
+        "content_hash": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+        "storage_path": "organisations/3f2a5c1e-8b4d-4c6a-9e1f-2d7b6a5c4e3d/cv/a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d/",
+        "locale": "ar",
+        "enqueued_at": "2026-09-24T12:00:00.000Z"
+      }
+    },
+    {
+      "name": "storage_path_with_traversal",
+      "message": {
+        "schema_version": 1,
+        "job_type": "cv_processing",
+        "organisation_id": "3f2a5c1e-8b4d-4c6a-9e1f-2d7b6a5c4e3d",
+        "cv_file_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+        "job_id": null,
+        "content_hash": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+        "storage_path": "organisations/3f2a5c1e-8b4d-4c6a-9e1f-2d7b6a5c4e3d/cv/a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d/../../../7c6b5a4f-3e2d-4c1b-9a0f-8e7d6c5b4a3f/cv/a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d/cv.pdf",
+        "locale": "ar",
+        "enqueued_at": "2026-09-24T12:00:00.000Z"
+      }
+    },
+    {
+      "name": "storage_path_with_dot_segment",
+      "message": {
+        "schema_version": 1,
+        "job_type": "cv_processing",
+        "organisation_id": "3f2a5c1e-8b4d-4c6a-9e1f-2d7b6a5c4e3d",
+        "cv_file_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+        "job_id": null,
+        "content_hash": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+        "storage_path": "organisations/3f2a5c1e-8b4d-4c6a-9e1f-2d7b6a5c4e3d/cv/a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d/./cv.pdf",
+        "locale": "ar",
+        "enqueued_at": "2026-09-24T12:00:00.000Z"
+      }
+    },
+    {
+      "name": "storage_path_with_empty_segment",
+      "message": {
+        "schema_version": 1,
+        "job_type": "cv_processing",
+        "organisation_id": "3f2a5c1e-8b4d-4c6a-9e1f-2d7b6a5c4e3d",
+        "cv_file_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+        "job_id": null,
+        "content_hash": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+        "storage_path": "organisations/3f2a5c1e-8b4d-4c6a-9e1f-2d7b6a5c4e3d/cv/a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d//cv.pdf",
+        "locale": "ar",
+        "enqueued_at": "2026-09-24T12:00:00.000Z"
+      }
+    },
+    {
+      "name": "storage_path_with_backslash",
+      "message": {
+        "schema_version": 1,
+        "job_type": "cv_processing",
+        "organisation_id": "3f2a5c1e-8b4d-4c6a-9e1f-2d7b6a5c4e3d",
+        "cv_file_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+        "job_id": null,
+        "content_hash": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+        "storage_path": "organisations/3f2a5c1e-8b4d-4c6a-9e1f-2d7b6a5c4e3d/cv/a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d/..\\cv.pdf",
+        "locale": "ar",
+        "enqueued_at": "2026-09-24T12:00:00.000Z"
+      }
+    },
+    {
       "name": "locale_not_supported",
       "message": {
         "schema_version": 1,
