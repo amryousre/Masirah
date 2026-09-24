@@ -11,6 +11,7 @@ from typing import Any
 
 import psycopg
 import pytest
+from psycopg import sql
 from psycopg.types.json import Jsonb
 
 from tests.database import WEIGHTS, Cursor, Tenant, act_as, seed_tenant
@@ -179,3 +180,34 @@ def test_a_member_cannot_record_an_action_as_someone_else(cur: Cursor, tenant: T
             " subject_id) values (%s, %s, 'candidate.viewed', 'candidate', %s)",
             (tenant.organisation_id, uuid.uuid4(), tenant.row_ids["candidate"]),
         )
+
+
+@pytest.mark.parametrize("table", ["candidate", "cv_file"])
+def test_members_cannot_delete_personal_data_directly(
+    cur: Cursor, tenant: Tenant, table: str
+) -> None:
+    """Erasure (FR-076) runs server-side and removes the stored original first (T100, T101).
+
+    A direct delete would leave the original CV behind in storage, so members have none.
+    """
+    act_as_member(cur, tenant)
+    with pytest.raises(psycopg.errors.InsufficientPrivilege):
+        cur.execute(
+            sql.SQL("delete from public.{} where id = %s").format(sql.Identifier(table)),
+            (tenant.row_ids[table],),
+        )
+
+
+def test_members_cannot_delete_stored_originals(cur: Cursor, tenant: Tenant) -> None:
+    """Originals are retained unchanged (FR-012) until erasure removes them.
+
+    Supabase blocks direct SQL deletes from storage with a trigger, so this takes the path the
+    Storage API takes: it lifts that guard for the transaction and deletes as the member,
+    leaving row level security as the only thing standing between the member and the file.
+    """
+    act_as_member(cur, tenant)
+    cur.execute("select set_config('storage.allow_delete_query', 'true', true)")
+    cur.execute("delete from storage.objects where name = %s", (tenant.storage_path,))
+    assert cur.rowcount == 0
+    cur.execute("select count(*) from storage.objects where name = %s", (tenant.storage_path,))
+    assert cur.fetchone() == (1,)

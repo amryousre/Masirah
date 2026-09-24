@@ -19,7 +19,9 @@ create trigger set_updated_at before update on public.candidate
 
 alter table public.candidate enable row level security;
 revoke all on public.candidate from anon, authenticated;
-grant select, insert, update, delete on public.candidate to authenticated;
+-- No delete for members. Erasure (FR-076) runs server-side through T100 and T101, which remove
+-- the stored original first; a direct delete would leave the CV behind in storage.
+grant select, insert, update on public.candidate to authenticated;
 
 create policy "members manage their organisation's candidates" on public.candidate
   for all to authenticated

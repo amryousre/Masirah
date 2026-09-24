@@ -234,3 +234,6 @@ form so that the audit trail is not destroyed by retention.
 
 **Deletion on request (FR-076)**: removes the same set within 30 days of a request, on demand rather
 than on schedule. Both paths write an activity row recording what was removed and when.
+
+Members cannot delete candidate rows, CV file rows or stored originals directly. Both paths run
+server-side and remove the stored original first, so no route can leave a CV behind in storage.

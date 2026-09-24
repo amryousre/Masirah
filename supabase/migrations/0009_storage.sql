@@ -36,6 +36,5 @@ create policy "members upload into their organisation's CV folder" on storage.ob
   for insert to authenticated
   with check (private.is_own_cv_object(bucket_id, name));
 
-create policy "members delete their organisation's CV files" on storage.objects
-  for delete to authenticated
-  using (private.is_own_cv_object(bucket_id, name));
+-- No update or delete policy: originals are retained unchanged (FR-012) until erasure (T100,
+-- T101) removes them server-side, together with the rows that reference them.

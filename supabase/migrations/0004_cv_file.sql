@@ -34,7 +34,9 @@ create trigger set_updated_at before update on public.cv_file
 
 alter table public.cv_file enable row level security;
 revoke all on public.cv_file from anon, authenticated;
-grant select, insert, update, delete on public.cv_file to authenticated;
+-- No delete for members, for the same reason as candidate: only erasure removes a CV file, and
+-- it removes the stored original first.
+grant select, insert, update on public.cv_file to authenticated;
 
 create policy "members manage their organisation's CV files" on public.cv_file
   for all to authenticated
