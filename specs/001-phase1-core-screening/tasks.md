@@ -18,7 +18,7 @@
 
 Per the Project Structure decision in plan.md: one repository, three top-level directories, no monorepo tooling.
 
-- `web/` — Next.js App Router, TypeScript 5.x, Node 22
+- `web/` — Next.js App Router, TypeScript 5.x, Node 24 LTS
 - `pipeline/` — Python 3.12 worker, `src/masirah_pipeline/`
 - `supabase/` — migrations
 
@@ -34,13 +34,13 @@ quickstart.md is explicit: **build the accuracy suite first, before the interfac
 
 **Purpose**: Project initialization, toolchain, and the gates that stop bad code reaching main.
 
-- [ ] T001 Create the three-directory structure `web/`, `pipeline/`, `supabase/` at repository root per plan.md Project Structure
-- [ ] T002 [P] Initialize Next.js App Router project in `web/package.json` and `web/tsconfig.json`, TypeScript 5.x on Node 22, strictest practical compiler settings per Constitution III
+- [X] T001 Create the three-directory structure `web/`, `pipeline/`, `supabase/` at repository root per plan.md Project Structure
+- [X] T002 [P] Initialize Next.js App Router project in `web/package.json` and `web/tsconfig.json`, TypeScript 5.x on Node 24 LTS, strictest practical compiler settings per Constitution III
 - [ ] T003 [P] Initialize Python 3.12 project in `pipeline/` with `src/masirah_pipeline/` layout and the `domain/`, `ports/`, `adapters/` subdirectories
-- [ ] T004 [P] Configure ESLint and Prettier in `web/.eslintrc` and `web/.prettierrc`, with `strict: true` and `noUncheckedIndexedAccess` in `web/tsconfig.json`
+- [X] T004 [P] Configure ESLint and Prettier in `web/eslint.config.mjs` (ESLint 9 flat config, which no longer reads `.eslintrc`) and `web/.prettierrc`, with `strict: true` and `noUncheckedIndexedAccess` in `web/tsconfig.json`
 - [ ] T005 [P] Configure ruff and mypy in `pipeline/pyproject.toml` with strict typing enabled
-- [ ] T006 [P] Configure Vitest for unit tests in `web/vitest.config.ts` with the suite rooted at `web/tests/unit/`
-- [ ] T007 [P] Configure Playwright in `web/playwright.config.ts` with the suite rooted at `web/tests/e2e/`
+- [X] T006 [P] Configure Vitest for unit tests in `web/vitest.config.ts` with the suite rooted at `web/tests/unit/`
+- [X] T007 [P] Configure Playwright in `web/playwright.config.ts` with the suite rooted at `web/tests/e2e/`
 - [ ] T008 [P] Configure pytest in `pipeline/pyproject.toml` with `pipeline/tests/unit/` and `pipeline/tests/accuracy/` as separate suites
 - [ ] T009 Add import-boundary enforcement so `web/lib/domain/` cannot import from `web/lib/adapters/` and `pipeline/src/masirah_pipeline/domain/` cannot import from `adapters/`, failing the build on violation per Constitution II
 - [ ] T010 Create CI workflow in `.github/workflows/ci.yml` running lint, type check, unit tests and the T009 boundary check on every push, blocking merge on failure
