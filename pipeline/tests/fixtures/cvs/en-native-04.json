@@ -1,0 +1,27 @@
+{
+  "document": { "capture": "native", "language": "en", "layout": "single_column", "pages": 2 },
+  "expected": "parsed",
+  "profile": {
+    "name": "Tarek Fawzy El-Sherif",
+    "emails": ["tarek.sherif@example.com"],
+    "phones": ["+201000000104"],
+    "location": "Alexandria",
+    "years_of_experience": 4,
+    "employment": [
+      { "employer": "CivilSoft", "title": "Sofware Developer", "start": "2015-04", "end": "present" }
+    ],
+    "education": [
+      { "institution": "Alexandria University", "qualification": "Bachelor's Degree, Electrical, Electronics and Communications Engineering", "start": null, "end": "2010-05" }
+    ],
+    "skills": [
+      "C# MVC", "Web-Forms", "LINQ", "Entity Framework", "SQL Server",
+      "Stored Procedures / Triggers / Functions / Views", "JavaScript / JQuery", "TFS", "HTML / CSS",
+      "OOP Concepts & Principles", "Web development Concepts & Principles",
+      "Agile Development Approaches", "Database Design / Normalization Skills",
+      "High Code Debugging Skills"
+    ],
+    "languages": [{ "language": "English", "level": "Good" }],
+    "certifications": []
+  },
+  "protected": {}
+}

@@ -1,0 +1,35 @@
+{
+  "document": { "capture": "native", "language": "en", "layout": "single_column", "pages": 3 },
+  "expected": "parsed",
+  "profile": {
+    "name": "Sherif Magdy",
+    "emails": ["sherif.magdy@example.com"],
+    "phones": ["+201000000110"],
+    "location": "Alexandria",
+    "years_of_experience": null,
+    "employment": [
+      { "employer": "ArabChamber", "title": "Backend Developer", "start": "2020-03", "end": "2020-11" },
+      { "employer": "Info Sys Tech (IST)", "title": "Full Stack Developer", "start": "2020-12", "end": "present" }
+    ],
+    "education": [
+      { "institution": null, "qualification": "Computer Science", "start": "2012", "end": "2016" }
+    ],
+    "skills": [
+      "C#", "SQL Server", "PHP", "MySQL", "HTML", "CSS", "JavaScript", "JQuery", "ASP.NET MVC",
+      "Laravel", "Visual Studio", "Photoshop"
+    ],
+    "languages": [
+      { "language": "Arabic", "level": "Very Good" },
+      { "language": "English", "level": "Good" }
+    ],
+    "certifications": [
+      { "name": "Programming in C#", "issuer": null },
+      { "name": "Querying Microsoft SQL Server 2012", "issuer": null },
+      { "name": "Developing Microsoft SQL Server 2012 Databases", "issuer": null },
+      { "name": "Developing Data Access Solutions", "issuer": null },
+      { "name": "Programming in HTML5 with JavaScript and CSS", "issuer": null },
+      { "name": "Developing ASP.NET MVC Web Applications", "issuer": null }
+    ]
+  },
+  "protected": {}
+}
