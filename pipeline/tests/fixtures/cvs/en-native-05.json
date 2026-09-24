@@ -9,18 +9,19 @@
     "years_of_experience": null,
     "employment": [
       { "employer": "Ipda3 Tech", "title": "Backend Developer", "start": "2022-02", "end": "2022-05" },
-      { "employer": "Tuna Doors & Windows", "title": "Marketing and project follow-up", "start": "2020-08", "end": "2021-03" }
+      { "employer": "Tuna Doors & Windows", "title": "Markting and project follow-up", "start": "2020-08", "end": "2021-03" }
     ],
     "education": [
       { "institution": "Higher Institute of Management and Information Technology in Kafr El-Sheikh", "qualification": "Bachelor of Computers and Information (Computer Science)", "start": "2013-09", "end": "2017-07" }
     ],
     "skills": [
       "PHP", "OOP", "MVC", "Laravel", "MySQL", "HTML5", "CSS3", "JavaScript", "Git", "GitHub", "Ajax",
-      "Static and dynamic routing", "Access Control Lists (ACLs)", "OSI and TCP/IP models",
+      "Configuration of static routing and dynamic routing", "Access Control Lists (ACLs)",
+      "OSI and TCP/IP models",
       "TCP and UDP protocols"
     ],
     "languages": [
-      { "language": "Arabic", "level": "Mother language" },
+      { "language": "Arabic", "level": "My Mother Langauge" },
       { "language": "English", "level": "Intermediate" }
     ],
     "certifications": [

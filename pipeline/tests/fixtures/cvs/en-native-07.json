@@ -13,11 +13,11 @@
     ],
     "education": [
       { "institution": "Arab Academy for Science & Technology & Maritime Transport", "qualification": "Pre-master diploma in Computer Science", "start": "2017", "end": "2021" },
-      { "institution": "Alexandria University, Faculty of Commerce", "qualification": "Bachelor of Accounting", "start": "2009", "end": "2013" }
+      { "institution": "Alexandria University", "qualification": "Bachelor of Accounting", "start": "2009", "end": "2013" }
     ],
     "skills": [
-      ".Net framework", "Algorithms", "Data structures", "Design patterns", "OOP",
-      "Relational databases", "Scrum", "C#", "SQL", "Python", "JavaScript", "C/C++", "SQL Server",
+      ".Net framework", "Algorithms", "Data structure", "Design patterns", "OOP",
+      "Relational database", "Scrum", "C#", "SQL", "Python", "JavaScript", "C/C++", "SQL Server",
       "MySQL", "Git", "TFS"
     ],
     "languages": [],

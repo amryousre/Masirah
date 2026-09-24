@@ -16,7 +16,7 @@
       { "institution": "Ain Shams University", "qualification": "Faculty of Computer and Information Science", "start": "2014", "end": "2018" }
     ],
     "skills": [
-      "C", "C#", "Java", "JavaScript", "Design Patterns (MVC)", "OOP", "Git", "SVN",
+      "C", "C#", "Java", "JavaScript", "Design Batterns (MVC)", "OOP", "Git", "SVN",
       "Image Processing", "DICOM Parsing", "Assembly Language", "VHDL", "Oracle SQL Developer",
       "SQL Server", "XML", "Microsoft Access", "OpenGL", "Qt Creator", "HTML", "CSS", "Windows",
       "Linux", "DOS"

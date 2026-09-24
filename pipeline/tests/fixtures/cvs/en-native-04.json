@@ -8,10 +8,10 @@
     "location": "Alexandria",
     "years_of_experience": 4,
     "employment": [
-      { "employer": "CivilSoft", "title": "Software Developer", "start": "2015-04", "end": "present" }
+      { "employer": "CivilSoft", "title": "Sofware Developer", "start": "2015-04", "end": "present" }
     ],
     "education": [
-      { "institution": "Alexandria University, Faculty of Engineering", "qualification": "Bachelor's Degree, Electrical, Electronics and Communications Engineering", "start": null, "end": "2010-05" }
+      { "institution": "Alexandria University", "qualification": "Bachelor's Degree, Electrical, Electronics and Communications Engineering", "start": null, "end": "2010-05" }
     ],
     "skills": [
       "C# MVC", "Web-Forms", "LINQ", "Entity Framework", "SQL Server",

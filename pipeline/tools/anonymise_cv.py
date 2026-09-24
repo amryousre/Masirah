@@ -1,9 +1,10 @@
 """Anonymise a CV before it enters the repository (T028).
 
 Replaces identifying values span by span, keeping each span's position, size and colour, swaps
-photographs for a blank placeholder, and drops every link, all metadata and any attachment. The
-result is then re-read and must contain none of the original values in its text, metadata, links
-or raw objects, and none of the original photo pixels. A leaking output is deleted, not kept.
+photographs for a blank placeholder, and drops every link, annotation, form field and attachment
+and all metadata. The result is then re-read and must contain none of the original values in its
+text, metadata, links or raw objects, none of the original photo pixels, and no annotation or form
+field. An output that fails, or that cannot be checked, is deleted rather than kept.
 
 The plan names the real values, so it lives outside the repository beside the originals:
 
@@ -172,6 +173,13 @@ def _rewrite_page(page: pymupdf.Page, patterns: Patterns) -> list[str]:
             _draw(page, span, text, width)
     for link in page.get_links():
         page.delete_link(link)
+    # Notes, text boxes, attachments and form fields can each hold a person, outside the text.
+    annot = page.first_annot
+    while annot:
+        annot = page.delete_annot(annot)
+    widget = page.first_widget
+    while widget:
+        widget = page.delete_widget(widget)
     return [text for text in expected if text]
 
 
@@ -250,14 +258,25 @@ def find_leaks(pdf: Path, forbidden: Iterable[str], photos: Iterable[str] = ()) 
         leaks.append("an original photo is still embedded")
     if doc.embfile_count():
         leaks.append("an attachment is still embedded")
+    if any(page.first_annot for page in doc):
+        leaks.append("an annotation is still present")
+    if any(page.first_widget for page in doc) or doc.is_form_pdf:
+        leaks.append("a form field is still present")
     return leaks
 
 
 def run(plan: CvPlan) -> list[str]:
-    """Anonymise, then prove it. A leaking or damaged output is deleted, never committed."""
-    originals = photo_pixels(plan.source, plan.photos)
-    kept = anonymise(plan)
-    problems = find_leaks(plan.output, plan.forbidden, originals) + find_losses(plan.output, kept)
+    """Anonymise, then prove it. An output that leaks, is damaged, or could not be checked at all
+    is deleted, so nothing unverified is left where it could be committed.
+    """
+    try:
+        originals = photo_pixels(plan.source, plan.photos)
+        expected = anonymise(plan)
+        leaks = find_leaks(plan.output, plan.forbidden, originals)
+        problems = leaks + find_losses(plan.output, expected)
+    except BaseException:
+        plan.output.unlink(missing_ok=True)
+        raise
     if problems:
         plan.output.unlink()
     return problems
@@ -284,10 +303,13 @@ def main(argv: list[str]) -> int:
     plan_file, output_dir = Path(argv[0]), Path(argv[1])
     failed = 0
     for plan in _plans(plan_file, output_dir):
-        leaks = run(plan)
-        failed += bool(leaks)
-        # Only the output name is printed: a leak report names the values, so keep it local.
-        print(f"{plan.output.name}: {'FAILED ' + '; '.join(leaks) if leaks else 'clean'}")
+        try:
+            problems = run(plan)
+        except Exception as error:  # one broken CV is reported, and the rest still run
+            problems = [f"could not be checked: {type(error).__name__}: {error}"]
+        failed += bool(problems)
+        # The report can name original values, so it goes to the local terminal only.
+        print(f"{plan.output.name}: {'FAILED ' + '; '.join(problems) if problems else 'clean'}")
     return 1 if failed else 0
 
 

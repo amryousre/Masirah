@@ -4,11 +4,13 @@ The CVs here are built on the fly around an invented person, so no real data ent
 repository to test the tool that keeps real data out of it.
 """
 
+import json
 from pathlib import Path
 
 import pymupdf
 import pytest
 
+from tools import anonymise_cv
 from tools.anonymise_cv import (
     CvPlan,
     _pattern,
@@ -16,6 +18,7 @@ from tools.anonymise_cv import (
     anonymise,
     find_leaks,
     find_losses,
+    main,
     photo_pixels,
     run,
 )
@@ -52,6 +55,16 @@ def make_cv(path: Path) -> int:
         for y in range(32):
             photo.set_pixel(x, y, (x * 8, y * 8, 128))
     xref: int = page.insert_image(pymupdf.Rect(400, 50, 480, 130), pixmap=photo)
+    # Places a person can hide outside the page text: notes, text boxes, attachments, form fields.
+    page.add_text_annot((300, 300), f"Call {NAME}")
+    page.add_freetext_annot(pymupdf.Rect(300, 320, 520, 340), f"Note: {NAME}")
+    page.add_file_annot((300, 360), NAME.encode(), "contact.txt")
+    field = pymupdf.Widget()
+    field.field_type = pymupdf.PDF_WIDGET_TYPE_TEXT
+    field.field_name = "candidate"
+    field.field_value = NAME
+    field.rect = pymupdf.Rect(300, 380, 520, 400)
+    page.add_widget(field)
     doc.set_metadata({"author": NAME, "title": f"{NAME} CV"})
     doc.save(path)
     return xref
@@ -168,6 +181,50 @@ def test_an_untouched_cv_leaks_everywhere(plan: CvPlan) -> None:
     assert f"{NAME!r} in metadata" in leaks
     assert f"{EMAIL!r} in links" in leaks
     assert "an original photo is still embedded" in leaks
+    assert "an annotation is still present" in leaks
+    assert "a form field is still present" in leaks
+
+
+def test_annotations_and_form_fields_are_removed(plan: CvPlan) -> None:
+    assert run(plan) == []
+    doc = pymupdf.open(plan.output)
+    assert [annot.type for page in doc for annot in page.annots()] == []
+    assert [widget.field_name for page in doc for widget in page.widgets()] == []
+
+
+def test_a_crashing_check_leaves_no_unchecked_file(
+    plan: CvPlan, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def crash(*_: object) -> list[str]:
+        raise RuntimeError("the check itself failed")
+
+    monkeypatch.setattr(anonymise_cv, "find_losses", crash)
+    with pytest.raises(RuntimeError):
+        run(plan)
+    assert not plan.output.exists()
+
+
+def test_the_command_reports_a_failing_cv_and_carries_on(
+    plan: CvPlan, capsys: pytest.CaptureFixture[str]
+) -> None:
+    folder = plan.source.parent
+    entries = [
+        {"source": "missing.pdf", "output": "first.pdf", "replace": []},
+        {
+            "source": plan.source.name,
+            "output": "second.pdf",
+            "replace": [list(pair) for pair in REPLACE],
+            "photos": list(plan.photos),
+        },
+    ]
+    (folder / "plan.json").write_text(json.dumps({"cvs": entries}), encoding="utf-8")
+    output_dir = folder / "out"
+    output_dir.mkdir()
+    assert main([str(folder / "plan.json"), str(output_dir)]) == 1
+    report = capsys.readouterr().out
+    assert "first.pdf: FAILED" in report
+    assert "second.pdf: clean" in report
+    assert [path.name for path in output_dir.iterdir()] == ["second.pdf"]
 
 
 def test_a_leaking_output_is_deleted_rather_than_kept(plan: CvPlan) -> None:

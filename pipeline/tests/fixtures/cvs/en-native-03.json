@@ -15,7 +15,7 @@
       { "employer": "Carrefour UAE", "title": "IT Engineer", "start": "2011-12", "end": "2012-06" }
     ],
     "education": [
-      { "institution": "Zagazig University, Faculty of Computer and informatics", "qualification": "Bachelor in software and information system", "start": "2006", "end": "2010" }
+      { "institution": "Zagazig University", "qualification": "Bachelor in software and information system", "start": "2006", "end": "2010" }
     ],
     "skills": [
       "SQL (Microsoft SQL server)", ".Net framework 4.5", ".Net framework core 3.1", "Angular", "VueJS",

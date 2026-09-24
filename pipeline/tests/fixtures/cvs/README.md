@@ -22,15 +22,18 @@ they stay on the owner's machine, outside the working tree.
   certificate or verification codes. Invented emails use `example.com`, and invented mobile
   numbers start `01000000`.
 - **Removed:** photographs (replaced with a blank of the same size, so the layout is unchanged),
-  every link, all document metadata and any attachment.
+  every link, annotation (notes, text boxes, file attachments) and form field, all document
+  metadata and any embedded file.
 - **Kept, because extraction and later tests need them:** employers, job titles, dates,
   education, cities, skills, nationality and marital status.
 
-The tool re-reads every output before keeping it. The output fails, and is deleted, if any
-original value survives in its text, metadata, links or raw objects, if an original photo's
-pixels are still embedded, or if any line reads differently from what was intended.
-`tests/unit/test_cv_corpus.py` then re-checks every committed file in CI. No metadata, links or
-attachments are allowed, and every email and Egyptian mobile number must be an invented one.
+The tool re-reads every output before keeping it. The output is deleted if any original value
+survives in its text, metadata, links or raw objects, if an original photo's pixels are still
+embedded, if an annotation or form field remains, if any line reads differently from what was
+intended, or if a check cannot run at all. `tests/unit/test_cv_corpus.py` then re-checks every
+committed file in CI. No metadata, links or attachments are allowed. Every email must be at
+`example.com`, `.net` or `.org`, and every Egyptian mobile number must be an invented one, however
+it is written (`01…`, `+20…`, `0020…`, letter-spaced or wrapped across lines).
 
 ## Labels
 
@@ -67,9 +70,13 @@ Each `name.pdf` has a `name.json` beside it:
 | `skills` | Technical skills the CV lists as skills. Soft skills are not labelled |
 | `protected` | Attributes FR-017 redacts before scoring, when the CV shows them. Not extraction targets |
 
-Values are written as the CV writes them, with obvious typos corrected ("Sofware" is labelled
-"Software"). How strictly each field is compared, for example exact names but overlapping skill
-sets, is T029's decision, not the labels'.
+Values are copied as the CV writes them, typos included ("Sofware Developer", "Markting"). That
+way every label can be checked against its document: `test_cv_corpus.py` requires each Latin-script
+value to appear in the PDF's text, and each labelled year and phone number too. Arabic script is
+checked by review instead, because a PDF text layer often stores it in visual order or as
+presentation forms, which is exactly what extraction has to repair. How strictly extraction is
+compared with a label is T029's decision, for example tolerating case and small spelling
+differences, or scoring skills as an overlapping set.
 
 ## Coverage
 
