@@ -11,7 +11,7 @@ in [spec.md](./spec.md) and the success criteria they satisfy. Entity shapes are
 
 | Requirement | Notes |
 |---|---|
-| Node 22 and npm | For `web/` |
+| Node 24 LTS and npm | For `web/` |
 | Python 3.12 | For `pipeline/` |
 | Supabase CLI | Local database and migrations |
 | Tesseract with Arabic language data | OCR fallback path |

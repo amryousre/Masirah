@@ -23,7 +23,7 @@ name variants and Hijri dates are markedly stronger in Python.
 
 ## Technical Context
 
-**Language/Version**: TypeScript 5.x on Node 22 for the web application. Python 3.12 for the
+**Language/Version**: TypeScript 5.x on Node 24 LTS for the web application. Python 3.12 for the
 processing pipeline.
 
 **Primary Dependencies**: Next.js App Router for the interface and server routes. Supabase client

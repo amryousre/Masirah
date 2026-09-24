@@ -24,3 +24,16 @@ Thumbs.db
 
 # Word lock files
 ~$*.docx
+
+# Python tooling
+.venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.import_linter_cache/
+*.egg-info/
+
+# Test output
+coverage/
+test-results/
+playwright-report/

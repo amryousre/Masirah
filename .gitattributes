@@ -1,0 +1,8 @@
+# One line ending everywhere, so Prettier and ruff agree on every machine
+* text=auto eol=lf
+
+*.docx binary
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary

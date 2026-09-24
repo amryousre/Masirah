@@ -35,10 +35,11 @@ The tenant root. Owns every other record.
 
 Phase 1 holds one organisation per pilot. Invitations and roles arrive in Phase 2 with FR-071.
 
-### user
+### app_user
 
 A person signed in to an organisation. Authentication is handled by Supabase Auth; this table holds
-the application-level association.
+the application-level association. Named `app_user` rather than `user`, which is a reserved word in
+PostgreSQL.
 
 | Field | Type | Notes |
 |---|---|---|
@@ -67,7 +68,9 @@ A role being filled, holding the specification candidates are measured against.
 | weights | jsonb | Component weights used for scoring, defaulted per organisation |
 
 Validation: title must be non-empty. Weights must sum to a fixed total so that scores remain
-comparable; a job with malformed weights cannot be saved.
+comparable; a job with malformed weights cannot be saved. The weights are whole-number percentages
+keyed `skills_match`, `experience_relevance`, `education`, `tenure_stability`, `language` and
+`location`, one per FR-014 component, and must total 100.
 
 ### candidate
 
@@ -209,7 +212,7 @@ audit trail rather than a log.
 ## Relationships
 
 ```text
-organisation 1──N user
+organisation 1──N app_user
 organisation 1──N job
 organisation 1──N candidate
 candidate    1──N cv_file
@@ -231,3 +234,6 @@ form so that the audit trail is not destroyed by retention.
 
 **Deletion on request (FR-076)**: removes the same set within 30 days of a request, on demand rather
 than on schedule. Both paths write an activity row recording what was removed and when.
+
+Members cannot delete candidate rows, CV file rows or stored originals directly. Both paths run
+server-side and remove the stored original first, so no route can leave a CV behind in storage.
