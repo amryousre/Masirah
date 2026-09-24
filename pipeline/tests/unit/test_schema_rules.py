@@ -211,3 +211,23 @@ def test_members_cannot_delete_stored_originals(cur: Cursor, tenant: Tenant) -> 
     assert cur.rowcount == 0
     cur.execute("select count(*) from storage.objects where name = %s", (tenant.storage_path,))
     assert cur.fetchone() == (1,)
+
+
+def test_every_foreign_key_has_a_covering_index(cur: Cursor) -> None:
+    """Every policy filters by organisation, and deleting a referenced row scans its referrers.
+
+    An index covers a foreign key when its leading columns are exactly the key's columns.
+    """
+    cur.execute(
+        "select c.conrelid::regclass::text || ' ' || c.conname"
+        " from pg_constraint c"
+        " where c.contype = 'f' and c.connamespace = 'public'::regnamespace"
+        " and not exists ("
+        "   select 1 from pg_index i"
+        "   where i.indrelid = c.conrelid"
+        "   and (i.indkey::int2[])[0:cardinality(c.conkey) - 1] @> c.conkey"
+        "   and (i.indkey::int2[])[0:cardinality(c.conkey) - 1] <@ c.conkey"
+        " )"
+        " order by 1"
+    )
+    assert [row[0] for row in cur.fetchall()] == []
