@@ -12,7 +12,7 @@ build-backend = "uv_build"
 [tool.ruff]
 line-length = 100
 target-version = "py312"
-src = ["src", "tests"]
+src = ["src", "."]
 
 [tool.ruff.lint]
 select = [
@@ -34,7 +34,13 @@ select = [
 [tool.mypy]
 strict = true
 python_version = "3.12"
-files = ["src", "tests"]
+files = ["src", "tests", "tools"]
+
+[[tool.mypy.overrides]]
+# PyMuPDF ships py.typed, but most of its API is unannotated or generated at import time, so strict
+# mode reports every call. Treating it as untyped here beats scattering ignores through callers.
+module = ["pymupdf", "pymupdf.*"]
+follow_imports = "skip"
 
 [tool.pytest.ini_options]
 # Plain `pytest` runs the unit suite. The accuracy suite is a release gate and
@@ -52,6 +58,7 @@ dev = [
     "import-linter>=2.15",
     "mypy>=2.3.1",
     "psycopg[binary]>=3.3.6",
+    "pymupdf>=1.28.2",
     "pytest>=9.1.1",
     "ruff>=0.16.8",
 ]

@@ -1,0 +1,42 @@
+{
+  "document": { "capture": "native", "language": "en", "layout": "single_column", "pages": 3 },
+  "expected": "parsed",
+  "profile": {
+    "name": "Omar Adel",
+    "emails": ["omar.adel@example.com"],
+    "phones": ["+201000000102"],
+    "location": "Cairo",
+    "years_of_experience": null,
+    "employment": [
+      { "employer": "Link Development", "title": "Senior Solutions Developer", "start": "2022-10", "end": "present" },
+      { "employer": "Sarmady - a Vodafone Company", "title": "Dotnet Developer", "start": "2021-08", "end": "2022-10" },
+      { "employer": "DMS Egypt", "title": "Software Developer Dotnet", "start": "2019-08", "end": "2021-07" },
+      { "employer": "Raya Holding for Financial Investments", "title": "Dotnet Developer", "start": "2018-08", "end": "2019-08" }
+    ],
+    "education": [
+      { "institution": "Faculty of Graduate Studies for Statistical Research, Cairo University", "qualification": "Post-graduate diploma, Computer Science", "start": "2018", "end": "2020" },
+      { "institution": "Alexandria University", "qualification": "Bachelor's degree, Accounting and Finance", "start": "2008", "end": "2013" }
+    ],
+    "skills": [
+      "C#", "ASP.NET MVC", "ASP.NET Web API", "Microsoft SQL Server", "HTML5",
+      "Cascading Style Sheets (CSS)", ".NET Framework", "HTML", "Web Development", "SQL"
+    ],
+    "languages": [],
+    "certifications": [
+      { "name": "Data Analysis Professional", "issuer": "Udacity" },
+      { "name": "Object-Oriented Data Structures in C++", "issuer": "University of Illinois Urbana-Champaign" },
+      { "name": "Algorithmic Toolbox", "issuer": "UC San Diego" },
+      { "name": "Data Structures", "issuer": "UC San Diego" },
+      { "name": "Web Developing Diploma", "issuer": "Russian cultural center" },
+      { "name": "Algorithms on Graphs", "issuer": "UC San Diego" },
+      { "name": "Programming Foundations: Algorithms", "issuer": "LinkedIn" },
+      { "name": "Programming Foundations: Data Structures", "issuer": "LinkedIn" },
+      { "name": "JavaScript", "issuer": "IBM" },
+      { "name": "Web Development", "issuer": "IBM" },
+      { "name": "Git", "issuer": "IBM" },
+      { "name": "Microsoft Certified: Azure AI Fundamentals", "issuer": "Microsoft" },
+      { "name": "SQL (Basic) Certificate", "issuer": "HackerRank" }
+    ]
+  },
+  "protected": {}
+}

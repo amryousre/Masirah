@@ -1,0 +1,27 @@
+{
+  "document": { "capture": "native", "language": "en", "layout": "single_column", "pages": 2 },
+  "expected": "parsed",
+  "profile": {
+    "name": "Ashraf Nabil Hamdy",
+    "emails": ["ashraf_nh@example.com"],
+    "phones": ["+201000000108", "+201000000109"],
+    "location": null,
+    "years_of_experience": 5,
+    "employment": [
+      { "employer": "Andalusia Business Healthcare solutions", "title": "Senior .Net developer", "start": null, "end": null },
+      { "employer": "iFlow", "title": ".NET developer", "start": "2016-11", "end": "2019-12" }
+    ],
+    "education": [
+      { "institution": "Arab Academy for Science & Technology & Maritime Transport", "qualification": "Pre-master diploma in Computer Science", "start": "2017", "end": "2021" },
+      { "institution": "Alexandria University, Faculty of Commerce", "qualification": "Bachelor of Accounting", "start": "2009", "end": "2013" }
+    ],
+    "skills": [
+      ".Net framework", "Algorithms", "Data structures", "Design patterns", "OOP",
+      "Relational databases", "Scrum", "C#", "SQL", "Python", "JavaScript", "C/C++", "SQL Server",
+      "MySQL", "Git", "TFS"
+    ],
+    "languages": [],
+    "certifications": []
+  },
+  "protected": {}
+}

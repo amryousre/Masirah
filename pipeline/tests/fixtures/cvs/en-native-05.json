@@ -1,0 +1,35 @@
+{
+  "document": { "capture": "native", "language": "en", "layout": "two_column", "pages": 2 },
+  "expected": "parsed",
+  "profile": {
+    "name": "Hossam Eldin Mahmoud Ali Ragab",
+    "emails": ["hossam.ragab@example.com"],
+    "phones": ["+201000000105", "+201000000106"],
+    "location": "Nasr City",
+    "years_of_experience": null,
+    "employment": [
+      { "employer": "Ipda3 Tech", "title": "Backend Developer", "start": "2022-02", "end": "2022-05" },
+      { "employer": "Tuna Doors & Windows", "title": "Marketing and project follow-up", "start": "2020-08", "end": "2021-03" }
+    ],
+    "education": [
+      { "institution": "Higher Institute of Management and Information Technology in Kafr El-Sheikh", "qualification": "Bachelor of Computers and Information (Computer Science)", "start": "2013-09", "end": "2017-07" }
+    ],
+    "skills": [
+      "PHP", "OOP", "MVC", "Laravel", "MySQL", "HTML5", "CSS3", "JavaScript", "Git", "GitHub", "Ajax",
+      "Static and dynamic routing", "Access Control Lists (ACLs)", "OSI and TCP/IP models",
+      "TCP and UDP protocols"
+    ],
+    "languages": [
+      { "language": "Arabic", "level": "Mother language" },
+      { "language": "English", "level": "Intermediate" }
+    ],
+    "certifications": [
+      { "name": "YAT Professional Diploma For Web Development", "issuer": "YAT Learning Solutions" },
+      { "name": "Building Web Applications using PHP & MYSQL", "issuer": "Mahara Tech" },
+      { "name": "PHP OOP In Arabic Language With Complete Website", "issuer": "Udemy" },
+      { "name": "HTML, CSS and JavaScript", "issuer": "The Hong Kong University of Science and Technology" },
+      { "name": "Web design: دورة تصميم مواقع الإنترنت", "issuer": "Udemy" }
+    ]
+  },
+  "protected": { "date_of_birth": "1995-03-07", "nationality": "Egyptian", "marital_status": "Single" }
+}
