@@ -40,13 +40,18 @@ files = ["src", "tests"]
 # Plain `pytest` runs the unit suite. The accuracy suite is a release gate and
 # runs on its own: `pytest tests/accuracy`.
 testpaths = ["tests/unit"]
+pythonpath = ["."]
 addopts = ["--strict-markers", "--strict-config", "-ra", "--import-mode=importlib"]
 xfail_strict = true
+markers = [
+  "database: needs the local Supabase database (npx supabase start from the repository root)",
+]
 
 [dependency-groups]
 dev = [
     "import-linter>=2.15",
     "mypy>=2.3.1",
+    "psycopg[binary]>=3.3.6",
     "pytest>=9.1.1",
     "ruff>=0.16.8",
 ]
