@@ -73,8 +73,8 @@ Every table below carries `organisation_id` and has row level security enabled w
 
 ### Queue
 
-- [ ] T022 Create the `cv_processing` and `cv_rescoring` queues in `supabase/migrations/0010_queues.sql` via the `pgmq` extension, reachable through the `pgmq_public` schema. `cv_rescoring` carries no Phase 1 producer and is declared now so the worker's routing does not change in Phase 2
-- [ ] T023 Define the queue message types in `web/lib/ports/queue-message.ts` and `pipeline/src/masirah_pipeline/ports/queue_message.py` matching contracts/queue-message.md exactly, with `schema_version` mandatory. A worker receiving an unrecognised version must leave the message in the queue and alert rather than guessing
+- [X] T022 Create the `cv_processing` and `cv_rescoring` queues in `supabase/migrations/0011_queues.sql` via the `pgmq` extension, reachable through the `pgmq_public` schema. `cv_rescoring` carries no Phase 1 producer and is declared now so the worker's routing does not change in Phase 2
+- [X] T023 Define the queue message types in `web/lib/ports/queue-message.ts` and `pipeline/src/masirah_pipeline/ports/queue_message.py` matching contracts/queue-message.md exactly, with `schema_version` mandatory. A worker receiving an unrecognised version must leave the message in the queue and alert rather than guessing
 
 ### Application shell
 
@@ -108,7 +108,7 @@ Every table below carries `organisation_id` and has row level security enabled w
 
 > Write these first. Observe them failing for the intended reason before writing any implementation.
 
-- [ ] T033 [P] [US1] Contract test for the `cv_processing` message shape in `pipeline/tests/unit/test_queue_contract.py`, including rejection of an unrecognised `schema_version`
+- [X] T033 [P] [US1] Contract test for the `cv_processing` message shape in `pipeline/tests/unit/test_queue_contract.py`, including rejection of an unrecognised `schema_version`
 - [ ] T034 [P] [US1] Contract test for the model provider port in `pipeline/tests/unit/test_model_provider_port.py`, run against both adapters: structured output only, identity returned not assumed, cost returned, payload hashable, failures typed as rate limit, timeout, refusal and malformed output
 - [ ] T035 [P] [US1] Accuracy gate test for native PDF extraction at 95 percent field accuracy in `pipeline/tests/accuracy/test_native_pdf_accuracy.py` (SC-002)
 - [ ] T036 [P] [US1] Unit tests for reading order on two-column layouts in `pipeline/tests/unit/test_reading_order.py`
@@ -234,7 +234,7 @@ Every table below carries `organisation_id` and has row level security enabled w
 ### Implementation for User Story 4
 
 - [ ] T099 [US4] Write activity rows on every access to and export of candidate data in `web/lib/adapters/activity.ts`, covering `candidate.viewed`, `candidate.exported` and `application.rejected` (FR-074)
-- [ ] T100 [US4] Scheduled retention purge in `supabase/migrations/0011_retention.sql` and `pipeline/src/masirah_pipeline/jobs/purge.py`, removing candidate identity fields, the stored original file and the profile content once the organisation's `retention_months` elapses. Scores and activity survive so retention does not destroy the audit trail (NFR-10)
+- [ ] T100 [US4] Scheduled retention purge in `supabase/migrations/0013_retention.sql` and `pipeline/src/masirah_pipeline/jobs/purge.py`, removing candidate identity fields, the stored original file and the profile content once the organisation's `retention_months` elapses. Scores and activity survive so retention does not destroy the audit trail (NFR-10)
 - [ ] T101 [US4] `DELETE /api/candidates/{id}` in `web/app/api/candidates/[id]/route.ts` removing the same set on demand within 30 days, writing an activity row recording what was removed and when (FR-076)
 - [ ] T102 [US4] Settings page at `web/app/[lang]/settings/page.tsx` exposing the retention period, interface language and deletion request
 

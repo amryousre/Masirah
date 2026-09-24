@@ -47,6 +47,17 @@ is the expected behaviour and is visible on `/api/health`.
 | `web/` dev server | Interface and server routes, on the usual Next.js port |
 | `pipeline/` worker | Long-running consumer, polls `cv_processing`, exits non-zero on fatal config errors |
 
+## Cloud project
+
+`supabase/config.toml` configures the local stack only. Each release reaches the hosted project in
+this order, after its pull request merges:
+
+1. **Push the migrations** with `supabase db push`, dry run first.
+2. **Match the exposed schemas** to `[api] schemas` in the hosted project's Data API settings.
+   Never before step 1: the Data API stops serving when an exposed schema does not exist. Not with
+   `supabase config push` either, which would also send the local `[auth]` URLs.
+3. **Run the security and performance advisors** and resolve anything new before real data arrives.
+
 ## Validation scenarios
 
 ### 1. The core loop (User Story 1)

@@ -1,0 +1,264 @@
+{
+  "$comment": "Examples of the queue message contract in queue-message.md. The web tests (producer) and the pipeline tests (consumer) both read this file, so the two runtimes cannot drift apart. Timestamps use the form JavaScript's toISOString produces.",
+  "valid": [
+    {
+      "name": "cv_processing",
+      "message": {
+        "schema_version": 1,
+        "job_type": "cv_processing",
+        "organisation_id": "3f2a5c1e-8b4d-4c6a-9e1f-2d7b6a5c4e3d",
+        "cv_file_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+        "job_id": "0f9e8d7c-6b5a-4f3e-8d2c-1b0a9f8e7d6c",
+        "content_hash": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+        "storage_path": "organisations/3f2a5c1e-8b4d-4c6a-9e1f-2d7b6a5c4e3d/cv/a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d/cv.pdf",
+        "locale": "ar",
+        "enqueued_at": "2026-09-24T12:00:00.000Z"
+      }
+    },
+    {
+      "name": "cv_processing_without_job",
+      "message": {
+        "schema_version": 1,
+        "job_type": "cv_processing",
+        "organisation_id": "3f2a5c1e-8b4d-4c6a-9e1f-2d7b6a5c4e3d",
+        "cv_file_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+        "job_id": null,
+        "content_hash": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+        "storage_path": "organisations/3f2a5c1e-8b4d-4c6a-9e1f-2d7b6a5c4e3d/cv/a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d/cv.pdf",
+        "locale": "en",
+        "enqueued_at": "2026-09-24T12:00:00.000Z"
+      }
+    },
+    {
+      "name": "cv_rescoring",
+      "message": {
+        "schema_version": 1,
+        "job_type": "cv_rescoring",
+        "organisation_id": "3f2a5c1e-8b4d-4c6a-9e1f-2d7b6a5c4e3d",
+        "application_id": "5e4d3c2b-1a0f-4e9d-8c7b-6a5f4e3d2c1b",
+        "weights_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "locale": "ar",
+        "enqueued_at": "2026-09-24T12:00:00.000Z"
+      }
+    }
+  ],
+  "unsupported_version": [
+    {
+      "name": "future_schema_version",
+      "message": {
+        "schema_version": 2,
+        "job_type": "cv_processing",
+        "organisation_id": "3f2a5c1e-8b4d-4c6a-9e1f-2d7b6a5c4e3d",
+        "cv_file_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"
+      }
+    }
+  ],
+  "malformed": [
+    {
+      "name": "not_an_object",
+      "message": ["cv_processing"]
+    },
+    {
+      "name": "missing_schema_version",
+      "message": {
+        "job_type": "cv_processing",
+        "organisation_id": "3f2a5c1e-8b4d-4c6a-9e1f-2d7b6a5c4e3d",
+        "cv_file_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+        "job_id": null,
+        "content_hash": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+        "storage_path": "organisations/3f2a5c1e-8b4d-4c6a-9e1f-2d7b6a5c4e3d/cv/a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d/cv.pdf",
+        "locale": "ar",
+        "enqueued_at": "2026-09-24T12:00:00.000Z"
+      }
+    },
+    {
+      "name": "schema_version_as_text",
+      "message": {
+        "schema_version": "1",
+        "job_type": "cv_processing"
+      }
+    },
+    {
+      "name": "unknown_job_type",
+      "message": {
+        "schema_version": 1,
+        "job_type": "cv_deleting",
+        "organisation_id": "3f2a5c1e-8b4d-4c6a-9e1f-2d7b6a5c4e3d"
+      }
+    },
+    {
+      "name": "missing_field",
+      "message": {
+        "schema_version": 1,
+        "job_type": "cv_processing",
+        "organisation_id": "3f2a5c1e-8b4d-4c6a-9e1f-2d7b6a5c4e3d",
+        "cv_file_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+        "job_id": null,
+        "content_hash": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+        "storage_path": "organisations/3f2a5c1e-8b4d-4c6a-9e1f-2d7b6a5c4e3d/cv/a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d/cv.pdf",
+        "enqueued_at": "2026-09-24T12:00:00.000Z"
+      }
+    },
+    {
+      "name": "unexpected_field",
+      "message": {
+        "schema_version": 1,
+        "job_type": "cv_rescoring",
+        "organisation_id": "3f2a5c1e-8b4d-4c6a-9e1f-2d7b6a5c4e3d",
+        "application_id": "5e4d3c2b-1a0f-4e9d-8c7b-6a5f4e3d2c1b",
+        "weights_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "locale": "ar",
+        "enqueued_at": "2026-09-24T12:00:00.000Z",
+        "priority": 1
+      }
+    },
+    {
+      "name": "organisation_id_not_a_uuid",
+      "message": {
+        "schema_version": 1,
+        "job_type": "cv_rescoring",
+        "organisation_id": "organisation-7",
+        "application_id": "5e4d3c2b-1a0f-4e9d-8c7b-6a5f4e3d2c1b",
+        "weights_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "locale": "ar",
+        "enqueued_at": "2026-09-24T12:00:00.000Z"
+      }
+    },
+    {
+      "name": "content_hash_not_sha256",
+      "message": {
+        "schema_version": 1,
+        "job_type": "cv_processing",
+        "organisation_id": "3f2a5c1e-8b4d-4c6a-9e1f-2d7b6a5c4e3d",
+        "cv_file_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+        "job_id": null,
+        "content_hash": "md5:098f6bcd4621d373cade4e832627b4f6",
+        "storage_path": "organisations/3f2a5c1e-8b4d-4c6a-9e1f-2d7b6a5c4e3d/cv/a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d/cv.pdf",
+        "locale": "ar",
+        "enqueued_at": "2026-09-24T12:00:00.000Z"
+      }
+    },
+    {
+      "name": "storage_path_outside_organisation",
+      "message": {
+        "schema_version": 1,
+        "job_type": "cv_processing",
+        "organisation_id": "3f2a5c1e-8b4d-4c6a-9e1f-2d7b6a5c4e3d",
+        "cv_file_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+        "job_id": null,
+        "content_hash": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+        "storage_path": "organisations/7c6b5a4f-3e2d-4c1b-9a0f-8e7d6c5b4a3f/cv/a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d/cv.pdf",
+        "locale": "ar",
+        "enqueued_at": "2026-09-24T12:00:00.000Z"
+      }
+    },
+    {
+      "name": "storage_path_for_another_file",
+      "message": {
+        "schema_version": 1,
+        "job_type": "cv_processing",
+        "organisation_id": "3f2a5c1e-8b4d-4c6a-9e1f-2d7b6a5c4e3d",
+        "cv_file_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+        "job_id": null,
+        "content_hash": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+        "storage_path": "organisations/3f2a5c1e-8b4d-4c6a-9e1f-2d7b6a5c4e3d/cv/b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e/cv.pdf",
+        "locale": "ar",
+        "enqueued_at": "2026-09-24T12:00:00.000Z"
+      }
+    },
+    {
+      "name": "storage_path_is_the_folder",
+      "message": {
+        "schema_version": 1,
+        "job_type": "cv_processing",
+        "organisation_id": "3f2a5c1e-8b4d-4c6a-9e1f-2d7b6a5c4e3d",
+        "cv_file_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+        "job_id": null,
+        "content_hash": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+        "storage_path": "organisations/3f2a5c1e-8b4d-4c6a-9e1f-2d7b6a5c4e3d/cv/a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d/",
+        "locale": "ar",
+        "enqueued_at": "2026-09-24T12:00:00.000Z"
+      }
+    },
+    {
+      "name": "storage_path_with_traversal",
+      "message": {
+        "schema_version": 1,
+        "job_type": "cv_processing",
+        "organisation_id": "3f2a5c1e-8b4d-4c6a-9e1f-2d7b6a5c4e3d",
+        "cv_file_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+        "job_id": null,
+        "content_hash": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+        "storage_path": "organisations/3f2a5c1e-8b4d-4c6a-9e1f-2d7b6a5c4e3d/cv/a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d/../../../7c6b5a4f-3e2d-4c1b-9a0f-8e7d6c5b4a3f/cv/a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d/cv.pdf",
+        "locale": "ar",
+        "enqueued_at": "2026-09-24T12:00:00.000Z"
+      }
+    },
+    {
+      "name": "storage_path_with_dot_segment",
+      "message": {
+        "schema_version": 1,
+        "job_type": "cv_processing",
+        "organisation_id": "3f2a5c1e-8b4d-4c6a-9e1f-2d7b6a5c4e3d",
+        "cv_file_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+        "job_id": null,
+        "content_hash": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+        "storage_path": "organisations/3f2a5c1e-8b4d-4c6a-9e1f-2d7b6a5c4e3d/cv/a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d/./cv.pdf",
+        "locale": "ar",
+        "enqueued_at": "2026-09-24T12:00:00.000Z"
+      }
+    },
+    {
+      "name": "storage_path_with_empty_segment",
+      "message": {
+        "schema_version": 1,
+        "job_type": "cv_processing",
+        "organisation_id": "3f2a5c1e-8b4d-4c6a-9e1f-2d7b6a5c4e3d",
+        "cv_file_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+        "job_id": null,
+        "content_hash": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+        "storage_path": "organisations/3f2a5c1e-8b4d-4c6a-9e1f-2d7b6a5c4e3d/cv/a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d//cv.pdf",
+        "locale": "ar",
+        "enqueued_at": "2026-09-24T12:00:00.000Z"
+      }
+    },
+    {
+      "name": "storage_path_with_backslash",
+      "message": {
+        "schema_version": 1,
+        "job_type": "cv_processing",
+        "organisation_id": "3f2a5c1e-8b4d-4c6a-9e1f-2d7b6a5c4e3d",
+        "cv_file_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+        "job_id": null,
+        "content_hash": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+        "storage_path": "organisations/3f2a5c1e-8b4d-4c6a-9e1f-2d7b6a5c4e3d/cv/a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d/..\\cv.pdf",
+        "locale": "ar",
+        "enqueued_at": "2026-09-24T12:00:00.000Z"
+      }
+    },
+    {
+      "name": "locale_not_supported",
+      "message": {
+        "schema_version": 1,
+        "job_type": "cv_rescoring",
+        "organisation_id": "3f2a5c1e-8b4d-4c6a-9e1f-2d7b6a5c4e3d",
+        "application_id": "5e4d3c2b-1a0f-4e9d-8c7b-6a5f4e3d2c1b",
+        "weights_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "locale": "fr",
+        "enqueued_at": "2026-09-24T12:00:00.000Z"
+      }
+    },
+    {
+      "name": "enqueued_at_without_timezone",
+      "message": {
+        "schema_version": 1,
+        "job_type": "cv_rescoring",
+        "organisation_id": "3f2a5c1e-8b4d-4c6a-9e1f-2d7b6a5c4e3d",
+        "application_id": "5e4d3c2b-1a0f-4e9d-8c7b-6a5f4e3d2c1b",
+        "weights_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "locale": "ar",
+        "enqueued_at": "2026-09-24T12:00:00"
+      }
+    }
+  ]
+}
