@@ -1,0 +1,48 @@
+/* The holding page follows DESIGN.md: a pure white canvas, zero-chroma greys, one hairline, and no
+   amber, because there is nothing here to act on. */
+:root {
+  color-scheme: light;
+  --canvas: oklch(1 0 0);
+  --ink: oklch(0.2 0 0);
+  --muted: oklch(0.45 0 0);
+  --hairline: oklch(0.9 0 0);
+}
+
+body {
+  margin: 0;
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: system-ui, "Segoe UI", Tahoma, "Noto Sans Arabic", "Noto Sans", sans-serif;
+  line-height: 1.6;
+}
+
+main {
+  box-sizing: border-box;
+  display: grid;
+  align-content: center;
+  gap: 2rem;
+  min-block-size: 100vh;
+  min-block-size: 100svh;
+  max-inline-size: 36rem;
+  margin-inline: auto;
+  padding: 3rem 1rem;
+}
+
+section + section {
+  border-block-start: 1px solid var(--hairline);
+  padding-block-start: 2rem;
+}
+
+h1,
+h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+p {
+  margin: 0;
+  max-inline-size: 65ch;
+  color: var(--muted);
+}
