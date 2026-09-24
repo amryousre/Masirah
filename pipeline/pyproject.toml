@@ -1,0 +1,79 @@
+[project]
+name = "masirah-pipeline"
+version = "0.1.0"
+description = "Masirah CV extraction and scoring worker"
+requires-python = ">=3.12,<3.13"
+dependencies = []
+
+[build-system]
+requires = ["uv_build>=0.11,<0.12"]
+build-backend = "uv_build"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+  "E", "W", "F",  # pycodestyle, pyflakes
+  "I",            # import order
+  "N",            # naming
+  "UP",           # modern syntax for the target version
+  "B",            # likely bugs
+  "S",            # security
+  "C4", "SIM", "RET", "PTH",
+  "PT",           # pytest style
+  "ERA",          # commented-out code, which Constitution III requires be deleted
+  "RUF",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"]
+
+[tool.mypy]
+strict = true
+python_version = "3.12"
+files = ["src", "tests"]
+
+[tool.pytest.ini_options]
+# Plain `pytest` runs the unit suite. The accuracy suite is a release gate and
+# runs on its own: `pytest tests/accuracy`.
+testpaths = ["tests/unit"]
+addopts = ["--strict-markers", "--strict-config", "-ra", "--import-mode=importlib"]
+xfail_strict = true
+
+[dependency-groups]
+dev = [
+    "import-linter>=2.15",
+    "mypy>=2.3.1",
+    "pytest>=9.1.1",
+    "ruff>=0.16.8",
+]
+
+# Constitution II: dependencies point inward. Adapters may import domain and ports; never the reverse.
+[tool.importlinter]
+root_package = "masirah_pipeline"
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "Domain never imports adapters, database, HTTP or model-provider code"
+type = "forbidden"
+source_modules = ["masirah_pipeline.domain"]
+forbidden_modules = [
+  "masirah_pipeline.adapters",
+  "supabase",
+  "anthropic",
+  "openai",
+  "fitz",
+  "pymupdf",
+  "pytesseract",
+  "httpx",
+  "requests",
+]
+
+[[tool.importlinter.contracts]]
+name = "Ports never import adapters"
+type = "forbidden"
+source_modules = ["masirah_pipeline.ports"]
+forbidden_modules = ["masirah_pipeline.adapters"]
