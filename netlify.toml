@@ -1,0 +1,17 @@
+# Netlify builds this repository on every push to main and publishes the directory named here.
+# Without this file it published the repository root, which put every tracked file on the public
+# domain. Until the web app has pages, only the holding page is published. T032 replaces this with
+# the build for web/ and deletes holding-page/.
+[build]
+  publish = "holding-page"
+  # Explicit, so a build command set in the Netlify dashboard cannot run instead.
+  command = "echo 'No build: publishing the holding page until T032'"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Security-Policy = "default-src 'none'; style-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer"
+    # Nothing is launched yet, so nothing should be indexed.
+    X-Robots-Tag = "noindex"

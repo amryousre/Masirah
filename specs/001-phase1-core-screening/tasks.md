@@ -92,7 +92,7 @@ Every table below carries `organisation_id` and has row level security enabled w
 
 - [ ] T030 Implement `GET /api/health` in `web/app/api/health/route.ts` reporting queue depth and the worker's last heartbeat, which is the cheapest early warning that the worker has stopped
 - [ ] T031 [P] Configure structured logging, error tracking and per-tenant usage metrics in `web/lib/adapters/telemetry.ts` and `pipeline/src/masirah_pipeline/adapters/telemetry.py`, alerting when the parse failure rate exceeds five percent per NFR-14
-- [ ] T032 Configure deployment in `netlify.toml` for `web/` and `pipeline/render.yaml` for the worker host. No code may depend on Netlify-specific behaviour, because ADR 0002 plans a migration before Phase 3
+- [ ] T032 Configure deployment in `netlify.toml` for `web/` and `pipeline/render.yaml` for the worker host. No code may depend on Netlify-specific behaviour, because ADR 0002 plans a migration before Phase 3. Until then `netlify.toml` publishes only `holding-page/`, because a Netlify site with no publish directory serves the whole repository; T032 replaces that and deletes the folder
 
 **Checkpoint**: Foundation ready. The database rejects cross-tenant reads, the queue carries a versioned message, the shell renders in both directions, and the accuracy harness runs against real documents.
 
