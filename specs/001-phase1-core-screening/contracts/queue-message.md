@@ -16,6 +16,10 @@ the service role alone; anonymous and signed-in sessions cannot call them or rea
 which also carry row level security (Supabase lint 0019). Never use the dashboard toggle "Expose
 Queues via PostgREST": it recreates these functions with its own grants.
 
+The server reaches `pgmq_public` through the Data API, so the schema is exposed there: locally by
+`[api] schemas` in `supabase/config.toml`, and on the hosted project by its Data API settings. The
+grants above still keep every role except the service role out.
+
 Worker obligation 3 below means the worker will not keep using the service role: T053 and T054 give
 it a database role of its own with queue access granted explicitly.
 
