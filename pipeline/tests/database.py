@@ -10,7 +10,7 @@ import psycopg
 from psycopg.types.json import Jsonb
 
 DATABASE_URL = os.environ.get(
-    "MASIRAH_TEST_DATABASE_URL", "postgresql://postgres:postgres@127.0.0.1:45322/postgres"
+    "MASIRAH_TEST_DATABASE_URL", "postgresql://postgres:postgres@127.0.0.1:14322/postgres"
 )
 CV_BUCKET = "cv-originals"
 TENANT_TABLES = [
