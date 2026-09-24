@@ -282,18 +282,14 @@ def run(plan: CvPlan) -> list[str]:
     return problems
 
 
-def _plans(plan_file: Path, output_dir: Path) -> list[CvPlan]:
-    entries = json.loads(plan_file.read_text(encoding="utf-8"))["cvs"]
-    return [
-        CvPlan(
-            source=plan_file.parent / entry["source"],
-            output=output_dir / entry["output"],
-            replace=tuple((original, new) for original, new in entry["replace"]),
-            forbid=tuple(entry.get("forbid", ())),
-            photos=tuple(entry.get("photos", ())),
-        )
-        for entry in entries
-    ]
+def _plan(entry: dict[str, Any], plan_file: Path, output_dir: Path) -> CvPlan:
+    return CvPlan(
+        source=plan_file.parent / entry["source"],
+        output=output_dir / entry["output"],
+        replace=tuple((original, new) for original, new in entry["replace"]),
+        forbid=tuple(entry.get("forbid", ())),
+        photos=tuple(entry.get("photos", ())),
+    )
 
 
 def main(argv: list[str]) -> int:
@@ -301,15 +297,19 @@ def main(argv: list[str]) -> int:
         print(__doc__)
         return 2
     plan_file, output_dir = Path(argv[0]), Path(argv[1])
+    entries: list[Any] = json.loads(plan_file.read_text(encoding="utf-8"))["cvs"]
     failed = 0
-    for plan in _plans(plan_file, output_dir):
+    for number, entry in enumerate(entries, 1):
+        has_output = isinstance(entry, dict) and isinstance(entry.get("output"), str)
+        name = entry["output"] if has_output else f"entry {number}"
+        # Parsing sits inside the boundary too: one malformed entry must not stop the rest.
         try:
-            problems = run(plan)
-        except Exception as error:  # one broken CV is reported, and the rest still run
-            problems = [f"could not be checked: {type(error).__name__}: {error}"]
+            problems = run(_plan(entry, plan_file, output_dir))
+        except Exception as error:
+            problems = [f"could not be processed: {type(error).__name__}: {error}"]
         failed += bool(problems)
         # The report can name original values, so it goes to the local terminal only.
-        print(f"{plan.output.name}: {'FAILED ' + '; '.join(problems) if problems else 'clean'}")
+        print(f"{name}: {'FAILED ' + '; '.join(problems) if problems else 'clean'}")
     return 1 if failed else 0
 
 

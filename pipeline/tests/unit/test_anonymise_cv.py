@@ -6,6 +6,7 @@ repository to test the tool that keeps real data out of it.
 
 import json
 from pathlib import Path
+from typing import Any
 
 import pymupdf
 import pytest
@@ -204,27 +205,39 @@ def test_a_crashing_check_leaves_no_unchecked_file(
     assert not plan.output.exists()
 
 
+def run_command(plan: CvPlan, first: dict[str, Any]) -> tuple[int, list[str]]:
+    """Runs the command on a plan whose first entry is broken and whose second is sound."""
+    folder = plan.source.parent
+    second = {
+        "source": plan.source.name,
+        "output": "second.pdf",
+        "replace": [list(pair) for pair in REPLACE],
+        "photos": list(plan.photos),
+    }
+    (folder / "plan.json").write_text(json.dumps({"cvs": [first, second]}), encoding="utf-8")
+    output_dir = folder / "out"
+    output_dir.mkdir()
+    status = main([str(folder / "plan.json"), str(output_dir)])
+    return status, sorted(path.name for path in output_dir.iterdir())
+
+
 def test_the_command_reports_a_failing_cv_and_carries_on(
     plan: CvPlan, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    folder = plan.source.parent
-    entries = [
-        {"source": "missing.pdf", "output": "first.pdf", "replace": []},
-        {
-            "source": plan.source.name,
-            "output": "second.pdf",
-            "replace": [list(pair) for pair in REPLACE],
-            "photos": list(plan.photos),
-        },
-    ]
-    (folder / "plan.json").write_text(json.dumps({"cvs": entries}), encoding="utf-8")
-    output_dir = folder / "out"
-    output_dir.mkdir()
-    assert main([str(folder / "plan.json"), str(output_dir)]) == 1
+    missing = {"source": "missing.pdf", "output": "first.pdf", "replace": []}
+    assert run_command(plan, missing) == (1, ["second.pdf"])
     report = capsys.readouterr().out
     assert "first.pdf: FAILED" in report
     assert "second.pdf: clean" in report
-    assert [path.name for path in output_dir.iterdir()] == ["second.pdf"]
+
+
+def test_a_malformed_plan_entry_is_reported_and_the_rest_still_run(
+    plan: CvPlan, capsys: pytest.CaptureFixture[str]
+) -> None:
+    assert run_command(plan, {"source": plan.source.name}) == (1, ["second.pdf"])
+    report = capsys.readouterr().out
+    assert "entry 1: FAILED" in report
+    assert "second.pdf: clean" in report
 
 
 def test_a_leaking_output_is_deleted_rather_than_kept(plan: CvPlan) -> None:
