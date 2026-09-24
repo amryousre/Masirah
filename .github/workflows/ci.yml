@@ -65,4 +65,29 @@ jobs:
       - name: Import boundaries
         run: uv run lint-imports
       - name: Unit tests
-        run: uv run pytest
+        run: uv run pytest -m "not database"
+
+  database:
+    name: Database
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: supabase/setup-cli@v3
+        with:
+          version: 2.117.0
+      - name: Start Postgres, Auth and Storage
+        run: >-
+          supabase start -x
+          realtime,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+      - uses: astral-sh/setup-uv@v10.2.0
+        with:
+          working-directory: pipeline
+          enable-cache: true
+          cache-dependency-glob: pipeline/uv.lock
+      - run: uv sync --locked
+        working-directory: pipeline
+      - name: Tenant isolation and schema tests
+        run: uv run pytest -m database
+        working-directory: pipeline
