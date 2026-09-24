@@ -79,7 +79,7 @@ Every table below carries `organisation_id` and has row level security enabled w
 ### Application shell
 
 - [ ] T024 Implement Supabase Auth sign-in at `web/app/[lang]/sign-in/page.tsx` and session-to-organisation resolution in `web/lib/adapters/session.ts`. The organisation is derived from the session and never from a request body; a client-supplied organisation identifier is ignored
-- [ ] T025 Create the locale root parameter layout at `web/app/[lang]/layout.tsx` setting document direction from the locale, with detection and redirect in `web/proxy.ts`. Direction is decided in exactly one place
+- [ ] T025 Create the locale root parameter layout at `web/app/[lang]/layout.tsx` setting document direction from the locale, with detection and redirect in `web/proxy.ts`. Direction is decided in exactly one place. This is the first route, so it also switches the `typecheck` script in `web/package.json` to `next typegen && tsc --noEmit` and adds `next build` to CI: App Router route types only exist once a route does, and `next typegen` fails without one (raised by CodeRabbit on PR #1)
 - [ ] T026 [P] Create translation files `web/messages/ar.json` and `web/messages/en.json`, and add a lint rule failing the build on a hard-coded user-visible string, per Constitution IV
 - [ ] T027 [P] Define the design tokens in `web/app/globals.css` from DESIGN.md: canvas exactly `oklch(1 0 0)`, the amber ramp anchored at `oklch(0.774 0.174 65.1)` with an interactive step near lightness 0.55 for white text, a zero-chroma grey ramp, one type family carrying Arabic and Latin, and rem type steps rather than `clamp()`. Add a lint rule forbidding physical `left`/`right` in layout code per Constitution IV
 

@@ -11,6 +11,13 @@ const noAdapters = {
     "Domain and ports may not depend on adapters (Constitution II). Depend on a port instead.",
 };
 
+// no-restricted-imports cannot see import(), and its specifier can be computed, so the inner
+// layers may not use one at all. Pure domain logic has no reason to load code lazily.
+const noDynamicImport = {
+  selector: "ImportExpression",
+  message: "Domain and ports may not use dynamic import() (Constitution II).",
+};
+
 export default defineConfig([
   ...nextVitals,
   ...nextTs,
@@ -52,12 +59,14 @@ export default defineConfig([
           ],
         },
       ],
+      "no-restricted-syntax": ["error", noDynamicImport],
     },
   },
   {
     files: ["lib/ports/**/*.{ts,tsx}"],
     rules: {
       "no-restricted-imports": ["error", { patterns: [noAdapters] }],
+      "no-restricted-syntax": ["error", noDynamicImport],
     },
   },
   {

@@ -47,6 +47,8 @@ def test_adapters_may_import_domain_and_ports(
         ("domain/probe.py", "from .. import adapters\n"),
         ("domain/probe.py", "import anthropic\n"),
         ("domain/probe.py", "from supabase import create_client\n"),
+        ("domain/probe.py", "import psycopg\n"),
+        ("domain/probe.py", "import importlib\n"),
         ("ports/probe.py", "from masirah_pipeline import adapters\n"),
     ],
     ids=[
@@ -55,6 +57,8 @@ def test_adapters_may_import_domain_and_ports(
         "domain-relative",
         "domain-provider",
         "domain-db",
+        "domain-db-driver",
+        "domain-dynamic-import",
         "ports",
     ],
 )

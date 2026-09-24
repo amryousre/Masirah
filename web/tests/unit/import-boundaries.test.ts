@@ -11,10 +11,25 @@ const eslint = new ESLint({
   overrideConfig: tseslint.configs.disableTypeChecked,
 });
 
+async function violations(filePath: string, source: string, ruleId: string): Promise<number> {
+  const [result] = await eslint.lintText(source, { filePath });
+  return result?.messages.filter((m) => m.ruleId === ruleId).length ?? 0;
+}
+
 async function boundaryViolations(filePath: string, specifier: string): Promise<number> {
   const source = `import { thing } from "${specifier}";\nexport const used = thing;\n`;
-  const [result] = await eslint.lintText(source, { filePath });
-  return result?.messages.filter((m) => m.ruleId === "no-restricted-imports").length ?? 0;
+  return violations(filePath, source, "no-restricted-imports");
+}
+
+// A dynamic import() is invisible to no-restricted-imports, and its specifier can be computed,
+// so domain and ports may not use one at all.
+const dynamicImports = {
+  literal: `export const load = () => import("@/lib/adapters/session");\n`,
+  computed: `const target = "@/lib/adapters/session";\nexport const load = () => import(target);\n`,
+};
+
+async function dynamicImportViolations(filePath: string, source: string): Promise<number> {
+  return violations(filePath, source, "no-restricted-syntax");
 }
 
 describe("domain", () => {
@@ -39,6 +54,10 @@ describe("domain", () => {
       expect(await boundaryViolations("lib/domain/ranking.ts", specifier)).toBe(0);
     },
   );
+
+  it.each(Object.entries(dynamicImports))("may not use a %s dynamic import", async (_, source) => {
+    expect(await dynamicImportViolations("lib/domain/ranking.ts", source)).toBe(1);
+  });
 });
 
 describe("ports", () => {
@@ -48,6 +67,10 @@ describe("ports", () => {
       expect(await boundaryViolations("lib/ports/queue-message.ts", specifier)).toBe(1);
     },
   );
+
+  it.each(Object.entries(dynamicImports))("may not use a %s dynamic import", async (_, source) => {
+    expect(await dynamicImportViolations("lib/ports/queue-message.ts", source)).toBe(1);
+  });
 });
 
 describe("adapters", () => {
@@ -57,4 +80,10 @@ describe("adapters", () => {
       expect(await boundaryViolations("lib/adapters/session.ts", specifier)).toBe(0);
     },
   );
+
+  it("may use dynamic imports", async () => {
+    expect(await dynamicImportViolations("lib/adapters/session.ts", dynamicImports.literal)).toBe(
+      0,
+    );
+  });
 });

@@ -75,6 +75,9 @@ forbidden_modules = [
   "pytesseract",
   "httpx",
   "requests",
+  "psycopg",
+  # Dynamic imports are invisible to this contract, so domain code may not make them.
+  "importlib",
 ]
 
 [[tool.importlinter.contracts]]
