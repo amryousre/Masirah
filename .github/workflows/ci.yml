@@ -1,0 +1,68 @@
+name: CI
+
+# Constitution III: formatting, lint, types and tests pass before anything merges.
+# Constitution II: the import-boundary checks run in both runtimes on every push.
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    name: Web
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: web/.nvmrc
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - name: Format
+        run: npm run format:check
+      - name: Lint, including import boundaries
+        run: npm run lint
+      - name: Type check
+        run: npm run typecheck
+      - name: Unit tests
+        run: npm test
+
+  pipeline:
+    name: Pipeline
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: pipeline
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v10
+        with:
+          working-directory: pipeline
+          enable-cache: true
+          cache-dependency-glob: pipeline/uv.lock
+      - run: uv sync --locked
+      - name: Format
+        run: uv run ruff format --check
+      - name: Lint
+        run: uv run ruff check
+      - name: Type check
+        run: uv run mypy
+      - name: Import boundaries
+        run: uv run lint-imports
+      - name: Unit tests
+        run: uv run pytest

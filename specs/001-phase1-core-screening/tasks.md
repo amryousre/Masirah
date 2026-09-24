@@ -43,7 +43,7 @@ quickstart.md is explicit: **build the accuracy suite first, before the interfac
 - [X] T007 [P] Configure Playwright in `web/playwright.config.ts` with the suite rooted at `web/tests/e2e/`
 - [X] T008 [P] Configure pytest in `pipeline/pyproject.toml` with `pipeline/tests/unit/` and `pipeline/tests/accuracy/` as separate suites
 - [X] T009 Add import-boundary enforcement so `web/lib/domain/` cannot import from `web/lib/adapters/` and `pipeline/src/masirah_pipeline/domain/` cannot import from `adapters/`, failing the build on violation per Constitution II
-- [ ] T010 Create CI workflow in `.github/workflows/ci.yml` running lint, type check, unit tests and the T009 boundary check on every push, blocking merge on failure
+- [X] T010 Create CI workflow in `.github/workflows/ci.yml` running lint, type check, unit tests and the T009 boundary check on every push, blocking merge on failure
 
 **Checkpoint**: a clone plus one command produces a working toolchain, and CI rejects a boundary violation.
 
