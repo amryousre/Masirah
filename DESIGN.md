@@ -168,6 +168,18 @@ convention: `78`, `1,500 CVs`, `900 EGP`. Numerals are tabular wherever a number
 Quoted CV text keeps Arabic-Indic digits and Hijri dates exactly as written, with the normalised
 value beside them: «تخرّج ١٤٤٢هـ» (≈ 2021).
 
+Two rules keep numbers right in Arabic, and both are enforced in code:
+
+- A numeric expression such as `26 / 30`, `78 / 100` or `240 KB` is set left to right
+  (`dir="ltr"`). In a right-to-left line the slash or the Latin unit would otherwise let its parts
+  swap places, so `78 / 100` would read `100 / 78`.
+- A count inside a translated plural uses its named argument (`{count}`), never ICU's `#`, which
+  formats with the locale's digits and would print Arabic-Indic digits in Arabic. A test fails on
+  any `#` in a plural.
+
+Quotation marks follow the quote's own language, “like this” for Latin and «هكذا» for Arabic,
+whatever the language of the page around it.
+
 ### Named Rules
 
 **The One Voice Rule.** One family, both scripts, no exceptions. Plex Mono is the only second

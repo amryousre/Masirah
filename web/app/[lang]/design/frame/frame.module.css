@@ -1,0 +1,19 @@
+.page {
+  display: grid;
+  gap: var(--space-6);
+  padding-block: var(--space-8);
+  padding-inline: var(--space-8);
+}
+
+.title {
+  font-size: var(--size-headline);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-headline);
+}
+
+@media (width < 48rem) {
+  .page {
+    padding-block: var(--space-5);
+    padding-inline: var(--space-4);
+  }
+}

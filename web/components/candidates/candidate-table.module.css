@@ -1,0 +1,177 @@
+.table {
+  inline-size: 100%;
+  border-collapse: collapse;
+  font-size: var(--size-body-sm);
+  line-height: var(--leading-body-sm);
+}
+
+/* Read by screen readers, not shown: the table's visible context is the page heading. */
+.caption {
+  position: absolute;
+  overflow: hidden;
+  inline-size: 1px;
+  block-size: 1px;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.table th,
+.table td {
+  padding-block: 0;
+  padding-inline: var(--space-3);
+  text-align: start;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.table thead th {
+  block-size: var(--row-height);
+  border-block-end: var(--border);
+  color: var(--color-text-secondary);
+  font-size: var(--size-label);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-label);
+}
+
+.sorted {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.row {
+  block-size: var(--row-height);
+  border-block-end: var(--border-divider);
+  cursor: pointer;
+  transition: background-color var(--duration-base) var(--ease);
+}
+
+.row:hover {
+  background: var(--color-fill-hover);
+}
+
+.row:active {
+  background: var(--color-fill-pressed);
+}
+
+/* The only amber in the list (DESIGN.md section 3). */
+.row[data-selected] {
+  background: var(--color-selected);
+  outline: 1px solid var(--color-selected-edge);
+  outline-offset: -1px;
+}
+
+.row[data-selected]:hover {
+  background: var(--color-selected-hover);
+}
+
+/* Rejected rows dim but keep their evidence and name who decided. */
+.row[data-rejected] {
+  color: var(--color-text-tertiary);
+}
+
+.rank {
+  inline-size: 3rem;
+  color: var(--color-text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+.name {
+  font-weight: var(--weight-medium);
+}
+
+.select {
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.reasonHead,
+.reason {
+  inline-size: 100%;
+}
+
+.reason {
+  overflow: hidden;
+  max-inline-size: 0;
+  color: var(--color-text-secondary);
+  text-overflow: ellipsis;
+}
+
+.row[data-rejected] .reason {
+  color: var(--color-text-tertiary);
+}
+
+.review {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-warning);
+}
+
+.group {
+  padding-block: var(--space-4) var(--space-2);
+  color: var(--color-text-secondary);
+  font-size: var(--size-label);
+  font-weight: var(--weight-medium);
+}
+
+.unranked {
+  cursor: default;
+}
+
+.file {
+  font-family: var(--font-mono);
+  font-weight: var(--weight-regular);
+}
+
+.failed {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-error);
+}
+
+/* On a phone the column headers hide and each row stacks: rank and name, then the reason, then
+   score, confidence and status on one line. */
+@media (width < 48rem) {
+  .table thead {
+    display: none;
+  }
+
+  .table tbody,
+  .table tr {
+    display: block;
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: var(--space-1) var(--space-2);
+    block-size: auto;
+    padding-block: var(--space-2);
+  }
+
+  .table th,
+  .table td {
+    display: block;
+    padding-inline: 0;
+    white-space: normal;
+  }
+
+  .rank {
+    inline-size: auto;
+  }
+
+  .reason {
+    grid-column: 1 / -1;
+    max-inline-size: none;
+  }
+
+  .row > td:nth-child(n + 4) {
+    display: inline-flex;
+  }
+}

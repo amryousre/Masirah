@@ -22,9 +22,10 @@ function flatten(tree: Tree, prefix = ""): Map<string, string> {
 }
 
 // ICU arguments: {name}, {count, plural, ...}. The words inside a plural branch differ by
-// language; the argument names must not.
+// language, and so does the number of branches; the set of argument names must not.
 function argumentsOf(message: string): string[] {
-  return [...message.matchAll(/\{\s*([A-Za-z_]\w*)\s*[,}]/g)].map((match) => match[1] ?? "").sort();
+  const names = [...message.matchAll(/\{\s*([A-Za-z_]\w*)\s*[,}]/g)].map((match) => match[1] ?? "");
+  return [...new Set(names)].sort();
 }
 
 const arabic = flatten(ar);
@@ -46,6 +47,15 @@ describe("translation files", () => {
   it("have no empty messages", () => {
     const empty = [...arabic, ...english].filter(([, text]) => text.trim() === "");
     expect(empty.map(([key]) => key)).toEqual([]);
+  });
+
+  it("count with named arguments, never #, so numbers stay in Western digits", () => {
+    // Inside a plural, # is formatted with the locale's digits: Arabic-Indic in Arabic. The
+    // interface uses Western digits in both languages (DESIGN.md section 4).
+    const pound = [...arabic, ...english].filter(
+      ([, text]) => text.includes("plural,") && text.includes("#"),
+    );
+    expect(pound.map(([key]) => key)).toEqual([]);
   });
 
   it("never use an em dash, per the product's copy rules", () => {
