@@ -19,8 +19,9 @@ is to execute it with craft and to settle the values it leaves open, not to prop
 
 ## 1. The product in one paragraph
 
-A recruiter creates a job, drops up to 25 CVs onto it (PDF, Word, or phone photos of printed CVs,
-in Arabic, English or both), and gets every candidate ranked against the job. Each candidate has a
+A recruiter creates a job, drops CVs onto it up to 25 at a time (PDF, Word, or phone photos of
+printed CVs, in Arabic, English or both; a role with 300 applicants takes several uploads), and
+gets every candidate ranked against the job. Each candidate has a
 0 to 100 score broken into six weighted components: skills match, experience relevance, education,
 tenure stability, language, location. Every score comes with a written justification that quotes
 the CV lines it relied on. The machine advises; a person decides. The real competitor is not
@@ -50,7 +51,9 @@ sales call, priced in Egyptian pounds with a genuine free tier.
    of a scored candidate. The number supports them and is never the headline.
 2. **The machine advises, the human decides.** No screen presents a score as a decision.
    Rejecting a candidate is always a deliberate human action that records who did it. This is a
-   legal requirement, and it constrains layout, copy and interaction.
+   product requirement (FR-023), not a styling preference, and it constrains layout, copy and
+   interaction. Whether Egypt's data protection law (Law 151 of 2020) also requires it is still
+   awaiting a legal opinion.
 3. **Arabic is the original, not the translation.** Right-to-left is designed first, not mirrored
    afterwards.
 4. **Density without noise.** Three hundred candidates must feel finishable. The answer is
@@ -84,8 +87,10 @@ between them to check whether the machine is right.
 
 - Canvas is exactly `oklch(1 0 0)`, pure white, everywhere. Panels match the page. No cream, sand,
   beige or any warm tint.
-- Greys have zero chroma, so amber is the only color on screen.
-- **Amber** (identity anchor `oklch(0.774 0.174 65.1)`, hue 65) is the single chromatic color. It
+- Greys have zero chroma, so amber is the only accent on screen.
+- **Amber** (identity anchor `oklch(0.774 0.174 65.1)`, hue 65) is the single accent color. The
+  only other hues are the error, warning and success colors in section 7, which stay dark and low
+  in chroma, appear only inside their own messages, and always come with an icon and words. Amber
   marks primary actions, the selected row and focus rings, and nothing else: not headings, icons,
   borders, scores or empty states. It covers well under ten percent of any screen. The anchor cannot
   carry white text at WCAG AA, so the interactive primary is the same hue at roughly 0.55

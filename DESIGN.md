@@ -70,8 +70,8 @@ where the accent's rarity is what gives it meaning. Contrast ratios are against 
 | `amber-200` | `0.9 0.068 65` | 1.36 | Selected row, pressed |
 | `amber-300` | `0.84 0.116 65` | 1.67 | Selected row edge |
 | `amber-400` | `0.774 0.174 65.1` | 2.13 | Identity anchor. The logo only: never text, never alone |
-| `amber-500` | `0.66 0.148 65` | 3.23 | Focus ring on grey fills |
-| `amber-600` | `0.55 0.122 65` | 5.01 | Primary button, focus ring (`--color-primary`, `--color-focus`) |
+| `amber-500` | `0.66 0.148 65` | 3.23 | Unassigned. Not a focus ring: 2.96:1 on `grey-50` and 2.76:1 on `grey-100` fall under 3:1 |
+| `amber-600` | `0.55 0.122 65` | 5.01 | Primary button, and the focus ring on every fill: 4.60:1 on `grey-50`, 4.28:1 on `grey-100` (`--color-primary`, `--color-focus`) |
 | `amber-700` | `0.47 0.106 65` | 7.02 | Primary hover and pressed, links |
 | `amber-800` | `0.39 0.087 65` | 9.83 | Text on amber tints |
 | `amber-900` | `0.3 0.068 65` | 13.84 | Strong text on tints (12.85:1 on `amber-50`) |
@@ -125,7 +125,8 @@ single most saturated cliché in current interface design.
 **The Isolation Rule.** Amber marks the primary button, the selected row, the selected citation and
 focus rings. Nothing else. Not headings, not icons, not borders, not scores, not charts, not empty
 states, not the selected tab. Its budget is under ten percent of any screen, and every decorative
-use spends it.
+use spends it. The only other hues are the three semantic colors, which are dark, low in chroma,
+confined to the message they belong to, and never without an icon and words.
 
 **The Greyscale Rule.** No information may be carried by hue alone. The audit test: screenshot any
 screen, convert to greyscale, and confirm nothing has been lost. This applies hardest to the score,
@@ -306,8 +307,8 @@ error. Specimens and every state live in `Docs/design/Figma export/Masirah Compo
 - **Don't** reach for cards. Three hundred candidates in cards is unusable; rows are the answer.
   Board cards are the single exception. Nested cards are always wrong.
 - **Don't** place a reject control where a hover or a mistimed click can reach it. Rejection is a
-  deliberate act that records a human actor, and that is a legal requirement rather than a
-  preference.
+  deliberate act that records a human actor, and that is a product requirement (FR-023) rather
+  than a preference.
 - **Don't** animate anything that does not convey state. No orchestrated page-load sequence. The
   user arrives in a task, not at a performance.
 - **Don't** invent new affordances for standard tasks. Custom scrollbars, non-standard modals and

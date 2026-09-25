@@ -96,8 +96,8 @@ not believe numbers.
 
 **2. The machine advises, the human decides.** No screen may present a score as a decision, and
 rejecting a candidate always requires a deliberate human action. This is a hard product requirement
-carrying legal weight, not a stylistic preference, and it constrains layout, copy and interaction
-equally.
+(FR-023), not a stylistic preference, and it constrains layout, copy and interaction equally.
+Whether Egypt's data protection law also requires it awaits the legal opinion in OQ-04.
 
 **3. Arabic is the original, not the translation.** Right-to-left is a primary reading direction
 designed from the start, not a mirrored afterthought. Every competitor either ignores Arabic or
