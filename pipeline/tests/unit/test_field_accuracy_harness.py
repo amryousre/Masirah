@@ -87,12 +87,20 @@ class TestTheWholeCorpus:
         assert everything.correct == everything.total > 0
 
     def test_the_captured_gate_stays_closed_without_real_scans(self) -> None:
-        """The corpus has no real scan or photo yet, so SC-003 cannot pass on synthetic ones."""
-        report = run(oracle)
-        assert not any(d.real for d in CORPUS if d.captured)
+        """SC-003 cannot pass on synthetic or simulated captures alone, however well they score."""
+        without_real_captures = [d for d in CORPUS if not (d.captured and d.real)]
+        assert any(d.captured for d in without_real_captures)
+        report = run(oracle, without_real_captures)
         assert report.captured.accuracy is None
         assert not report.captured_passes
         assert "not measured: no real documents yet" in report.render()
+
+    def test_a_real_capture_is_measured_for_the_captured_gate(self) -> None:
+        real_captures = [d for d in CORPUS if d.captured and d.real]
+        assert real_captures, "the corpus holds at least one real scan or photo"
+        report = run(oracle, real_captures)
+        assert report.captured.accuracy == 1.0
+        assert report.captured_passes
 
     def test_only_real_documents_decide_the_gate(self) -> None:
         def wrong_unless_real(path: Path) -> Extraction:
