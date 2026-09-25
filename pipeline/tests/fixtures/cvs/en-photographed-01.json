@@ -1,0 +1,31 @@
+{
+  "document": { "capture": "photographed", "language": "en", "layout": "two_column", "pages": 2, "origin": "real", "copy_of": "en-native-03", "simulated": false },
+  "expected": "parsed",
+  "profile": {
+    "name": "Youssef Samir Nabil",
+    "emails": ["y.nabil@example.com"],
+    "phones": ["+201000000103"],
+    "location": null,
+    "years_of_experience": null,
+    "employment": [
+      { "employer": "AHBS", "title": "Product lead", "start": "2021-01", "end": "present" },
+      { "employer": "AHBS", "title": "Scrum master / Technical team lead", "start": "2018-11", "end": "2021-01" },
+      { "employer": "AHBS", "title": "Senior software engineer", "start": "2015-10", "end": "2018-11" },
+      { "employer": "ALEC", "title": "Software engineer", "start": "2011-05", "end": "2015-10" },
+      { "employer": "Carrefour UAE", "title": "IT Engineer", "start": "2011-12", "end": "2012-06" }
+    ],
+    "education": [
+      { "institution": "Zagazig University", "qualification": "Bachelor in software and information system", "start": "2006", "end": "2010" }
+    ],
+    "skills": [
+      "SQL (Microsoft SQL server)", ".Net framework 4.5", ".Net framework core 3.1", "Angular", "VueJS",
+      "HTML/CSS"
+    ],
+    "languages": [
+      { "language": "Arabic", "level": "Mother tongue" },
+      { "language": "English", "level": "Very good" }
+    ],
+    "certifications": [{ "name": "Agile project management", "issuer": null }]
+  },
+  "protected": {}
+}

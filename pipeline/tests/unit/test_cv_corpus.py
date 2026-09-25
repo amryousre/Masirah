@@ -5,6 +5,7 @@ is only as good as they are. And the corpus must stay anonymised: this is the la
 CV reaches GitHub, so a real document committed by mistake fails here rather than being published.
 """
 
+import io
 import json
 import re
 import unicodedata
@@ -42,7 +43,6 @@ PDFS = [document for document in DOCUMENTS if document.suffix == ".pdf"]
 IMAGES = [document for document in DOCUMENTS if document.suffix == ".jpg"]
 NATIVE = [d for d in DOCUMENTS if labels(d)["document"]["capture"] == "native"]
 COPIES = [d for d in DOCUMENTS if labels(d)["document"]["copy_of"]]
-SIMULATED = [d for d in DOCUMENTS if labels(d)["document"]["simulated"]]
 
 
 def text(document: Path) -> str:
@@ -113,9 +113,10 @@ def test_a_copy_carries_its_sources_labels(copy: Path) -> None:
         assert truth["document"][key] == original["document"][key], key
 
 
-@pytest.mark.parametrize("copy", SIMULATED, ids=stem)
-def test_a_simulated_copy_has_no_text_layer(copy: Path) -> None:
-    """Otherwise extraction could read the text and never meet the pixels it is meant to test."""
+@pytest.mark.parametrize("copy", COPIES, ids=stem)
+def test_a_scan_or_photo_has_no_text_layer(copy: Path) -> None:
+    """Otherwise extraction could read the text and never meet the pixels it is meant to test.
+    This holds for real captures too: SC-003 measures reading pixels, not a scanner's OCR."""
     assert text(copy).strip() == ""
 
 
@@ -190,6 +191,18 @@ def test_no_photograph_carries_camera_metadata(image: Path) -> None:
         assert picture.format == "JPEG"
         assert not picture.getexif()
         assert not {"exif", "xmp", "comment"} & set(picture.info)
+
+
+@pytest.mark.parametrize("pdf", PDFS, ids=stem)
+def test_no_image_inside_a_pdf_carries_camera_metadata(pdf: Path) -> None:
+    """A real scan or photo is stored as a PDF of its pages, and each page image is a JPEG that
+    could still hold the same EXIF as a photo saved on its own."""
+    doc = pymupdf.open(pdf)
+    for xref in {image[0] for page in doc for image in page.get_images()}:
+        extracted = doc.extract_image(xref)
+        with Image.open(io.BytesIO(extracted["image"])) as picture:
+            assert not picture.getexif(), f"image {xref}"
+            assert not {"exif", "xmp", "comment"} & set(picture.info), f"image {xref}"
 
 
 def invented_domain(domain: str, *, squeezed: bool) -> bool:

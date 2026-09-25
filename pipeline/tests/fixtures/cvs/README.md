@@ -209,10 +209,42 @@ than extraction. The unit tests in `tests/unit/test_field_accuracy_harness.py` p
 | Arabic | 0 | 3 | `syn-ar-native-01` to `03` |
 | Mixed Arabic and English | 0 | 2 | `syn-mixed-native-01`, `02` |
 | Scanned | 0 | 2 | `en-scanned-01`, `syn-ar-scanned-01` |
-| Photographed | 0 | 2 | `syn-ar-photographed-01`, `syn-en-photographed-01` |
+| Photographed | 1 | 2 | `en-photographed-01`, `syn-ar-photographed-01`, `syn-en-photographed-01` |
 | Wholly French | 0 | 1 | `syn-fr-native-01` |
 | English with a few French lines | 0 | 1 | `syn-en-native-01` |
 
-Every row still needs real documents before the gate can close on it. A scan or photo of a
-corpus PDF needs no new labels: print the PDF, scan or photograph it, and copy its JSON with
-`capture` and `copy_of` set and `simulated` false. No new personal data is involved.
+Every row still needs real documents before the gate can close on it. On 26 September 2026 the
+project owner reported that no real mixed Arabic and English CV could be found, so that row rests on
+synthetic CVs for now. Until real Arabic CVs arrive as well, the gate measures accuracy on English
+only.
+
+## Adding a real scan or photo
+
+A scan or photo of a corpus PDF brings no new personal data and needs no new labels. Display or
+print one of the anonymised PDFs above, and scan it or photograph each page. Then, from
+`pipeline/`, give the images in page order:
+
+```sh
+uv run python -m tools.add_capture en-native-03 photographed en-photographed-01 page1.jpg page2.jpg
+```
+
+`tools/add_capture.py` turns each image upright by its EXIF orientation, then rebuilds it from its
+pixels alone, so nothing of the camera's metadata survives: its location, device, owner, comment or
+colour profile. The pages become one image-only PDF with no document metadata. The labels are the
+source's, with `capture` and `copy_of` set and `simulated` false. `test_cv_corpus.py` then checks
+every image inside every corpus PDF for camera metadata, and checks that no scan or photo carries a
+text layer.
+
+Use the original files from the phone or scanner. Chat apps shrink photos: one sent through a chat
+at 574 by 1280 pixels left a page about 560 pixels wide, with body text too small to read. That is
+worse than a real candidate's photo, and the score would suffer for it.
+
+Never photograph an original CV, only its anonymised version in this folder. A photo of an original
+shows the real name and contact details, and pixels cannot be checked for them the way the
+anonymiser checks text.
+
+### The real captures so far
+
+| File | Source | How it was made |
+|---|---|---|
+| `en-photographed-01` | `en-native-03` | The project owner photographed both pages with a phone as they showed on a laptop screen, on 26 September 2026. Each page was then taken from Telegram's photo viewer as a screenshot, about 800 by 860 pixels and cropped to the page. The bottom of page 1 is cut just below its last line; every labelled value shows on at least one page. A mouse pointer covers a word on each page. |
