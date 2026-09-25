@@ -46,30 +46,33 @@ export async function createAccount(organisation: string | null): Promise<Accoun
   const userId = created.user.id;
 
   let organisationId: string | null = null;
+  const remove = async () => {
+    // Deleting the user removes its app_user row with it.
+    await client.auth.admin.deleteUser(userId);
+    if (organisationId !== null) {
+      await client.from("organisation").delete().eq("id", organisationId);
+    }
+  };
+
   if (organisation !== null) {
-    const { data: row, error: orgError } = await client
-      .from("organisation")
-      .insert({ name: organisation, locale: "ar" })
-      .select("id")
-      .single();
-    if (orgError) throw orgError;
-    organisationId = row.id;
-    const { error: memberError } = await client
-      .from("app_user")
-      .insert({ id: userId, organisation_id: organisationId, email });
-    if (memberError) throw memberError;
+    try {
+      const { data: row, error: orgError } = await client
+        .from("organisation")
+        .insert({ name: organisation, locale: "ar" })
+        .select("id")
+        .single();
+      if (orgError) throw orgError;
+      organisationId = row.id;
+      const { error: memberError } = await client
+        .from("app_user")
+        .insert({ id: userId, organisation_id: organisationId, email });
+      if (memberError) throw memberError;
+    } catch (failure) {
+      // A half-made account would outlive the run; take back what was made, then report why.
+      await remove();
+      throw failure;
+    }
   }
 
-  return {
-    email,
-    password,
-    organisation,
-    remove: async () => {
-      // Deleting the user removes its app_user row with it.
-      await client.auth.admin.deleteUser(userId);
-      if (organisationId !== null) {
-        await client.from("organisation").delete().eq("id", organisationId);
-      }
-    },
-  };
+  return { email, password, organisation, remove };
 }

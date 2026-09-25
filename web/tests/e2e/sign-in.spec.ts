@@ -26,15 +26,18 @@ async function signIn(page: Page, email: string, password: string) {
 
 let member: Account;
 let stranded: Account;
+// Only what setup actually made, so a failure halfway through still cleans up the rest.
+const made: Account[] = [];
 
 test.beforeAll(async () => {
   member = await createAccount("دلتا سوفت");
+  made.push(member);
   stranded = await createAccount(null);
+  made.push(stranded);
 });
 
 test.afterAll(async () => {
-  await member.remove();
-  await stranded.remove();
+  await Promise.all(made.splice(0).map((account) => account.remove()));
 });
 
 for (const lang of ["ar", "en"] as const) {
