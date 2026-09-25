@@ -1,0 +1,50 @@
+.form {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.wide {
+  inline-size: 100%;
+}
+
+/* "or" between two hairlines. */
+.divider {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--color-text-tertiary);
+  font-size: var(--size-caption);
+  line-height: var(--leading-caption);
+}
+
+.divider::before,
+.divider::after {
+  block-size: 1px;
+  background: var(--color-divider);
+  content: "";
+}
+
+.note {
+  color: var(--color-text-secondary);
+  font-size: var(--size-caption);
+  line-height: var(--leading-caption);
+}
+
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding-block: var(--space-2);
+  padding-inline: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-error-bg);
+  color: var(--color-error);
+  font-size: var(--size-body-sm);
+  line-height: var(--leading-body-sm);
+}
+
+.alertIcon {
+  flex: none;
+  margin-block-start: 0.2em;
+}

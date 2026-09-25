@@ -35,7 +35,8 @@
   },
   "field": {
     "suggested": "Suggested",
-    "choose": "Choose…"
+    "choose": "Choose…",
+    "showPassword": "Show password"
   },
   "dialog": {
     "close": "Close"
@@ -53,7 +54,9 @@
     "navigation": "Main navigation",
     "jobs": "Jobs",
     "reviewQueue": "Review queue",
-    "settings": "Settings"
+    "settings": "Settings",
+    "signOut": "Sign out",
+    "signingOut": "Signing out…"
   },
   "usage": {
     "label": "CVs this month",
@@ -137,6 +140,38 @@
     "keep": "Keep candidate",
     "confirm": "Reject candidate",
     "recording": "Recording…"
+  },
+  "signIn": {
+    "title": "Sign in",
+    "lede": "Screen and rank CVs, with a written reason for every candidate.",
+    "google": "Continue with Google",
+    "googleProgress": "Opening Google…",
+    "or": "or",
+    "email": "Work email",
+    "emailPlaceholder": "name@company.com",
+    "password": "Password",
+    "submit": "Sign in",
+    "submitProgress": "Signing in…",
+    "inviteOnly": "Access is by invitation for now. If you haven't been invited, ask your company's account owner.",
+    "errors": {
+      "missing": "Enter your work email and your password.",
+      "invalid": "That email and password don't match. Check both and try again.",
+      "unavailable": "Sign-in isn't available right now. Try again in a few minutes.",
+      "google": "Google sign-in didn't finish. Try again, or sign in with your email and password."
+    }
+  },
+  "noAccess": {
+    "title": "This account has no access yet",
+    "notInvited": "This Google account hasn't been invited to any organisation on Masirah. No account was created and nothing was stored.",
+    "noOrganisation": "This account isn't part of any organisation on Masirah, so there is nothing to open yet.",
+    "next": "What you can do",
+    "askOwner": "If your company uses Masirah, ask the account owner to invite your work email.",
+    "useInvited": "Or sign in with the work account the invitation was sent to.",
+    "useAnother": "Use another account",
+    "useAnotherProgress": "Signing out…"
+  },
+  "jobs": {
+    "title": "Jobs"
   },
   "gallery": {
     "title": "Design system",

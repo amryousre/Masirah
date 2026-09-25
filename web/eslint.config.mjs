@@ -146,5 +146,7 @@ export default defineConfig([
     "test-results/**",
     "playwright-report/**",
     "next-env.d.ts",
+    // Generated from the database schema by the Supabase CLI.
+    "lib/adapters/database.types.ts",
   ]),
 ]);

@@ -1,0 +1,68 @@
+/* The Phase 1 setup sheet: a 56px bar, then a 380px column 96px below it. Controls
+   here are 44px rather than 36px, because these screens are often reached on a phone. */
+.frame {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-block-size: 100dvb;
+  background: var(--color-canvas);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  min-block-size: 56px;
+  padding-inline: var(--space-8);
+}
+
+.product {
+  color: var(--color-text);
+  font-size: var(--size-body);
+  font-weight: var(--weight-semibold);
+}
+
+.main {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  padding-block: calc(var(--space-12) * 2) var(--space-12);
+  padding-inline: var(--space-4);
+}
+
+.column {
+  --control-height: 44px;
+
+  display: grid;
+  gap: var(--space-5);
+  inline-size: min(100%, 380px);
+}
+
+.heading {
+  display: grid;
+  gap: calc(var(--space-1) + var(--space-0_5));
+}
+
+.title {
+  color: var(--color-text);
+  font-size: var(--size-headline);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-headline);
+  text-wrap: balance;
+}
+
+.lede {
+  color: var(--color-text-secondary);
+  font-size: var(--size-body-sm);
+  line-height: var(--leading-body-sm);
+}
+
+@media (width < 48rem) {
+  .header {
+    padding-inline: var(--space-4);
+  }
+
+  .main {
+    padding-block-start: var(--space-10);
+  }
+}

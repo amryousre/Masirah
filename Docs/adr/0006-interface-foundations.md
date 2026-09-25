@@ -42,5 +42,5 @@ A new screen should need little CSS of its own: layout, and nothing a component 
 A visual change is made once, in a token or a component, and every screen gets it.
 
 The design page at `/ar/design` and `/en/design` shows every shared component in both languages.
-It is the start of the app until sign-in (T024) exists, and the end-to-end suite runs the WCAG 2.1
-AA checks against it.
+It needs no sign-in, and the end-to-end suite runs the WCAG 2.1 AA checks against it. Since T024
+the start of the app is the jobs list, behind sign-in.

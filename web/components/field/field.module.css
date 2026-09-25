@@ -105,3 +105,34 @@
 .error {
   color: var(--color-error);
 }
+
+.withToggle {
+  padding-inline-end: var(--space-10);
+}
+
+.toggle {
+  display: grid;
+  grid-area: 1 / 1;
+  place-items: center;
+  justify-self: end;
+  inline-size: var(--space-8);
+  block-size: var(--space-8);
+  margin-inline-end: var(--space-1);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast) var(--ease),
+    color var(--duration-fast) var(--ease);
+}
+
+.toggle:hover {
+  background: var(--color-fill-subtle);
+  color: var(--color-text);
+}
+
+.toggle[aria-pressed="true"] {
+  color: var(--color-text);
+}

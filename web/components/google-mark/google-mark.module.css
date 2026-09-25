@@ -1,0 +1,19 @@
+.mark {
+  flex: none;
+}
+
+.red {
+  fill: var(--brand-google-red);
+}
+
+.blue {
+  fill: var(--brand-google-blue);
+}
+
+.yellow {
+  fill: var(--brand-google-yellow);
+}
+
+.green {
+  fill: var(--brand-google-green);
+}

@@ -78,10 +78,10 @@ Every table below carries `organisation_id` and has row level security enabled w
 
 ### Application shell
 
-- [ ] T024 Implement Supabase Auth sign-in at `web/app/[lang]/sign-in/page.tsx` and session-to-organisation resolution in `web/lib/adapters/session.ts`. The organisation is derived from the session and never from a request body; a client-supplied organisation identifier is ignored
-- [ ] T025 Create the locale root parameter layout at `web/app/[lang]/layout.tsx` setting document direction from the locale, with detection and redirect in `web/proxy.ts`. Direction is decided in exactly one place. This is the first route, so it also switches the `typecheck` script in `web/package.json` to `next typegen && tsc --noEmit` and adds `next build` to CI: App Router route types only exist once a route does, and `next typegen` fails without one (raised by CodeRabbit on PR #1)
-- [ ] T026 [P] Create translation files `web/messages/ar.json` and `web/messages/en.json`, and add a lint rule failing the build on a hard-coded user-visible string, per Constitution IV
-- [ ] T027 [P] Define the design tokens in `web/app/globals.css` from DESIGN.md: canvas exactly `oklch(1 0 0)`, the amber ramp anchored at `oklch(0.774 0.174 65.1)` with an interactive step near lightness 0.55 for white text, a zero-chroma grey ramp, one type family carrying Arabic and Latin, and rem type steps rather than `clamp()`. Add a lint rule forbidding physical `left`/`right` in layout code per Constitution IV
+- [X] T024 Implement Supabase Auth sign-in at `web/app/[lang]/sign-in/page.tsx` and session-to-organisation resolution in `web/lib/adapters/session.ts`. The organisation is derived from the session and never from a request body; a client-supplied organisation identifier is ignored
+- [X] T025 Create the locale root parameter layout at `web/app/[lang]/layout.tsx` setting document direction from the locale, with detection and redirect in `web/proxy.ts`. Direction is decided in exactly one place. This is the first route, so it also switches the `typecheck` script in `web/package.json` to `next typegen && tsc --noEmit` and adds `next build` to CI: App Router route types only exist once a route does, and `next typegen` fails without one (raised by CodeRabbit on PR #1)
+- [X] T026 [P] Create translation files `web/messages/ar.json` and `web/messages/en.json`, and add a lint rule failing the build on a hard-coded user-visible string, per Constitution IV
+- [X] T027 [P] Define the design tokens in `web/app/globals.css` from DESIGN.md: canvas exactly `oklch(1 0 0)`, the amber ramp anchored at `oklch(0.774 0.174 65.1)` with an interactive step near lightness 0.55 for white text, a zero-chroma grey ramp, one type family carrying Arabic and Latin, and rem type steps rather than `clamp()`. Add a lint rule forbidding physical `left`/`right` in layout code per Constitution IV
 
 ### The release gate
 
@@ -142,7 +142,7 @@ Every table below carries `organisation_id` and has row level security enabled w
 
 ### Implementation: web
 
-- [ ] T058 [P] [US1] Job list page at `web/app/[lang]/jobs/page.tsx`. Empty state teaches the paste-a-description path rather than saying "no jobs", per design-brief.md section 6
+- [ ] T058 [P] [US1] Job list page at `web/app/[lang]/(app)/jobs/page.tsx`, inside the signed-in layout T024 created. Empty state teaches the paste-a-description path rather than saying "no jobs", per design-brief.md section 6
 - [ ] T059 [US1] Job creation page at `web/app/[lang]/jobs/new/page.tsx`. **Paste first, structure second**: the primary input is one large field for pasting a job description, with the manual field-by-field path secondary. A ten-field form as the front door is the enterprise pattern this product is positioned against
 - [ ] T060 [US1] `POST /api/jobs/{jobId}/specification` in `web/app/api/jobs/[jobId]/specification/route.ts` turning a pasted description into a structured specification for review. This route exists precisely so the browser never calls a model provider directly
 - [ ] T061 [US1] `POST /api/uploads` in `web/app/api/uploads/route.ts`: accept a batch of up to 25 files of type PDF, DOCX, DOC, JPG and PNG, store originals, create `cv_file` rows, enqueue one `cv_processing` message each, and return. **It must not wait for extraction.** The 25-file limit is enforced server-side, not only in the browser

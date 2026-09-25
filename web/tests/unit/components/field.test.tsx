@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 import { screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
-import { SelectField, TextField } from "@/components/field/field";
+import { PasswordField, SelectField, TextField } from "@/components/field/field";
 
 import { renderIn } from "./render";
 
@@ -82,5 +83,27 @@ describe("SelectField", () => {
     const select = screen.getByRole("combobox", { name: "Required language" });
     expect(select).toHaveAttribute("aria-invalid", "true");
     expect(select).toHaveAccessibleDescription("Choose at least one language.");
+  });
+});
+
+describe("PasswordField", () => {
+  it("hides the password until asked, and says whether it is shown", async () => {
+    const user = userEvent.setup();
+    renderIn("ar", <PasswordField label="كلمة المرور" name="password" />);
+    const input = screen.getByLabelText("كلمة المرور");
+    const toggle = screen.getByRole("button", { name: "إظهار كلمة المرور" });
+
+    expect(input).toHaveAttribute("type", "password");
+    expect(toggle).toHaveAttribute("aria-pressed", "false");
+    expect(toggle).toHaveAttribute("aria-controls", input.id);
+
+    await user.click(toggle);
+    expect(input).toHaveAttribute("type", "text");
+    expect(toggle).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("never submits the toggle", () => {
+    renderIn("en", <PasswordField label="Password" />);
+    expect(screen.getByRole("button", { name: "Show password" })).toHaveAttribute("type", "button");
   });
 });

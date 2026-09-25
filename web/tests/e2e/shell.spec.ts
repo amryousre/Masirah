@@ -5,16 +5,17 @@ import { expect, test } from "@playwright/test";
 // keyboard and focus behaviour, and WCAG 2.1 AA (Constitution IV) in both languages.
 
 test.describe("locale routing", () => {
+  // The start of the app is behind sign-in (T024), so a first visit ends there.
   test("sends an Arabic browser to Arabic", async ({ browser }) => {
     const page = await (await browser.newContext({ locale: "ar-EG" })).newPage();
     await page.goto("/");
-    await expect(page).toHaveURL(/\/ar\/design$/);
+    await expect(page).toHaveURL(/\/ar\/sign-in$/);
   });
 
   test("sends an English browser to English", async ({ browser }) => {
     const page = await (await browser.newContext({ locale: "en-US" })).newPage();
     await page.goto("/");
-    await expect(page).toHaveURL(/\/en\/design$/);
+    await expect(page).toHaveURL(/\/en\/sign-in$/);
   });
 
   test("answers an unknown page with a translated not-found page", async ({ page }) => {

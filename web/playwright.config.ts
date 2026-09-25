@@ -1,6 +1,15 @@
+import { existsSync } from "node:fs";
+
 import { defineConfig, devices } from "@playwright/test";
 
 const isCI = process.env["CI"] !== undefined;
+
+// Locally the Supabase settings come from the same file as the dev server, and the secret key
+// the sign-in tests use to make accounts from .env.test.local, which the dev server never loads.
+// CI sets all of them from `supabase status`.
+for (const file of [".env.local", ".env.test.local"]) {
+  if (existsSync(file)) process.loadEnvFile(file);
+}
 
 export default defineConfig({
   testDir: "tests/e2e",
