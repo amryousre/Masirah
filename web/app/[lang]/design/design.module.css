@@ -1,0 +1,137 @@
+.bar {
+  position: sticky;
+  z-index: var(--z-sticky);
+  inset-block-start: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  min-block-size: 48px;
+  padding-inline: var(--space-6);
+  border-block-end: var(--border);
+  background: var(--color-canvas);
+}
+
+.product {
+  font-size: var(--size-body);
+  font-weight: var(--weight-semibold);
+}
+
+.main {
+  display: grid;
+  gap: var(--space-10);
+  max-inline-size: 72rem;
+  margin-inline: auto;
+  padding-block: var(--space-10) var(--space-16);
+  padding-inline: var(--space-6);
+}
+
+.intro {
+  display: grid;
+  gap: var(--space-2);
+  max-inline-size: var(--measure);
+}
+
+.title {
+  font-size: var(--size-headline);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-headline);
+}
+
+.lede {
+  color: var(--color-text-secondary);
+}
+
+.note {
+  color: var(--color-text-tertiary);
+  font-size: var(--size-body-sm);
+  line-height: var(--leading-body-sm);
+}
+
+.section {
+  display: grid;
+  grid-template-columns: minmax(12rem, 18rem) minmax(0, 1fr);
+  gap: var(--space-8);
+  padding-block-start: var(--space-8);
+  border-block-start: var(--border);
+}
+
+.sectionHead {
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+}
+
+.sectionTitle {
+  font-size: var(--size-title);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-title);
+}
+
+.specimens {
+  min-inline-size: 0;
+}
+
+.matrix {
+  border-collapse: collapse;
+}
+
+.matrix th {
+  padding-block: var(--space-2);
+  padding-inline: 0 var(--space-4);
+  color: var(--color-text-secondary);
+  font-size: var(--size-label);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-label);
+  text-align: start;
+  vertical-align: top;
+}
+
+.matrix td {
+  padding-block: var(--space-2);
+  padding-inline: 0 var(--space-4);
+  vertical-align: top;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: var(--space-6) var(--space-8);
+}
+
+.statusGroups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: var(--space-6);
+  margin: 0;
+}
+
+.statusGroups dt {
+  margin-block-end: var(--space-2);
+  color: var(--color-text-secondary);
+  font-size: var(--size-label);
+  font-weight: var(--weight-medium);
+}
+
+.statusGroups dd {
+  margin: 0;
+  padding-block: var(--space-1);
+}
+
+/* On a phone the section heads stack above their specimens, and the button matrix scrolls
+   sideways inside its own box rather than widening the page. */
+@media (width < 48rem) {
+  .bar,
+  .main {
+    padding-inline: var(--space-4);
+  }
+
+  .section {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+  }
+
+  .specimens {
+    overflow: auto;
+  }
+}

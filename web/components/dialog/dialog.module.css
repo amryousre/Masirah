@@ -1,0 +1,76 @@
+.dialog {
+  inline-size: min(100% - 2 * var(--space-4), 32rem);
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-lg);
+  background: var(--color-canvas);
+  box-shadow: var(--shadow-overlay);
+  color: var(--color-text);
+}
+
+.dialog::backdrop {
+  background: var(--scrim);
+}
+
+.dialog[open] {
+  animation: enter var(--duration-slow) var(--ease);
+}
+
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+.header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding-block: var(--space-5) 0;
+  padding-inline: var(--space-6) var(--space-4);
+}
+
+.title {
+  font-size: var(--size-title);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-title);
+}
+
+.close {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  inline-size: 32px;
+  block-size: 32px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.close:hover {
+  background: var(--color-fill-subtle);
+  color: var(--color-text);
+}
+
+.body {
+  display: grid;
+  gap: var(--space-3);
+  max-inline-size: var(--measure);
+  padding-block: var(--space-3) var(--space-5);
+  padding-inline: var(--space-6);
+  color: var(--color-text-secondary);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: end;
+  gap: var(--space-2);
+  padding-block: var(--space-4);
+  padding-inline: var(--space-6);
+  border-block-start: var(--border-divider);
+}

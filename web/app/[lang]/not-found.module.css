@@ -1,0 +1,25 @@
+.page {
+  display: grid;
+  gap: var(--space-3);
+  max-inline-size: var(--measure);
+  margin-inline: auto;
+  padding-block: var(--space-16);
+  padding-inline: var(--space-4);
+}
+
+.title {
+  font-size: var(--size-headline);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-headline);
+}
+
+.body {
+  color: var(--color-text-secondary);
+}
+
+.link {
+  justify-self: start;
+  color: var(--color-link);
+  font-weight: var(--weight-medium);
+  text-underline-offset: 3px;
+}

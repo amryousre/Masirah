@@ -1,0 +1,107 @@
+/* Native controls, 36px, label above and one message line below. The message slot is shared by
+   help, loading and error text, so an error never pushes the form around. */
+.field {
+  display: grid;
+  gap: var(--space-1);
+  max-inline-size: 28rem;
+}
+
+.labelRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.label {
+  color: var(--color-text);
+  font-size: var(--size-label);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-label);
+}
+
+.tag {
+  padding-block: 0;
+  padding-inline: var(--space-1);
+  border: 1px dashed var(--color-control-border);
+  border-radius: var(--radius-xs);
+  color: var(--color-text-secondary);
+  font-size: var(--size-caption);
+  font-weight: var(--weight-regular);
+}
+
+.control {
+  position: relative;
+  display: grid;
+  align-items: center;
+}
+
+.input {
+  grid-area: 1 / 1;
+  inline-size: 100%;
+  min-block-size: var(--control-height);
+  padding-block: 0;
+  padding-inline: var(--space-3);
+  border: var(--border-control);
+  border-radius: var(--radius-md);
+  background: var(--color-canvas);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: var(--size-body-sm);
+  line-height: var(--leading-body-sm);
+  transition: border-color var(--duration-fast) var(--ease);
+}
+
+.input::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.input:hover:not(:disabled) {
+  border-color: var(--color-control-border-hover);
+}
+
+.input:focus-visible {
+  border-color: var(--color-focus);
+  outline-offset: 0;
+}
+
+.input[data-suggested] {
+  border-style: dashed;
+}
+
+.input[aria-invalid="true"] {
+  border-color: var(--color-error);
+}
+
+.input:disabled {
+  border-color: var(--color-divider);
+  background: var(--color-fill-subtle);
+  color: var(--color-text-tertiary);
+  cursor: not-allowed;
+}
+
+.select {
+  padding-inline-end: var(--space-8);
+  appearance: none;
+  cursor: pointer;
+}
+
+.adornment {
+  grid-area: 1 / 1;
+  justify-self: end;
+  margin-inline-end: var(--space-3);
+  color: var(--color-text-secondary);
+  pointer-events: none;
+}
+
+.message {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-text-secondary);
+  font-size: var(--size-caption);
+  line-height: var(--leading-caption);
+}
+
+.error {
+  color: var(--color-error);
+}

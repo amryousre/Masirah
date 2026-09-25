@@ -1,0 +1,89 @@
+.list {
+  display: flex;
+  gap: var(--space-1);
+  overflow: auto hidden;
+  border-block-end: var(--border-divider);
+  scrollbar-width: thin;
+}
+
+.tab {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: var(--control-height);
+  padding-block: 0;
+  padding-inline: var(--space-3);
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-family: inherit;
+  font-size: var(--size-body-sm);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-label);
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--ease);
+}
+
+/* The underline sits on the list's divider and is ink, not amber. */
+.tab::after {
+  position: absolute;
+  inset-block-end: -1px;
+  inset-inline: var(--space-3);
+  block-size: 2px;
+  background: transparent;
+  content: "";
+  transition: background-color var(--duration-fast) var(--ease);
+}
+
+.tab:hover:not(:disabled) {
+  color: var(--color-text);
+}
+
+.tab:active:not(:disabled) {
+  background: var(--color-fill-pressed);
+}
+
+.tab[aria-selected="true"] {
+  color: var(--color-text);
+  font-weight: var(--weight-semibold);
+}
+
+.tab[aria-selected="true"]::after {
+  background: var(--color-ink);
+}
+
+.tab:focus-visible {
+  outline-offset: -2px;
+}
+
+.tab:disabled {
+  color: var(--color-text-tertiary);
+  cursor: not-allowed;
+}
+
+.count {
+  min-inline-size: 1.25rem;
+  padding-block: 0;
+  padding-inline: var(--space-1);
+  border-radius: var(--radius-xs);
+  background: var(--color-fill-pressed);
+  color: var(--color-text-secondary);
+  font-size: var(--size-caption);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--weight-medium);
+  text-align: center;
+}
+
+.error {
+  color: var(--color-error);
+}
+
+.panel {
+  padding-block: var(--space-4);
+}
+
+.panel:focus-visible {
+  outline-offset: var(--space-1);
+}

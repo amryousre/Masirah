@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- The identity anchor, amber-400, is reserved for the mark (DESIGN.md section 3). The line is a
+       path walked: مسيرة means journey. -->
+  <rect width="32" height="32" rx="7" fill="oklch(0.774 0.174 65.1)" />
+  <path d="M7 21c4 0 4-10 9-10s5 10 9 10" fill="none" stroke="oklch(0.22 0 0)" stroke-width="2.5" stroke-linecap="round" />
+</svg>
