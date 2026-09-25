@@ -105,8 +105,33 @@ def test_refuses_to_overwrite_or_to_copy_a_copy(corpus: Path, tmp_path: Path) ->
         add_capture("en-photographed-01", "scanned", "en-scanned-09", photos, corpus)
 
 
+def test_labels_that_cannot_be_copied_leave_no_pdf(corpus: Path, tmp_path: Path) -> None:
+    """Otherwise the corpus would hold a capture without labels, and a retry would be refused."""
+    labels = corpus / f"{SOURCE}.json"
+    document = json.loads(labels.read_text(encoding="utf-8"))
+    labels.write_text(json.dumps(document, indent=2), encoding="utf-8")  # no one-line entry
+    photos = [phone_photo(tmp_path, "p1")]
+    with pytest.raises(ValueError, match="one-line document entry"):
+        add_capture(SOURCE, "photographed", "en-photographed-01", photos, corpus)
+    assert not (corpus / "en-photographed-01.pdf").exists()
+
+
+def test_a_failed_label_write_takes_the_pdf_back(
+    corpus: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def full_disk(output: Path, text: str) -> None:
+        raise OSError("no space left on device")
+
+    monkeypatch.setattr("tools.add_capture.write_labels", full_disk)
+    photos = [phone_photo(tmp_path, "p1")]
+    with pytest.raises(OSError, match="no space"):
+        add_capture(SOURCE, "photographed", "en-photographed-01", photos, corpus)
+    assert not (corpus / "en-photographed-01.pdf").exists()
+
+
 def test_runs_from_the_command_line(corpus: Path, tmp_path: Path) -> None:
     photo = str(phone_photo(tmp_path, "p1"))
     assert main([SOURCE, "scanned", "en-scanned-02", photo, "--corpus", str(corpus)]) == 0
     assert (corpus / "en-scanned-02.pdf").exists()
     assert main([SOURCE, "faxed", "en-faxed-01", photo, "--corpus", str(corpus)]) == 2
+    assert main([SOURCE, "scanned", "en-scanned-03", photo, "--corpus"]) == 2

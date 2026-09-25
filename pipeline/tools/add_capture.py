@@ -35,12 +35,13 @@ POINTS_PER_PIXEL = 72 / 150
 JPEG_QUALITY = 92
 
 
-def copy_labels(source: Path, output: Path, capture: Capture, *, simulated: bool) -> None:
-    """Writes output's labels: source's, with only the capture fields changed."""
+def copied_labels(source: Path, capture: Capture, pages: int, *, simulated: bool) -> str:
+    """A copy's labels: source's, with only the capture fields changed. Nothing is written, so a
+    source whose labels cannot be copied is found before any file exists."""
     text = source.with_suffix(".json").read_text(encoding="utf-8")
     document = json.loads(text)["document"] | {
         "capture": capture,
-        "pages": pymupdf.open(output).page_count,
+        "pages": pages,
         "copy_of": source.stem,
         "simulated": simulated,
     }
@@ -49,8 +50,18 @@ def copy_labels(source: Path, output: Path, capture: Capture, *, simulated: bool
     text, replaced = DOCUMENT_LINE.subn(f'  "document": {inline},', text, count=1)
     if replaced != 1:
         raise ValueError(f"{source.stem}.json has no one-line document entry to rewrite")
+    return text
+
+
+def write_labels(output: Path, text: str) -> None:
     # LF on every platform, as the corpus is stored.
     output.with_suffix(".json").write_text(text, encoding="utf-8", newline="\n")
+
+
+def copy_labels(source: Path, output: Path, capture: Capture, *, simulated: bool) -> None:
+    """Writes the labels of a copy already made at output."""
+    pages = pymupdf.open(output).page_count
+    write_labels(output, copied_labels(source, capture, pages, simulated=simulated))
 
 
 def clean_jpeg(image: Path) -> tuple[bytes, tuple[int, int]]:
@@ -78,6 +89,9 @@ def add_capture(
     if not images:
         raise ValueError("give the images in page order")
 
+    # Everything that can fail is done before anything is written, so the corpus never holds a
+    # capture without its labels, which would also block a retry under the same name.
+    text = copied_labels(original, capture, len(images), simulated=False)
     document = pymupdf.open()
     for image in images:
         jpeg, (width, height) = clean_jpeg(image)
@@ -86,7 +100,11 @@ def add_capture(
     document.set_metadata({})
     document.del_xml_metadata()
     document.save(output, garbage=4, deflate=True)
-    copy_labels(original, output, capture, simulated=False)
+    try:
+        write_labels(output, text)
+    except BaseException:
+        output.unlink(missing_ok=True)
+        raise
     return output
 
 
@@ -94,6 +112,9 @@ def main(argv: list[str]) -> int:
     corpus = CORPUS
     if "--corpus" in argv:
         at = argv.index("--corpus")
+        if at + 1 >= len(argv):
+            print(__doc__)
+            return 2
         corpus = Path(argv[at + 1])
         argv = argv[:at] + argv[at + 2 :]
     if len(argv) < 4 or argv[1] not in ("scanned", "photographed"):
