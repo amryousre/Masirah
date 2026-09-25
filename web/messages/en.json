@@ -1,0 +1,150 @@
+{
+  "meta": {
+    "product": "Masirah",
+    "titleTemplate": "%s · Masirah",
+    "description": "Arabic and English CV screening for small and medium companies in Egypt."
+  },
+  "language": {
+    "other": "العربية",
+    "switching": "Switching…"
+  },
+  "status": {
+    "document": {
+      "queued": "Queued",
+      "processing": "Processing",
+      "parsed": "Parsed",
+      "needsReview": "Needs review",
+      "failed": "Couldn't read",
+      "unsupportedLanguage": "Unsupported language"
+    },
+    "confidence": {
+      "label": "Confidence",
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low",
+      "lowHint": "Review before relying on it"
+    },
+    "decision": {
+      "undecided": "New",
+      "undecidedDetail": "No decision yet",
+      "shortlisted": "Shortlisted",
+      "rejected": "Rejected",
+      "byWhom": "{name} · {when}"
+    }
+  },
+  "field": {
+    "suggested": "Suggested",
+    "choose": "Choose…"
+  },
+  "dialog": {
+    "close": "Close"
+  },
+  "toast": {
+    "region": "Notifications",
+    "dismiss": "Dismiss notification"
+  },
+  "notFound": {
+    "title": "This page doesn't exist",
+    "body": "The link may have changed or the page was removed. Nothing in your account was deleted.",
+    "back": "Go to the start"
+  },
+  "gallery": {
+    "title": "Design system",
+    "intro": "The shared components every screen is built from, in their states. Hover, focus and press appear when you interact with them.",
+    "statesNote": "States shown: default, disabled, loading and error.",
+    "states": {
+      "default": "Default",
+      "disabled": "Disabled",
+      "loading": "Loading",
+      "error": "Error"
+    },
+    "variants": {
+      "primary": "Primary",
+      "secondary": "Secondary",
+      "ghost": "Ghost",
+      "destructive": "Destructive"
+    },
+    "buttons": {
+      "title": "Buttons",
+      "note": "One primary button per screen. The destructive button is never filled, and a trailing ellipsis means a confirmation follows.",
+      "saveJob": "Save job",
+      "saving": "Saving…",
+      "uploadCvs": "Upload CVs",
+      "uploading": "Uploading…",
+      "cancel": "Cancel",
+      "cancelling": "Cancelling…",
+      "rejectCandidate": "Reject candidate…",
+      "recording": "Recording…",
+      "saveFailed": "Couldn't save. Try again."
+    },
+    "fields": {
+      "title": "Fields and selects",
+      "note": "Native controls, 36 px high. An error replaces the helper text, so the field keeps its height.",
+      "jobTitle": "Job title",
+      "jobTitleValue": "Senior Front-end Developer",
+      "jobTitleHelp": "Candidates see it on their application status page.",
+      "jobTitleLocked": "The title can't change once the job is published.",
+      "jobTitleChecking": "Checking for a job with the same name…",
+      "jobTitleMissing": "A job title is needed to save the job.",
+      "language": "Required language",
+      "languageHelp": "Used only for the Language part of the score.",
+      "languageLocked": "Set by the account owner.",
+      "languageLoading": "Loading options…",
+      "languageMissing": "Choose at least one language.",
+      "arabic": "Arabic",
+      "english": "English",
+      "both": "Arabic and English",
+      "location": "Location",
+      "locationValue": "Cairo",
+      "locationHelp": "Suggested from the job description. Change it or save it as it is."
+    },
+    "tabs": {
+      "title": "Tabs",
+      "note": "The selected tab is marked by weight and an ink underline, not by amber.",
+      "label": "Job sections",
+      "candidates": "Candidates",
+      "reviewQueue": "Review queue",
+      "board": "Board",
+      "activity": "Activity",
+      "scorecard": "Scorecard",
+      "messages": "Messages",
+      "channels": "Channels",
+      "channelsFailed": "Couldn't load channels.",
+      "panel": "{tab}: this section's content appears here."
+    },
+    "status": {
+      "title": "Status, confidence and decisions",
+      "note": "Every indicator is a shape and a word, with color as a third, extra channel. A decision always names who made it.",
+      "documents": "Document status",
+      "confidence": "Confidence",
+      "decisions": "Decision",
+      "tarek": "Tarek Mansour",
+      "tarekWhen": "12 Mar",
+      "nourhan": "Nourhan Saeed",
+      "nourhanWhen": "12 Mar 14:32"
+    },
+    "dialog": {
+      "title": "Dialog",
+      "note": "Focus opens on the safe choice, Escape closes it, and focus returns to the button that opened it.",
+      "open": "Discard changes…",
+      "heading": "Discard your changes to this job?",
+      "body": "The job goes back to its last saved version. Candidates and their scores are not affected.",
+      "keep": "Keep editing",
+      "discard": "Discard changes"
+    },
+    "toasts": {
+      "title": "Toasts",
+      "note": "They state a fact and offer one action.",
+      "batchDone": "24 of 25 files are processed. One needs review.",
+      "openRanking": "Open ranking",
+      "rejected": "Mohamed Abdallah was rejected. The decision is recorded in your name.",
+      "undo": "Undo",
+      "sendFailed": "3 messages couldn't be sent. Nothing was sent twice.",
+      "retry": "Try again"
+    },
+    "switcher": {
+      "title": "Language switch",
+      "note": "Names the other language in its own script, and keeps the same page when switching."
+    }
+  }
+}

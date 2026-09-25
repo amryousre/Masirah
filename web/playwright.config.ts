@@ -14,8 +14,9 @@ export default defineConfig({
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
-    command: "npm run dev",
-    url: "http://localhost:3000",
+    // CI tests the production build it has just made; locally the dev server is quicker to start.
+    command: isCI ? "npm run start" : "npm run dev",
+    url: "http://localhost:3000/ar/design",
     reuseExistingServer: !isCI,
   },
 });

@@ -35,10 +35,16 @@ jobs:
         run: npm run format:check
       - name: Lint, including import boundaries
         run: npm run lint
-      - name: Type check
+      - name: Type check, with generated route types
         run: npm run typecheck
       - name: Unit tests
         run: npm test
+      - name: Production build
+        run: npm run build
+      - name: Browser for end-to-end tests
+        run: npx playwright install --with-deps chromium
+      - name: End-to-end and accessibility tests, against the production build
+        run: npm run test:e2e
 
   pipeline:
     name: Pipeline

@@ -1,0 +1,119 @@
+/* 36px high, 6px radius, verb plus object. Both labels share one grid cell, so swapping to the
+   progress verb never changes the width. */
+.button {
+  display: inline-grid;
+  place-items: center;
+  min-block-size: var(--control-height);
+  padding-block: 0;
+  padding-inline: var(--space-4);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: var(--size-body-sm);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-label);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast) var(--ease),
+    border-color var(--duration-fast) var(--ease),
+    color var(--duration-fast) var(--ease);
+}
+
+.label,
+.progress {
+  display: inline-flex;
+  grid-area: 1 / 1;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.progress,
+.button[data-loading] .label {
+  visibility: hidden;
+}
+
+.button[data-loading] .progress {
+  visibility: visible;
+}
+
+.button[data-loading] {
+  cursor: progress;
+}
+
+.primary {
+  background: var(--color-primary);
+  color: var(--color-text-on-primary);
+}
+
+.primary:hover:not(:disabled, [data-loading]),
+.primary:active:not(:disabled, [data-loading]) {
+  background: var(--color-primary-hover);
+}
+
+.secondary {
+  border-color: var(--color-control-border);
+  background: var(--color-canvas);
+}
+
+.secondary:hover:not(:disabled, [data-loading]) {
+  background: var(--color-fill-hover);
+}
+
+.secondary:active:not(:disabled, [data-loading]) {
+  background: var(--color-fill-pressed);
+}
+
+.ghost:hover:not(:disabled, [data-loading]) {
+  background: var(--color-fill-subtle);
+}
+
+.ghost:active:not(:disabled, [data-loading]) {
+  background: var(--color-fill-pressed);
+}
+
+.destructive {
+  border-color: var(--color-error);
+  background: var(--color-canvas);
+  color: var(--color-error);
+}
+
+.destructive:hover:not(:disabled, [data-loading]),
+.destructive:active:not(:disabled, [data-loading]) {
+  background: var(--color-error-bg);
+}
+
+.destructiveConfirm {
+  background: var(--color-error);
+  color: var(--color-text-on-primary);
+}
+
+.destructiveConfirm:hover:not(:disabled, [data-loading]),
+.destructiveConfirm:active:not(:disabled, [data-loading]) {
+  background: var(--color-error-strong);
+}
+
+.button:disabled {
+  border-color: var(--color-divider);
+  background: var(--color-fill-subtle);
+  color: var(--color-text-tertiary);
+  cursor: not-allowed;
+}
+
+.withError {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: start;
+  gap: var(--space-1);
+}
+
+.error {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-error);
+  font-size: var(--size-caption);
+  line-height: var(--leading-caption);
+}

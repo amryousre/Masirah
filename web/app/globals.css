@@ -1,0 +1,190 @@
+/* The design tokens (T027), from the Claude Design handoff recorded in DESIGN.md. This is the one
+   file allowed to write a color: everything else uses these custom properties, and lint enforces
+   it (DESIGN.md section 2). Contrast ratios are against white unless stated. */
+
+:root {
+  /* Canvas and greys, chroma 0 */
+  --grey-0: oklch(1 0 0);
+  --grey-25: oklch(0.985 0 0);
+  --grey-50: oklch(0.97 0 0);
+  --grey-100: oklch(0.945 0 0);
+  --grey-200: oklch(0.91 0 0);
+  --grey-300: oklch(0.85 0 0);
+  --grey-400: oklch(0.76 0 0);
+  --grey-500: oklch(0.64 0 0); /* 3.36:1, the floor for non-text UI */
+  --grey-600: oklch(0.54 0 0); /* 5.06:1 */
+  --grey-700: oklch(0.45 0 0); /* 7.44:1 */
+  --grey-800: oklch(0.34 0 0); /* 11.76:1 */
+  --grey-900: oklch(0.22 0 0); /* 17.31:1 */
+
+  /* Amber, hue 65: the only accent */
+  --amber-50: oklch(0.975 0.016 65);
+  --amber-100: oklch(0.95 0.032 65);
+  --amber-200: oklch(0.9 0.068 65);
+  --amber-300: oklch(0.84 0.116 65);
+  --amber-400: oklch(0.774 0.174 65.1); /* identity anchor: the logo only */
+  --amber-500: oklch(0.66 0.148 65); /* unassigned: under 3:1 on grey fills */
+  --amber-600: oklch(0.55 0.122 65); /* white on it 5.01:1 */
+  --amber-700: oklch(0.47 0.106 65); /* 7.02:1 */
+  --amber-800: oklch(0.39 0.087 65);
+  --amber-900: oklch(0.3 0.068 65);
+
+  /* Roles */
+  --color-canvas: var(--grey-0);
+  --color-text: var(--grey-900);
+  --color-text-secondary: var(--grey-700);
+  --color-text-tertiary: var(--grey-600);
+  --color-text-on-primary: var(--grey-0);
+  --color-divider: var(--grey-200);
+  --color-hairline: var(--grey-300);
+  --color-control-border: var(--grey-500);
+  --color-control-border-hover: var(--grey-700);
+  --color-disabled: var(--grey-400);
+  --color-fill-subtle: var(--grey-50);
+  --color-fill-hover: var(--grey-25);
+  --color-fill-pressed: var(--grey-100);
+  --color-ink: var(--grey-900);
+  --color-primary: var(--amber-600);
+  --color-primary-hover: var(--amber-700);
+  --color-link: var(--amber-700);
+  --color-selected: var(--amber-100);
+  --color-selected-hover: var(--amber-50);
+  --color-selected-pressed: var(--amber-200);
+  --color-selected-edge: var(--amber-300);
+  --color-text-on-selected: var(--amber-900);
+  --color-focus: var(--amber-600); /* 4.60:1 on grey-50, 4.28:1 on grey-100 */
+  --color-error: oklch(0.52 0.18 27); /* 6.04:1 */
+  --color-error-strong: oklch(0.45 0.16 27); /* hover on the one filled red */
+  --color-error-bg: oklch(0.97 0.014 27);
+  --color-warning: oklch(0.5 0.1 90); /* 6.02:1 */
+  --color-warning-bg: oklch(0.97 0.025 90);
+  --color-success: oklch(0.5 0.11 150); /* 5.70:1 */
+  --color-success-bg: oklch(0.97 0.025 150);
+  --score-bar: var(--grey-800);
+  --score-track: var(--grey-200);
+  --scrim: oklch(0.22 0 0 / 0.32);
+
+  /* Type: one family for Arabic and Latin, a mono for identifiers only */
+  --font-sans: var(--font-plex-arabic), var(--font-plex-sans), system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --size-headline: 1.5rem;
+  --size-title: 1.125rem;
+  --size-body: 1rem;
+  --size-body-sm: 0.875rem;
+  --size-label: 0.8125rem;
+  --size-caption: 0.75rem;
+  --leading-headline: 1.3;
+  --leading-title: 1.4;
+  --leading-body: 1.6;
+  --leading-body-sm: 1.55;
+  --leading-label: 1.4;
+  --leading-caption: 1.4;
+  --measure: 68ch;
+
+  /* Space, 4px base */
+  --space-0_5: 2px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Edges */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --border: 1px solid var(--color-hairline);
+  --border-divider: 1px solid var(--color-divider);
+  --border-control: 1px solid var(--color-control-border);
+  --control-height: 36px;
+  --row-height: 36px;
+  --row-height-compact: 32px;
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+
+  /* The two permitted shadows, both answers to a state */
+  --shadow-overlay: 0 0 0 1px var(--grey-300), 0 8px 24px -4px oklch(0.22 0 0 / 0.14);
+  --shadow-lift: 0 0 0 1px var(--grey-300), 0 2px 6px oklch(0.22 0 0 / 0.1);
+
+  /* Motion, for state only */
+  --duration-fast: 150ms;
+  --duration-base: 200ms;
+  --duration-slow: 250ms;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+
+  /* Stacking, lowest first */
+  --z-sticky: 10;
+  --z-dropdown: 20;
+  --z-dialog: 30;
+  --z-toast: 40;
+}
+
+/* Arabic runs at the same size as Latin with more leading, for its ascenders, descenders and dots. */
+:root:lang(ar) {
+  --leading-headline: 1.5;
+  --leading-title: 1.6;
+  --leading-body: 1.75;
+  --leading-body-sm: 1.7;
+  --leading-label: 1.5;
+  --leading-caption: 1.5;
+}
+
+/* Movement stops entirely; state changes still happen, instantly. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-base: 0ms;
+    --duration-slow: 0ms;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  background: var(--color-canvas);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: var(--size-body);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-body);
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  text-wrap: balance;
+}
+
+p {
+  margin: 0;
+  text-wrap: pretty;
+}
+
+:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
+}
+
+::selection {
+  background: var(--color-selected);
+  color: var(--color-text-on-selected);
+}

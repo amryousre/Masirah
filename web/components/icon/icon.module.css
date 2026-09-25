@@ -1,0 +1,30 @@
+.icon {
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
+.track {
+  opacity: 0.25;
+}
+
+/* Queued: a dashed ring, so it reads as "not started" without color. */
+.dashed {
+  stroke-dasharray: 3.5 3;
+}
+
+.spinner {
+  animation: spin 800ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+/* A spinner that cannot spin still says "busy" through the word beside it. */
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}
