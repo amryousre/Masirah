@@ -5,6 +5,8 @@ import styles from "./icon.module.css";
 // beside words and are hidden from assistive technology unless given a label of their own.
 const circle = "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z";
 const globeLines = "M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18";
+const eyeShape =
+  "M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12ZM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z";
 
 const paths = {
   alert: `${circle}M12 7.5v5M12 16v.01`,
@@ -16,6 +18,8 @@ const paths = {
   clock: `${circle}M12 7v5l3 2`,
   close: "M6 6l12 12M18 6 6 18",
   dot: "M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z",
+  eye: eyeShape,
+  eyeOff: `${eyeShape}M4 4l16 16`,
   gauge: `${circle}M12 12l4-4`,
   globe: `${circle}${globeLines}`,
   globeOff: `${circle}${globeLines}M4 4l16 16`,

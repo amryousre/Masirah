@@ -31,11 +31,21 @@ Phase 1 release gate.
    security rather than public URLs.
 3. **Create the queues.** `cv_processing` and `cv_rescoring`, as named in
    [contracts/queue-message.md](./contracts/queue-message.md).
-4. **Configure environment** for both runtimes. The web application needs the Supabase URL and
-   publishable key plus its service credentials for server routes. The worker needs Supabase
-   credentials and both provider keys. No provider key belongs in any variable the browser can read.
-5. **Seed one organisation and one user.** Phase 1 has no signup flow; that arrives in Phase 3 with
-   FR-080.
+4. **Configure environment** for both runtimes. The web application reads `web/.env.local`,
+   copied from `web/.env.example`: the Supabase URL, the publishable key and `SITE_URL`. The
+   Supabase CLI reads the Google sign-in client from the gitignored `.env` at the repository root
+   (`SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID` and `SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET`; the
+   OAuth client "Masirah sign-in" in Google Cloud project `masirah` lists
+   `http://127.0.0.1:14321/auth/v1/callback` for the local stack). The end-to-end tests also need
+   `SUPABASE_SECRET_KEY` in `web/.env.test.local`, which only the test runner loads. The worker
+   needs Supabase credentials and both provider keys. No provider key belongs in any variable the
+   browser can read.
+5. **Seed one organisation and one user.** Sign-ups are closed (`[auth] enable_signup = false`),
+   so access is by invitation: create the user through the Auth admin API with the email already
+   confirmed, then the `organisation` row and the `app_user` row joining them. The user signs in
+   with Google, which links to the existing user by email, or with a password. A Google account
+   nobody created is refused before any user exists and sees the no-access page. Self-serve signup
+   arrives in Phase 3 with FR-080.
 
 ## Running
 
@@ -57,6 +67,12 @@ this order, after its pull request merges:
    Never before step 1: the Data API stops serving when an exposed schema does not exist. Not with
    `supabase config push` either, which would also send the local `[auth]` URLs.
 3. **Run the security and performance advisors** and resolve anything new before real data arrives.
+4. **Match hosted Auth** when a release changes it, from a scratch workdir whose `config.toml`
+   declares only the keys that change, after `supabase config diff` shows nothing else. For sign-in
+   (T024) those are `[auth] enable_signup = false`, `site_url = "https://masirah.online"`,
+   `additional_redirect_urls = ["https://masirah.online/**"]` and `[auth.external.google]` with
+   the same client, whose redirect URIs include
+   `https://skgetonknlshzrvykrpf.supabase.co/auth/v1/callback`.
 
 ## Validation scenarios
 

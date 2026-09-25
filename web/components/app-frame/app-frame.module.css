@@ -113,8 +113,11 @@
 }
 
 .userName {
+  overflow: hidden;
   font-size: var(--size-body-sm);
   font-weight: var(--weight-medium);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .email {
@@ -125,12 +128,28 @@
   white-space: nowrap;
 }
 
+/* Quieter than the sections: it is used once a session, if at all. The footer qualifies the
+   selector so it wins over the button's own colour whichever stylesheet loads last. */
+.footer .signOut {
+  justify-self: start;
+  padding-inline: var(--space-2);
+  color: var(--color-text-secondary);
+  font-weight: var(--weight-regular);
+}
+
+.footer .signOut:hover {
+  color: var(--color-text);
+}
+
 .main {
   min-inline-size: 0;
 }
 
 @media (width < 48rem) {
+  /* The bar keeps its own height and the page takes the rest; without the row sizes a short page
+     would stretch the bar to fill the screen. */
   .frame {
+    grid-template-rows: auto 1fr;
     grid-template-columns: minmax(0, 1fr);
   }
 

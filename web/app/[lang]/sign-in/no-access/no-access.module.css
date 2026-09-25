@@ -1,0 +1,40 @@
+.next {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.nextTitle {
+  color: var(--color-text);
+  font-size: var(--size-label);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-label);
+}
+
+.steps {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+
+/* Western digits in both languages (DESIGN.md section 4), set apart in grey. */
+.steps li {
+  display: grid;
+  grid-template-columns: var(--space-4) 1fr;
+  gap: var(--space-2);
+  color: var(--color-text);
+  font-size: var(--size-body-sm);
+  line-height: var(--leading-body-sm);
+  counter-increment: step;
+}
+
+.steps li::before {
+  color: var(--color-text-tertiary);
+  font-variant-numeric: tabular-nums;
+  content: counter(step);
+}

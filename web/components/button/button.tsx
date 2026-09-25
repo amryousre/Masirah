@@ -1,6 +1,7 @@
 "use client";
 
 import { type ButtonHTMLAttributes, type MouseEvent, type ReactNode, useId } from "react";
+import { useFormStatus } from "react-dom";
 
 import { cx } from "../cx";
 import { Icon, type IconName } from "../icon/icon";
@@ -84,4 +85,14 @@ export function Button({
       </span>
     </span>
   );
+}
+
+/**
+ * The submit button of a form whose action runs on the server. It shows its progress verb from
+ * the moment the form is sent until the action answers, so a slow network never looks idle and
+ * a second press does nothing.
+ */
+export function SubmitButton(props: Omit<ButtonProps, "type" | "loading">) {
+  const { pending } = useFormStatus();
+  return <Button {...props} type="submit" loading={pending} />;
 }

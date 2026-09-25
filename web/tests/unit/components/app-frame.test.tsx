@@ -64,4 +64,42 @@ describe("AppFrame", () => {
     expect(screen.getByRole("link", { name: "العربية" })).toBeInTheDocument();
     expect(screen.getByText("Nourhan Saeed")).toBeInTheDocument();
   });
+
+  it("names a user without a name by their email", () => {
+    renderIn(
+      "en",
+      <AppFrame organisation="Delta Soft" user={{ name: null, email: "karim@example.com" }}>
+        <p>Page</p>
+      </AppFrame>,
+    );
+    expect(screen.getByText("karim@example.com")).toBeInTheDocument();
+    expect(screen.getByText("K")).toBeInTheDocument();
+  });
+
+  it("offers sign-out as a form, so it works before any script loads", () => {
+    const signOut = vi.fn(() => Promise.resolve());
+    renderIn(
+      "ar",
+      <AppFrame
+        organisation="دلتا سوفت"
+        user={{ name: "نورهان سعيد", email: "n@example.com" }}
+        signOut={signOut}
+      >
+        <p>الصفحة</p>
+      </AppFrame>,
+    );
+    const button = screen.getByRole("button", { name: "تسجيل الخروج" });
+    expect(button).toHaveAttribute("type", "submit");
+    expect(button.closest("form")).not.toBeNull();
+  });
+
+  it("leaves sign-out out where there is no session to end", () => {
+    renderIn(
+      "en",
+      <AppFrame organisation="Delta Soft" user={{ name: "Nourhan Saeed", email: "n@example.com" }}>
+        <p>Page</p>
+      </AppFrame>,
+    );
+    expect(screen.queryByRole("button", { name: "Sign out" })).toBeNull();
+  });
 });

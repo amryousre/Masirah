@@ -64,6 +64,13 @@
   --score-track: var(--grey-200);
   --scrim: oklch(0.22 0 0 / 0.32);
 
+  /* Third-party marks, in their owners' colours and nowhere else: Google's "G" on the sign-in
+     button, which Google's branding rules do not allow recoloured */
+  --brand-google-blue: #4285f4;
+  --brand-google-red: #ea4335;
+  --brand-google-yellow: #fbbc05;
+  --brand-google-green: #34a853;
+
   /* Type: one family for Arabic and Latin, a mono for identifiers only */
   --font-sans: var(--font-plex-arabic), var(--font-plex-sans), system-ui, sans-serif;
   --font-mono: var(--font-plex-mono), ui-monospace, monospace;

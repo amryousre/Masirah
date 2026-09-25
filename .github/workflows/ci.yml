@@ -39,6 +39,29 @@ jobs:
         run: npm run typecheck
       - name: Unit tests
         run: npm test
+      # Sign-in (T024) runs against a real Supabase Auth, so the app is built and tested against a
+      # local stack. The keys printed by `supabase status` are the stack's fixed development keys.
+      - uses: supabase/setup-cli@v3
+        with:
+          version: 2.117.0
+      - name: Start Postgres, Auth, Storage and the API gateway
+        working-directory: .
+        # config.toml enables Google sign-in with env() values; CI never reaches Google, so any
+        # well-formed placeholder will do.
+        env:
+          SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID: ci-placeholder.apps.googleusercontent.com
+          SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET: ci-placeholder
+        run: >-
+          supabase start -x
+          realtime,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+      - name: Point the app and the tests at the local stack
+        working-directory: .
+        run: |
+          supabase status -o env | tr -d '"' | sed -n \
+            -e 's/^API_URL=/NEXT_PUBLIC_SUPABASE_URL=/p' \
+            -e 's/^PUBLISHABLE_KEY=/NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=/p' \
+            -e 's/^SECRET_KEY=/SUPABASE_SECRET_KEY=/p' >> "$GITHUB_ENV"
+          echo "SITE_URL=http://localhost:3000" >> "$GITHUB_ENV"
       - name: Production build
         run: npm run build
       - name: Browser for end-to-end tests
@@ -84,6 +107,11 @@ jobs:
         with:
           version: 2.117.0
       - name: Start Postgres, Auth and Storage
+        # config.toml enables Google sign-in with env() values; CI never reaches Google, so any
+        # well-formed placeholder will do.
+        env:
+          SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID: ci-placeholder.apps.googleusercontent.com
+          SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET: ci-placeholder
         run: >-
           supabase start -x
           realtime,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor

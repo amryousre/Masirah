@@ -1,7 +1,13 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, useId } from "react";
+import {
+  type InputHTMLAttributes,
+  type ReactNode,
+  type SelectHTMLAttributes,
+  useId,
+  useState,
+} from "react";
 
 import { cx } from "../cx";
 import { Icon } from "../icon/icon";
@@ -137,6 +143,49 @@ export function SelectField({
         strokeWidth={1.75}
         className={styles.adornment}
       />
+    </FieldFrame>
+  );
+}
+
+type PasswordFieldProps = FieldProps & Omit<InputHTMLAttributes<HTMLInputElement>, "id" | "type">;
+
+/**
+ * A password with a button that shows it, so a long password typed on a phone can be checked
+ * before sending. The button keeps one name and reports its state through aria-pressed.
+ */
+export function PasswordField({
+  label,
+  help,
+  error,
+  loading,
+  suggested,
+  className,
+  ...input
+}: PasswordFieldProps) {
+  const t = useTranslations("field");
+  const id = useId();
+  const [visible, setVisible] = useState(false);
+  const field = { label, help, error, loading, suggested: suggested ?? false };
+  return (
+    <FieldFrame id={id} {...field}>
+      <input
+        type={visible ? "text" : "password"}
+        className={cx(styles.input, styles.withToggle, className)}
+        {...controlProps(field, id)}
+        {...input}
+      />
+      <button
+        type="button"
+        className={styles.toggle}
+        aria-label={t("showPassword")}
+        aria-pressed={visible}
+        aria-controls={id}
+        onClick={() => {
+          setVisible((shown) => !shown);
+        }}
+      >
+        <Icon name={visible ? "eyeOff" : "eye"} size={16} strokeWidth={1.75} />
+      </button>
     </FieldFrame>
   );
 }
