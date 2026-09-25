@@ -209,7 +209,7 @@ than extraction. The unit tests in `tests/unit/test_field_accuracy_harness.py` p
 | Arabic | 0 | 3 | `syn-ar-native-01` to `03` |
 | Mixed Arabic and English | 0 | 2 | `syn-mixed-native-01`, `02` |
 | Scanned | 0 | 2 | `en-scanned-01`, `syn-ar-scanned-01` |
-| Photographed | 0 | 2 | `syn-ar-photographed-01`, `syn-en-photographed-01` |
+| Photographed | 1 | 2 | `en-photographed-01`, `syn-ar-photographed-01`, `syn-en-photographed-01` |
 | Wholly French | 0 | 1 | `syn-fr-native-01` |
 | English with a few French lines | 0 | 1 | `syn-en-native-01` |
 
@@ -242,3 +242,9 @@ worse than a real candidate's photo, and the score would suffer for it.
 Never photograph an original CV, only its anonymised version in this folder. A photo of an original
 shows the real name and contact details, and pixels cannot be checked for them the way the
 anonymiser checks text.
+
+### The real captures so far
+
+| File | Source | How it was made |
+|---|---|---|
+| `en-photographed-01` | `en-native-03` | The project owner photographed both pages with a phone as they showed on a laptop screen, on 26 September 2026. Each page was then taken from Telegram's photo viewer as a screenshot, about 800 by 860 pixels and cropped to the page. The bottom of page 1 is cut just below its last line; every labelled value shows on at least one page. A mouse pointer covers a word on each page. |
