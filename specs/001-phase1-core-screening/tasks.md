@@ -86,7 +86,7 @@ Every table below carries `organisation_id` and has row level security enabled w
 ### The release gate
 
 - [ ] T028 Commit the anonymised Egyptian CV corpus under `pipeline/tests/fixtures/cvs/` with labelled ground truth per field, covering Arabic, English, mixed-language, two-column, scanned and photographed documents, plus a wholly French CV and an English CV carrying a few French lines. Anonymise before anything enters the repository
-- [ ] T029 Build the accuracy suite harness in `pipeline/tests/accuracy/test_field_accuracy.py` comparing every extracted field against the labelled ground truth and reporting separate percentages for native PDFs and for scanned or photographed documents, each for real documents alone (`origin` real, `simulated` false) as well as for the whole corpus, since only real documents decide the gate. This is a gate, not a test: Phase 1 does not exit until it reports at least 95 percent and 85 percent respectively
+- [X] T029 Build the accuracy suite harness in `pipeline/tests/accuracy/test_field_accuracy.py` comparing every extracted field against the labelled ground truth and reporting separate percentages for native PDFs and for scanned or photographed documents, each for real documents alone (`origin` real, `simulated` false) as well as for the whole corpus, since only real documents decide the gate. This is a gate, not a test: Phase 1 does not exit until it reports at least 95 percent and 85 percent respectively
 
 ### Observability and deployment
 

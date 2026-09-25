@@ -130,8 +130,74 @@ way every label can be checked against its document: `test_cv_corpus.py` require
 value to appear in a native PDF's text, and each labelled year and phone number too. Arabic script
 is checked by review instead, because a PDF text layer often stores it in visual order or as
 presentation forms, which is exactly what extraction has to repair. How strictly extraction is
-compared with a label is T029's decision, for example tolerating case and small spelling
-differences, or scoring skills as an overlapping set.
+compared with a label is set out below.
+
+## How extraction is scored
+
+`pipeline/tests/accuracy/field_accuracy.py` (T029) runs an extractor over every document and
+compares what it returns with these labels. Accuracy is the share of fields extracted correctly,
+counted across all the documents in a group. SC-002 needs 95 percent on native PDFs and SC-003 needs
+85 percent on scans and photographs, counting real documents only (`origin` real, `simulated`
+false). The report also gives each group's figure for the whole corpus, and a breakdown by field
+and by document.
+
+**What one field is.** Every labelled value:
+
+- the name, the location and the years of experience;
+- each email, each phone and each skill;
+- each part of each job (employer, title, start, end), each degree (institution, qualification,
+  start, end), each language (language, level) and each certification (name, issuer).
+
+The `protected` attributes are not extraction targets and are not scored.
+
+**Empty labels count.** A `null` label is correct only when extraction also returns nothing, so
+inventing a value the CV does not give costs a field.
+
+**Lists are matched item by item.**
+
+- Each labelled email, phone or skill that extraction found is a correct field. Each one it missed
+  is a wrong field, and so is each extracted value that matches no label.
+- Jobs, degrees, languages and certifications are paired by their first two parts (employer and
+  title, institution and qualification, and so on), whatever order they come in. The agreeing part
+  has to hold a value: two certificates that both lack an issuer are not thereby the same one.
+- A paired record scores each part on its own. An unpaired record scores every part as wrong,
+  whether it was missed or invented.
+
+**Text is compared after folding how it is written:**
+
+- Unicode compatibility forms, which turns the Arabic presentation forms of PDF text layers back
+  into letters.
+- Case, runs of spaces, and punctuation at the ends.
+- Diacritics and tatweel, and hamza on alef, alef maqsura and ta marbuta.
+- Arabic-Indic digits, read as the digits they stand for.
+
+Punctuation inside a value stays, so C++ and C# remain different. Two values still count as the
+same when they are at least 90 percent alike. A ten-letter value may therefore differ by one letter
+(an OCR slip, or a typo the extractor corrected), while a short value such as an acronym must match
+exactly.
+
+**Some values have no spelling allowance:**
+
+- Dates must match exactly, so a CV that gives only a year must not come back with a month.
+- Emails match exactly apart from case.
+- Phones must be the labelled E.164 number once spaces and separators are removed. Turning `010…`
+  into `+2010…` is extraction's job.
+- Years of experience compare as numbers.
+
+**Unsupported languages.** A document labelled `unsupported_language` has no fields. The report
+says whether it was flagged. A supported CV that extraction turns away scores every field as wrong.
+
+**An extractor that raises** is recorded against the document and scores every field as wrong. It
+does not stop the run.
+
+To measure an extractor, name it and run the suite on its own. The report prints at the end:
+
+```sh
+MASIRAH_EXTRACTOR=package.module:function uv run pytest tests/accuracy
+```
+
+`tests.accuracy.field_accuracy:oracle` returns the labels themselves. It checks the harness rather
+than extraction. The unit tests in `tests/unit/test_field_accuracy_harness.py` pin each rule above.
 
 ## Coverage
 
