@@ -11,8 +11,6 @@ so a copy can never disagree with its source. Labels for the synthetic CVs thems
 by hand beside them, like the labels for the real ones.
 """
 
-import json
-import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -20,6 +18,7 @@ from typing import Literal
 
 import pymupdf
 
+from tools.add_capture import copy_labels
 from tools.simulate_capture import photograph, scan
 
 
@@ -34,8 +33,6 @@ class Copy:
     def suffix(self) -> str:
         return ".pdf" if self.capture == "scanned" else ".jpg"
 
-
-DOCUMENT_LINE = re.compile(r'^  "document": \{.*\},$', re.MULTILINE)
 
 COPIES = (
     Copy("en-scanned-01", "en-native-01", "scanned", 101),
@@ -64,19 +61,7 @@ def add_copy(copy: Copy, corpus: Path) -> str:
         scan(source, output, copy.seed)
     else:
         photograph(source, output, copy.seed)
-    text = source.with_suffix(".json").read_text(encoding="utf-8")
-    document = json.loads(text)["document"] | {
-        "capture": copy.capture,
-        "pages": pymupdf.open(output).page_count,
-        "copy_of": copy.source,
-        "simulated": True,
-    }
-    # Only the document line changes, so the copy keeps its source's hand-kept layout.
-    inline = "{ " + json.dumps(document, ensure_ascii=False)[1:-1] + " }"
-    text, replaced = DOCUMENT_LINE.subn(f'  "document": {inline},', text, count=1)
-    if replaced != 1:
-        raise ValueError(f"{source.stem}.json has no one-line document entry to rewrite")
-    output.with_suffix(".json").write_text(text, encoding="utf-8")
+    copy_labels(source, output, copy.capture, simulated=True)
     return output.name
 
 
