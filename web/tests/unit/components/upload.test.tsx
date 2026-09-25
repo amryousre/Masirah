@@ -101,6 +101,34 @@ describe("DropZone", () => {
     expect(onFiles).toHaveBeenCalledWith([file]);
   });
 
+  it("takes at most its maximum at once, and says how many it left out", () => {
+    const onFiles = vi.fn();
+    renderIn("en", <DropZone job="Accountant" onFiles={onFiles} max={3} />);
+    const files = ["a", "b", "c", "d", "e"].map(
+      (name) => new File(["%PDF"], `${name}.pdf`, { type: "application/pdf" }),
+    );
+    const zone = screen.getByTestId("drop-zone");
+    const drop = createEvent.drop(zone);
+    Object.defineProperty(drop, "dataTransfer", { value: { files, items: { length: 5 } } });
+    fireEvent(zone, drop);
+    expect(onFiles).toHaveBeenCalledWith(files.slice(0, 3));
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "2 files weren't added: you can upload up to 3 at a time.",
+    );
+  });
+
+  it("says in Arabic how many files it left out", async () => {
+    renderIn("ar", <DropZone job="محاسب" onFiles={vi.fn()} max={25} />);
+    const files = Array.from(
+      { length: 27 },
+      (_, index) => new File(["%PDF"], `${String(index)}.pdf`, { type: "application/pdf" }),
+    );
+    await userEvent.upload(screen.getByLabelText("اسحب حتى 25 ملفًا هنا، أو اختر ملفات"), files);
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "لم يُضف ملفان: يمكن رفع 25 ملفًا في كل مرة.",
+    );
+  });
+
   it("at the limit, stops taking files and says when it renews", () => {
     renderIn(
       "en",

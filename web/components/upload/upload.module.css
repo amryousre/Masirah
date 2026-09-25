@@ -127,6 +127,12 @@
   cursor: default;
 }
 
+.leftOut {
+  color: var(--color-warning);
+  font-size: var(--size-caption);
+  line-height: var(--leading-caption);
+}
+
 .hint {
   font-size: var(--size-caption);
   line-height: var(--leading-caption);

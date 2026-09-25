@@ -44,6 +44,17 @@ export function RejectDialog({
   const [reason, setReason] = useState("");
   const [notify, setNotify] = useState(true);
 
+  // The dialog stays mounted between uses. Each opening starts from nothing chosen, so a reason
+  // picked for one candidate can never pre-arm the reject button for the next.
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) {
+      setReason("");
+      setNotify(true);
+    }
+  }
+
   return (
     <Dialog
       open={open}

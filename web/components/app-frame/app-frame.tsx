@@ -74,7 +74,7 @@ export function AppFrame({ organisation, user, reviewCount, usage, children }: A
           </ul>
         </nav>
         <div className={styles.footer}>
-          {usage}
+          {usage && <div className={styles.usage}>{usage}</div>}
           <div className={styles.user}>
             <span className={styles.avatar} aria-hidden="true">
               {initials(user.name)}

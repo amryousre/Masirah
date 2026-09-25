@@ -11,6 +11,9 @@
   flex-direction: column;
   gap: var(--space-6);
   block-size: 100dvb;
+  /* On a short screen the sidebar scrolls on its own, so the user and the language switch at its
+     foot stay reachable. */
+  overflow: auto;
   padding-block: var(--space-5);
   padding-inline: var(--space-3);
   border-inline-end: var(--border);
@@ -158,14 +161,28 @@
     white-space: nowrap;
   }
 
+  /* Usage, the user and the language switch stay on a phone: a full-width row under the
+     sections, with the usage meter across the top of it. */
   .footer {
     display: flex;
+    flex-wrap: wrap;
+    order: 4;
     align-items: center;
+    gap: var(--space-3) var(--space-4);
+    inline-size: 100%;
     margin-block-start: 0;
-    margin-inline-start: auto;
+    padding-block: var(--space-3);
+    padding-inline: 0;
+    border-block-start: var(--border-divider);
   }
 
-  .footer > :not(:last-child) {
-    display: none;
+  .usage {
+    flex-basis: 100%;
+  }
+
+  .user {
+    margin-inline-end: auto;
+    padding-block-start: 0;
+    border-block-start: none;
   }
 }

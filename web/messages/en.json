@@ -124,7 +124,8 @@
     "openProfile": "Open profile",
     "review": "Review",
     "replace": "Replace file",
-    "ignore": "Ignore"
+    "ignore": "Ignore",
+    "tooMany": "{extra, plural, one {{extra} file wasn't added} other {{extra} files weren't added}}: you can upload up to {max} at a time."
   },
   "reject": {
     "title": "Reject {name}?",

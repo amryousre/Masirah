@@ -124,7 +124,8 @@
     "openProfile": "فتح الملف الشخصي",
     "review": "مراجعة",
     "replace": "استبدال الملف",
-    "ignore": "تجاهل"
+    "ignore": "تجاهل",
+    "tooMany": "{extra, plural, one {لم يُضف ملف واحد} two {لم يُضف ملفان} few {لم تُضف {extra} ملفات} many {لم يُضف {extra} ملفًا} other {لم يُضف {extra} ملف}}: يمكن رفع {max} ملفًا في كل مرة."
   },
   "reject": {
     "title": "رفض {name}؟",

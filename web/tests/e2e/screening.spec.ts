@@ -68,3 +68,11 @@ test("the sidebar sits at the reading start", async ({ page }) => {
   const mainEn = await page.getByRole("main").boundingBox();
   expect(sidebarEn && mainEn && sidebarEn.x < mainEn.x).toBe(true);
 });
+
+test("keeps usage, the user and the language switch visible on a phone", async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 780 });
+  await page.goto("/ar/design/frame");
+  await expect(page.getByRole("meter", { name: "السير الذاتية هذا الشهر" })).toBeVisible();
+  await expect(page.getByText("نورهان سعيد")).toBeVisible();
+  await expect(page.getByRole("link", { name: "English" })).toBeVisible();
+});

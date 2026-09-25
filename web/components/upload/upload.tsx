@@ -126,7 +126,15 @@ export function DropZone({ job, onFiles, max = 25, limitReached }: DropZoneProps
   const promptId = useId();
   const hintId = useId();
   const [dragging, setDragging] = useState<number | null>(null);
+  const [leftOut, setLeftOut] = useState(0);
   const disabled = limitReached !== undefined;
+
+  // At most `max` files per drop or choice (FR-001). The rest are not taken, and the zone says
+  // how many, rather than dropping them silently.
+  const accept = (files: File[]) => {
+    setLeftOut(Math.max(files.length - max, 0));
+    onFiles(files.slice(0, max));
+  };
 
   const onDrag = (event: DragEvent<HTMLDivElement>) => {
     if (disabled) return;
@@ -137,7 +145,7 @@ export function DropZone({ job, onFiles, max = 25, limitReached }: DropZoneProps
   const onDrop = (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     setDragging(null);
-    if (!disabled) onFiles([...event.dataTransfer.files]);
+    if (!disabled) accept([...event.dataTransfer.files]);
   };
 
   return (
@@ -178,10 +186,13 @@ export function DropZone({ job, onFiles, max = 25, limitReached }: DropZoneProps
         disabled={disabled}
         className={styles.input}
         onChange={(event) => {
-          onFiles([...(event.target.files ?? [])]);
+          accept([...(event.target.files ?? [])]);
           event.target.value = "";
         }}
       />
+      <p role="status" className={styles.leftOut}>
+        {leftOut > 0 && t("tooMany", { extra: leftOut, max })}
+      </p>
     </div>
   );
 }

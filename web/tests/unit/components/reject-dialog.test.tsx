@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useState } from "react";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import { RejectDialog } from "@/components/reject-dialog/reject-dialog";
@@ -55,6 +56,43 @@ describe("RejectDialog", () => {
     expect(reject).toBeEnabled();
     await userEvent.click(reject);
     expect(onConfirm).toHaveBeenCalledWith({ reason: "skills", notify: true });
+  });
+
+  it("starts fresh each time it opens, so no earlier reason carries over", async () => {
+    function Page() {
+      const [open, setOpen] = useState(true);
+      return (
+        <>
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(true);
+            }}
+          >
+            Reject another
+          </button>
+          <RejectDialog
+            open={open}
+            candidate="Mohamed Abdallah"
+            actor="Nourhan Saeed"
+            when="today 14:32"
+            reasons={reasons}
+            onCancel={() => {
+              setOpen(false);
+            }}
+            onConfirm={vi.fn()}
+          />
+        </>
+      );
+    }
+    renderIn("en", <Page />);
+    await userEvent.selectOptions(screen.getByRole("combobox"), "skills");
+    await userEvent.click(screen.getByRole("checkbox"));
+    await userEvent.click(screen.getByRole("button", { name: "Keep candidate" }));
+    await userEvent.click(screen.getByRole("button", { name: "Reject another" }));
+    expect(screen.getByRole("combobox")).toHaveValue("");
+    expect(screen.getByRole("checkbox")).toBeChecked();
+    expect(screen.getByRole("button", { name: "Reject candidate" })).toBeDisabled();
   });
 
   it("lets the notice to the candidate be switched off", async () => {
