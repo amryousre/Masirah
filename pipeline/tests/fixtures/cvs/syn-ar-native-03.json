@@ -1,0 +1,28 @@
+{
+  "document": { "capture": "native", "language": "ar", "layout": "single_column", "pages": 2, "origin": "synthetic", "copy_of": null, "simulated": false },
+  "expected": "parsed",
+  "profile": {
+    "name": "ياسمين عادل فهمي",
+    "emails": ["yasmine.adel@example.com"],
+    "phones": ["+201000000203", "+201000000204"],
+    "location": "الإسكندرية",
+    "years_of_experience": null,
+    "employment": [
+      { "employer": "مجموعة المنار للتجارة", "title": "أخصائي موارد بشرية", "start": "2019-06", "end": "present" },
+      { "employer": "شركة بحري للخدمات اللوجستية", "title": "منسق توظيف", "start": "2016-10", "end": "2019-05" }
+    ],
+    "education": [
+      { "institution": "جامعة الإسكندرية", "qualification": "ليسانس الآداب، قسم علم النفس", "start": "2012", "end": "2016" }
+    ],
+    "skills": ["إجراء المقابلات", "إعداد الرواتب", "التأمينات الاجتماعية", "Microsoft Office", "Oracle HCM"],
+    "languages": [
+      { "language": "العربية", "level": "اللغة الأم" },
+      { "language": "الإنجليزية", "level": "جيد" }
+    ],
+    "certifications": [
+      { "name": "دبلومة إدارة الموارد البشرية", "issuer": "الجامعة الأمريكية بالقاهرة" },
+      { "name": "PHRi", "issuer": "HRCI" }
+    ]
+  },
+  "protected": { "date_of_birth": "1994-05-12", "gender": "أنثى", "nationality": "مصرية", "marital_status": "متزوجة", "photograph": true }
+}

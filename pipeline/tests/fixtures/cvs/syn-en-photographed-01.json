@@ -1,0 +1,29 @@
+{
+  "document": { "capture": "photographed", "language": "en", "layout": "single_column", "pages": 1, "origin": "synthetic", "copy_of": "syn-en-native-01", "simulated": true },
+  "expected": "parsed",
+  "profile": {
+    "name": "Salma Ashraf Ragab",
+    "emails": ["salma.ragab@example.com"],
+    "phones": ["+201000000208"],
+    "location": "New Cairo",
+    "years_of_experience": 6,
+    "employment": [
+      { "employer": "Lumière Cosmetics Egypt", "title": "Supply Chain Coordinator", "start": "2020-01", "end": "present" },
+      { "employer": "Nile Freight Services", "title": "Logistics Officer", "start": "2017-06", "end": "2019-12" }
+    ],
+    "education": [
+      { "institution": "Helwan University", "qualification": "Bachelor of Commerce, Business Administration", "start": "2013", "end": "2017" }
+    ],
+    "skills": ["SAP MM", "Microsoft Excel", "Power BI", "Incoterms 2020"],
+    "languages": [
+      { "language": "Arabic", "level": "Native" },
+      { "language": "English", "level": "Fluent" },
+      { "language": "French", "level": "Professional working proficiency" }
+    ],
+    "certifications": [
+      { "name": "DELF B2", "issuer": "Institut français d'Égypte" },
+      { "name": "Certified Supply Chain Professional (CSCP)", "issuer": "ASCM" }
+    ]
+  },
+  "protected": {}
+}

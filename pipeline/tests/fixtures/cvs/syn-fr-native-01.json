@@ -1,0 +1,28 @@
+{
+  "document": { "capture": "native", "language": "fr", "layout": "single_column", "pages": 1, "origin": "synthetic", "copy_of": null, "simulated": false },
+  "expected": "unsupported_language",
+  "profile": {
+    "name": "Karim Youssef Nassar",
+    "emails": ["karim.nassar@example.com"],
+    "phones": ["+201000000207"],
+    "location": "Louxor",
+    "years_of_experience": 9,
+    "employment": [
+      { "employer": "Hôtel Les Pyramides d'Or", "title": "Responsable de la relation client", "start": "2019-09", "end": "present" },
+      { "employer": "Agence Nil Voyages", "title": "Guide touristique francophone", "start": "2015-06", "end": "2019-08" }
+    ],
+    "education": [
+      { "institution": "Université Française d'Égypte", "qualification": "Licence en langues appliquées", "start": "2011", "end": "2015" }
+    ],
+    "skills": ["Opera PMS", "Amadeus", "Microsoft Office"],
+    "languages": [
+      { "language": "Arabe", "level": "langue maternelle" },
+      { "language": "Français", "level": "courant" },
+      { "language": "Anglais", "level": "intermédiaire" }
+    ],
+    "certifications": [
+      { "name": "DALF C1", "issuer": "France Éducation International" }
+    ]
+  },
+  "protected": {}
+}
