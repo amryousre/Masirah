@@ -51,9 +51,9 @@ sales call, priced in Egyptian pounds with a genuine free tier.
    of a scored candidate. The number supports them and is never the headline.
 2. **The machine advises, the human decides.** No screen presents a score as a decision.
    Rejecting a candidate is always a deliberate human action that records who did it. This is a
-   product requirement (FR-023), not a styling preference, and it constrains layout, copy and
-   interaction. Whether Egypt's data protection law (Law 151 of 2020) also requires it is still
-   awaiting a legal opinion.
+   product requirement (FR-023 in the Phase 1 spec), not a styling preference, and it constrains
+   layout, copy and interaction. Whether Egypt's data protection law (Law 151 of 2020) also
+   requires it is still awaiting a legal opinion.
 3. **Arabic is the original, not the translation.** Right-to-left is designed first, not mirrored
    afterwards.
 4. **Density without noise.** Three hundred candidates must feel finishable. The answer is

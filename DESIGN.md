@@ -307,8 +307,8 @@ error. Specimens and every state live in `Docs/design/Figma export/Masirah Compo
 - **Don't** reach for cards. Three hundred candidates in cards is unusable; rows are the answer.
   Board cards are the single exception. Nested cards are always wrong.
 - **Don't** place a reject control where a hover or a mistimed click can reach it. Rejection is a
-  deliberate act that records a human actor, and that is a product requirement (FR-023) rather
-  than a preference.
+  deliberate act that records a human actor, and that is a product requirement (FR-023 in the
+  Phase 1 spec) rather than a preference.
 - **Don't** animate anything that does not convey state. No orchestrated page-load sequence. The
   user arrives in a task, not at a performance.
 - **Don't** invent new affordances for standard tasks. Custom scrollbars, non-standard modals and
