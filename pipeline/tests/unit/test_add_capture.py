@@ -116,16 +116,31 @@ def test_labels_that_cannot_be_copied_leave_no_pdf(corpus: Path, tmp_path: Path)
     assert not (corpus / "en-photographed-01.pdf").exists()
 
 
-def test_a_failed_label_write_takes_the_pdf_back(
+def test_a_failed_label_write_takes_back_both_files(
     corpus: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     def full_disk(output: Path, text: str) -> None:
+        output.with_suffix(".json").write_text(text[:40], encoding="utf-8")  # partway, then fails
         raise OSError("no space left on device")
 
     monkeypatch.setattr("tools.add_capture.write_labels", full_disk)
     photos = [phone_photo(tmp_path, "p1")]
     with pytest.raises(OSError, match="no space"):
         add_capture(SOURCE, "photographed", "en-photographed-01", photos, corpus)
+    assert not (corpus / "en-photographed-01.pdf").exists()
+    assert not (corpus / "en-photographed-01.json").exists()
+
+
+def test_a_label_file_already_there_is_never_overwritten_or_removed(
+    corpus: Path, tmp_path: Path
+) -> None:
+    stray = corpus / "en-photographed-01.json"
+    stray.write_text("{}", encoding="utf-8")
+    with pytest.raises(FileExistsError, match=r"en-photographed-01\.json"):
+        add_capture(
+            SOURCE, "photographed", "en-photographed-01", [phone_photo(tmp_path, "p1")], corpus
+        )
+    assert stray.read_text(encoding="utf-8") == "{}"
     assert not (corpus / "en-photographed-01.pdf").exists()
 
 

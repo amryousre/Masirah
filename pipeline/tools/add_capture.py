@@ -84,8 +84,10 @@ def add_capture(
     if labels["document"]["capture"] != "native":
         raise ValueError(f"{source} is itself a capture; photograph or scan a native document")
     output = corpus / f"{name}.pdf"
-    if output.exists():
-        raise FileExistsError(f"{output.name} is already in the corpus")
+    # Neither file may exist yet, so undoing a failed add below removes only what this call made.
+    for existing in (output, output.with_suffix(".json")):
+        if existing.exists():
+            raise FileExistsError(f"{existing.name} is already in the corpus")
     if not images:
         raise ValueError("give the images in page order")
 
@@ -103,7 +105,9 @@ def add_capture(
     try:
         write_labels(output, text)
     except BaseException:
+        # A write that failed partway can leave a truncated label file as well as the PDF.
         output.unlink(missing_ok=True)
+        output.with_suffix(".json").unlink(missing_ok=True)
         raise
     return output
 
