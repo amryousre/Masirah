@@ -43,7 +43,10 @@ Phase 1 release gate.
 5. **Seed one organisation and one user.** Sign-ups are closed (`[auth] enable_signup = false`),
    so access is by invitation: create the user through the Auth admin API with the email already
    confirmed, then the `organisation` row and the `app_user` row joining them. The user signs in
-   with Google, which links to the existing user by email, or with a password. A Google account
+   with Google, which links to the existing user by email, or with a password. Use the address
+   exactly as Google reports it: Supabase compares emails literally, dots included, while Gmail
+   ignores dots, so `first.last@gmail.com` does not match an account Google knows as
+   `firstlast@gmail.com`. A Google account
    nobody created is refused before any user exists and sees the no-access page. Self-serve signup
    arrives in Phase 3 with FR-080.
 
@@ -164,7 +167,16 @@ Separate from the scenarios above, and the reason Phase 1 cannot be declared don
 The accuracy suite under `pipeline/tests/accuracy/` runs the committed corpus through extraction and
 compares every field against the labelled ground truth. It is a gate, not a test: Phase 1 does not
 exit until it reports at least 95 percent field accuracy on native PDFs and 85 percent on scanned
-and photographed CVs, per SC-002 and SC-003.
+and photographed CVs, per SC-002 and SC-003, counting real documents only. Name the extractor and
+run it on its own, from `pipeline/`:
+
+```sh
+MASIRAH_EXTRACTOR=package.module:function uv run pytest tests/accuracy
+```
+
+The report prints per group, per field and per document. What counts as a field, and when one is
+correct, is set out in `pipeline/tests/fixtures/cvs/README.md` under "How extraction is scored".
+Until the corpus holds a real scanned or photographed CV, SC-003 reports "not measured" and fails.
 
 The gate covers Arabic and English, which are the only supported languages in version 1.0. Do not
 widen the supported set without first adding labelled CVs for the new language, because a supported
