@@ -76,10 +76,20 @@ interface DecisionProps {
   when?: string;
   /** Adds the second line under an undecided candidate: "No decision yet". */
   detailed?: boolean;
+  /** One line, for a table row: "Rejected · Nourhan". */
+  compact?: boolean;
 }
 
-export function Decision({ kind, by, when, detailed = false }: DecisionProps) {
+export function Decision({ kind, by, when, detailed = false, compact = false }: DecisionProps) {
   const t = useTranslations("status.decision");
+  if (compact) {
+    return (
+      <span className={styles.status} data-kind={kind}>
+        <Icon name={decisionIcon[kind]} size={14} />
+        <span>{by === undefined ? t(kind) : t("compact", { decision: t(kind), name: by })}</span>
+      </span>
+    );
+  }
   const detail =
     by !== undefined && when !== undefined
       ? t("byWhom", { name: by, when })

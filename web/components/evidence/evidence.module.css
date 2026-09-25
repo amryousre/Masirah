@@ -1,0 +1,155 @@
+.justification {
+  max-inline-size: var(--measure);
+  font-size: var(--size-body);
+  line-height: var(--leading-body);
+}
+
+/* A claim is a button inside running prose: it keeps the prose's type and only gains an underline
+   and its number. */
+.claim {
+  display: inline;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-xs);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  text-decoration: underline;
+  text-decoration-color: var(--color-control-border);
+  text-underline-offset: 4px;
+  cursor: pointer;
+  transition: background-color var(--duration-slow) var(--ease);
+}
+
+.claim:hover {
+  text-decoration-color: var(--color-text);
+}
+
+.claim[aria-pressed="true"] {
+  background: var(--color-selected);
+}
+
+.absent {
+  text-decoration-style: dashed;
+}
+
+.number {
+  display: inline-grid;
+  place-items: center;
+  min-inline-size: 1.25rem;
+  block-size: 1.25rem;
+  margin-inline-start: var(--space-1);
+  padding-inline: var(--space-1);
+  border: 1px solid var(--color-control-border);
+  border-radius: var(--radius-xs);
+  color: var(--color-text-secondary);
+  font-size: var(--size-caption);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--weight-semibold);
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.claim[aria-pressed="true"] .number,
+.quote[data-selected] .number {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-text-on-primary);
+}
+
+.quotes {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.quote {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border: var(--border);
+  border-radius: var(--radius-md);
+  transition:
+    background-color var(--duration-slow) var(--ease),
+    border-color var(--duration-slow) var(--ease);
+}
+
+.quote[data-selected] {
+  border-color: var(--color-selected-edge);
+  background: var(--color-selected);
+}
+
+.quote[data-kind="absence"] {
+  border-style: dashed;
+}
+
+.quote[data-kind="missing"] {
+  border-color: var(--color-error);
+}
+
+.quoteHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text-secondary);
+  font-size: var(--size-caption);
+  line-height: var(--leading-caption);
+}
+
+.quoteHead .number {
+  margin-inline-start: 0;
+}
+
+.quote[data-kind="missing"] .number {
+  border-color: var(--color-error);
+  color: var(--color-error);
+}
+
+.source {
+  flex: 1;
+}
+
+.show {
+  padding-block: 0;
+  padding-inline: var(--space-2);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-link);
+  font-family: inherit;
+  font-size: var(--size-caption);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+}
+
+.show:hover {
+  background: var(--color-fill-subtle);
+}
+
+/* Quote marks follow the quote's own language, not the page's: a browser takes them from the
+   surrounding text, so an English quote on an Arabic page would get Arabic marks facing outward. */
+.text {
+  font-size: var(--size-body-sm);
+  line-height: var(--leading-body-sm);
+  quotes: "\201C" "\201D";
+  unicode-bidi: isolate;
+}
+
+.text:lang(ar) {
+  quotes: "\00AB" "\00BB";
+}
+
+.note {
+  color: var(--color-text-secondary);
+  font-size: var(--size-body-sm);
+  line-height: var(--leading-body-sm);
+}
+
+.warning {
+  color: var(--color-error);
+  font-size: var(--size-body-sm);
+  line-height: var(--leading-body-sm);
+}

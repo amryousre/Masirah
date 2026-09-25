@@ -121,10 +121,14 @@ export default defineConfig([
       "css/prefer-logical-properties": "error",
       "css/relative-font-units": "error",
       // Widely available features only, except these progressive enhancements: where a browser
-      // lacks them the text still wraps, the scrollbar still shows and selection still works.
+      // lacks them the text still wraps, the scrollbar still shows, selection still works and a
+      // checkbox keeps its default color.
       "css/use-baseline": [
         "error",
-        { allowProperties: ["text-wrap", "scrollbar-width"], allowSelectors: ["selection"] },
+        {
+          allowProperties: ["text-wrap", "scrollbar-width", "accent-color"],
+          allowSelectors: ["selection"],
+        },
       ],
       "masirah/no-raw-color": "error",
     },

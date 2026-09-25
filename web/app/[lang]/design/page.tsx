@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 
 import { Button, type ButtonVariant } from "@/components/button/button";
 import { SelectField, TextField } from "@/components/field/field";
+import { ScoreBreakdown } from "@/components/score/score";
 import { LanguageSwitch } from "@/components/language-switch/language-switch";
 import {
   Confidence,
@@ -13,9 +14,11 @@ import {
   DocumentStatus,
   type DocumentStatusKind,
 } from "@/components/status/status";
+import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 
 import { DialogDemo, TabsDemo, ToastsDemo } from "./demos";
+import { CandidatesDemo, EvidenceDemo, RejectDemo, UploadDemo, UsageDemo } from "./screening-demos";
 import styles from "./design.module.css";
 
 export async function generateMetadata({ params }: PageProps<"/[lang]/design">): Promise<Metadata> {
@@ -77,6 +80,9 @@ export default async function DesignSystem({ params }: PageProps<"/[lang]/design
           <h1 className={styles.title}>{t("title")}</h1>
           <p className={styles.lede}>{t("intro")}</p>
           <p className={styles.note}>{t("statesNote")}</p>
+          <Link href="/design/frame" className={styles.frameLink}>
+            {t("frameLink")}
+          </Link>
         </div>
 
         <Section title={t("buttons.title")} note={t("buttons.note")}>
@@ -221,6 +227,46 @@ export default async function DesignSystem({ params }: PageProps<"/[lang]/design
               </dd>
             </div>
           </dl>
+        </Section>
+
+        <Section title={t("candidates.title")} note={t("candidates.note")}>
+          <CandidatesDemo />
+        </Section>
+
+        <Section title={t("evidence.title")} note={t("evidence.note")}>
+          <EvidenceDemo />
+        </Section>
+
+        <Section title={t("score.title")} note={t("score.note")}>
+          <div className={styles.grid}>
+            <ScoreBreakdown
+              total={78}
+              parts={[
+                { key: "skills", earned: 26, weight: 30 },
+                { key: "experience", earned: 19, weight: 25 },
+                { key: "education", earned: 12, weight: 15 },
+                { key: "tenure", earned: 8, weight: 10 },
+                { key: "language", earned: 8, weight: 10 },
+                { key: "location", earned: 5, weight: 10 },
+              ]}
+            />
+            <div className={styles.stack}>
+              <ScoreBreakdown state="calculating" />
+              <ScoreBreakdown state="unavailable" reason={t("score.unavailableReason")} />
+            </div>
+          </div>
+        </Section>
+
+        <Section title={t("upload.title")} note={t("upload.note")}>
+          <UploadDemo />
+        </Section>
+
+        <Section title={t("usage.title")} note={t("usage.note")}>
+          <UsageDemo />
+        </Section>
+
+        <Section title={t("reject.title")} note={t("reject.note")}>
+          <RejectDemo />
         </Section>
 
         <Section title={t("dialog.title")} note={t("dialog.note")}>

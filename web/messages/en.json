@@ -29,7 +29,8 @@
       "undecidedDetail": "No decision yet",
       "shortlisted": "Shortlisted",
       "rejected": "Rejected",
-      "byWhom": "{name} · {when}"
+      "byWhom": "{name} · {when}",
+      "compact": "{decision} · {name}"
     }
   },
   "field": {
@@ -47,6 +48,95 @@
     "title": "This page doesn't exist",
     "body": "The link may have changed or the page was removed. Nothing in your account was deleted.",
     "back": "Go to the start"
+  },
+  "frame": {
+    "navigation": "Main navigation",
+    "jobs": "Jobs",
+    "reviewQueue": "Review queue",
+    "settings": "Settings"
+  },
+  "usage": {
+    "label": "CVs this month",
+    "count": "{used} of {limit}",
+    "renews": "Renews on {date}.",
+    "remaining": "{left, plural, =0 {No CVs left this month.} one {{left} CV left this month.} other {{left} CVs left this month.}} Processing continues.",
+    "paused": "Processing is paused. {waiting, plural, =0 {No files are waiting} one {{waiting} file is waiting and will be processed} other {{waiting} files are waiting and will be processed}} when you upgrade or on {date}. Nothing was deleted or hidden.",
+    "loading": "Loading usage…",
+    "upgrade": "Upgrade plan",
+    "viewUsage": "View usage"
+  },
+  "score": {
+    "title": "Score breakdown",
+    "total": "Overall score",
+    "outOf": "{earned} / {max}",
+    "component": "{name} · weight {weight}",
+    "skills": "Skills match",
+    "experience": "Experience relevance",
+    "education": "Education",
+    "tenure": "Tenure stability",
+    "language": "Language",
+    "location": "Location",
+    "excluded": "Not used in scoring: name, gender, age, photo, nationality and marital status.",
+    "calculating": "Calculating the score…",
+    "unavailable": "No score for this candidate"
+  },
+  "evidence": {
+    "source": "p. {page} · {section}",
+    "showInDocument": "Show in document",
+    "absence": "Absence · no line to quote",
+    "searchedFor": "We searched the CV for: {terms}. None of them appear.",
+    "loading": "Loading the quote…",
+    "notFound": "This quote wasn't found in the document. Treat the claim as unconfirmed.",
+    "listSeparator": ", "
+  },
+  "candidates": {
+    "caption": "Candidates ranked by score",
+    "rank": "#",
+    "name": "Candidate",
+    "reason": "Why ranked here",
+    "score": "Score",
+    "confidence": "Confidence",
+    "status": "Status",
+    "notRanked": "Not ranked yet",
+    "lowConfidence": "Low confidence · review",
+    "readFailed": "Couldn't read: {reason}"
+  },
+  "upload": {
+    "drop": "Drag up to {max} files here, or choose files",
+    "formats": "PDF, DOCX, DOC, JPG or PNG. You can leave the page while they process.",
+    "dropNow": "{count, plural, one {Drop {count} file to upload it} other {Drop {count} files to upload them}}",
+    "destination": "They'll be added to “{job}”.",
+    "limitReached": "Processing is paused: you've reached this month's limit of {limit} CVs",
+    "limitDetail": "Everything you uploaded is still here. The limit renews on {date}.",
+    "sizeKb": "{size} KB",
+    "sizeMb": "{size} MB",
+    "queued": "Queued",
+    "uploading": "Uploading · {percent}%",
+    "processing": "Processing",
+    "parsed": "Parsed · {name}",
+    "needsReview": "Needs review: {reason}",
+    "failed": "Couldn't read: {reason}",
+    "unsupported": "Unsupported language ({language}). The file is kept and not scored.",
+    "summary": "{total, plural, one {{total} file} other {{total} files}} · {parsed} parsed · {review} need review · {failed} failed · {unsupported} unsupported language · {working} in progress",
+    "remove": "Remove",
+    "cancel": "Cancel",
+    "hide": "Hide",
+    "openProfile": "Open profile",
+    "review": "Review",
+    "replace": "Replace file",
+    "ignore": "Ignore",
+    "tooMany": "{extra, plural, one {{extra} file wasn't added} other {{extra} files weren't added}}: you can upload up to {max} at a time."
+  },
+  "reject": {
+    "title": "Reject {name}?",
+    "body": "You'll be recorded as the person who decided. The candidate stays in the list as “Rejected”, with their score and reasons, and you can undo this later.",
+    "reason": "Reason (required)",
+    "chooseReason": "Choose a reason…",
+    "notify": "Send the candidate a rejection notice after {days, plural, one {{days} day} other {{days} days}}",
+    "recorded": "Will be recorded: {actor} · {when}",
+    "keep": "Keep candidate",
+    "confirm": "Reject candidate",
+    "recording": "Recording…"
   },
   "gallery": {
     "title": "Design system",
@@ -145,6 +235,76 @@
     "switcher": {
       "title": "Language switch",
       "note": "Names the other language in its own script, and keeps the same page when switching."
+    },
+    "frameLink": "Preview the app frame",
+    "score": {
+      "title": "Score",
+      "note": "A numeral and a neutral bar, never a color grade. The breakdown comes after the reasons, not before.",
+      "unavailableReason": "The CV couldn't be read, so it wasn't scored. Open the original or upload a clearer copy."
+    },
+    "evidence": {
+      "title": "Evidence",
+      "note": "Each claim is numbered and leads to the CV line it relied on, or is marked as an absence. Quotes keep their own language and direction.",
+      "heading": "Why ranked third",
+      "claim1": "Worked four years on React apps at Vodafone Egypt",
+      "between1": ", the most important required skill. ",
+      "claim2": "Led a team of three developers",
+      "between2": ", which raises experience relevance. ",
+      "claim3": "The CV mentions no automated testing",
+      "end": ".",
+      "section": "Experience",
+      "quote1": "Front-end Engineer, Vodafone Egypt (2020 to 2024). Built and maintained React dashboards for the Ana Vodafone app.",
+      "quote2": "Led a squad of 3 front-end developers; ran code reviews and sprint planning.",
+      "term1": "tests"
+    },
+    "candidates": {
+      "title": "Candidate list",
+      "note": "36 px rows with the reason in the widest column. Documents that aren't ranked stay visible below the ranking.",
+      "name1": "Yasmin Farouk",
+      "reason1": "Six years of React at Instabug; led the design-system migration",
+      "name2": "Omar Hassan",
+      "reason2": "Strong TypeScript; short tenures, three roles in four years",
+      "name3": "Mohamed Abdallah",
+      "reason3": "Four years at Vodafone Egypt building React apps",
+      "name4": "Mahmoud Ali",
+      "reason4": "Scanned CV; employment dates partly unreadable",
+      "name5": "Hana Adel",
+      "reason5": "The CV shows no front-end experience",
+      "tarek": "Tarek",
+      "nourhan": "Nourhan",
+      "blurred": "the image is blurred. Upload a clearer one."
+    },
+    "upload": {
+      "title": "Upload",
+      "note": "One row per file, the reason in plain words, and one action that fixes it. An unsupported language is kept and listed, never dropped.",
+      "job": "Senior Front-end Developer",
+      "renews": "1 Oct",
+      "yasmin": "Yasmin Farouk",
+      "tilted": "the photo is skewed and the dates are uncertain",
+      "locked": "the file is password-protected",
+      "german": "German"
+    },
+    "usage": {
+      "title": "Usage meter",
+      "note": "A tick at 80%, where the words change. At 100% it explains the pause and how many files wait. The bar goes from grey to ink, never red.",
+      "renews": "1 Oct"
+    },
+    "reject": {
+      "title": "Reject confirmation",
+      "note": "Focus opens on “Keep candidate”, and the reject button stays disabled until a reason is chosen. This is the only filled red.",
+      "open": "Reject candidate…",
+      "candidate": "Mohamed Abdallah",
+      "actor": "Nourhan Saeed",
+      "when": "today 14:32",
+      "skills": "Required skills are missing",
+      "experience": "Less experience than required",
+      "location": "Location doesn't fit"
+    },
+    "frame": {
+      "organisation": "Delta Soft",
+      "user": "Nourhan Saeed",
+      "email": "nourhan@deltasoft.example",
+      "heading": "Senior Front-end Developer"
     }
   }
 }

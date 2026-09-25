@@ -1,0 +1,79 @@
+.meter {
+  display: grid;
+  gap: var(--space-2);
+  font-size: var(--size-caption);
+  line-height: var(--leading-caption);
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.label {
+  color: var(--color-text);
+  font-size: var(--size-label);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-label);
+}
+
+.count {
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.track {
+  position: relative;
+  overflow: visible;
+  block-size: 4px;
+  border-radius: 2px;
+  background: var(--score-track);
+}
+
+.fill {
+  display: block;
+  inline-size: var(--fill);
+  block-size: 100%;
+  border-radius: inherit;
+  background: var(--score-bar);
+}
+
+/* The 80 percent mark, where the words start to warn. */
+.tick {
+  position: absolute;
+  inset-block: -3px;
+  inset-inline-start: 80%;
+  inline-size: 1px;
+  background: var(--color-text-secondary);
+}
+
+.meter[data-state="limit"] .fill {
+  background: var(--color-ink);
+}
+
+.note {
+  display: flex;
+  align-items: start;
+  gap: var(--space-1);
+  color: var(--color-text-secondary);
+}
+
+.note svg {
+  margin-block-start: 2px;
+}
+
+.meter[data-state="warning"] .note svg {
+  color: var(--color-warning);
+}
+
+.meter[data-state="limit"] .note {
+  color: var(--color-text);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
