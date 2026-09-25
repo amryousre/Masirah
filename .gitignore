@@ -37,3 +37,6 @@ Thumbs.db
 coverage/
 test-results/
 playwright-report/
+
+# Browser automation scratch output (Playwright MCP snapshots, screenshots, logs)
+.playwright-mcp/

@@ -1,0 +1,5 @@
+# Only what differs from CodeRabbit's defaults.
+reviews:
+  path_filters:
+    # Bundled design exports (about 1 MB each). DESIGN.md is the reviewable record of them.
+    - "!Docs/design/Figma export/**"
