@@ -1,0 +1,35 @@
+{
+  "document": { "capture": "scanned", "language": "en", "layout": "single_column", "pages": 2, "origin": "real", "copy_of": "en-native-01", "simulated": true },
+  "expected": "parsed",
+  "profile": {
+    "name": "Karim Mostafa Hassan Farag",
+    "emails": ["karim.farag@example.com"],
+    "phones": ["+201000000101"],
+    "location": "Alexandria",
+    "years_of_experience": null,
+    "employment": [
+      { "employer": "Andalusia Medical Service Group", "title": "Full Stack .Net Developer", "start": "2021-01", "end": "present" },
+      { "employer": "bait design", "title": ".Net Developer", "start": "2020-07", "end": "2021-01" },
+      { "employer": "CliniSoft", "title": ".Net Developer", "start": "2020-04", "end": "2020-06" },
+      { "employer": "TMC", "title": "Scratch Instructor", "start": "2019-09", "end": "2020-02" },
+      { "employer": "G7 Software House", "title": ".Net Web Developer", "start": "2019-07", "end": "2020-04" },
+      { "employer": "3ayez App", "title": ".NET Developer", "start": "2018-10", "end": "2019-07" }
+    ],
+    "education": [
+      { "institution": "Arab Academy for Science, Technology & Maritime Transport", "qualification": "Diploma in Computer Science", "start": "2021-03", "end": "present" },
+      { "institution": "University of Alexandria", "qualification": "Faculty of Commerce", "start": "2011", "end": "2015" }
+    ],
+    "skills": [
+      "C#", "C/C++", "Python", "Visual Basic", "JavaScript", "ASP.NET MVC", "ASP.NET MVC Core",
+      "Linq", "HTML", "CSS", "JQuery", "ReactJs", "Angular", "VueJs", "SQL Server", "Win Forms",
+      "GIT", "VIM", "Python Flask", "Algorithms and Data Structures", "Linux"
+    ],
+    "languages": [{ "language": "English", "level": null }],
+    "certifications": [
+      { "name": "CS50 Introduction To Computer Science", "issuer": "Harvard University" },
+      { "name": "Developing Course", "issuer": "New Horizon" },
+      { "name": "Administration Course", "issuer": "New Horizon" }
+    ]
+  },
+  "protected": {}
+}

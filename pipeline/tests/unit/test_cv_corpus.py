@@ -13,46 +13,78 @@ from typing import Any
 
 import pymupdf
 import pytest
+from PIL import Image
 
 from tools.anonymise_cv import normalise
 
 CORPUS = Path(__file__).resolve().parents[1] / "fixtures" / "cvs"
-PDFS = sorted(CORPUS.glob("*.pdf"))
 DATE = re.compile(r"\d{4}(-(0[1-9]|1[0-2]))?")
 EMAIL = re.compile(r"[\w.+-]+@([\w-]+\.)+[a-z]{2,}", re.IGNORECASE)
 EGYPTIAN_MOBILE = re.compile(r"(?:(?:\+|00)\s*20|(?<!\d)0)[\s()-]*1[0125](?:[\s-]*\d){8}")
 INVENTED_MOBILE = "1000000"  # 01000000xxx: the national number starts 1000000
 INVENTED_DOMAINS = ("example.com", "example.net", "example.org")
+# Arabic-Indic and Eastern Arabic-Indic digits, read as the digits they stand for.
+ARABIC_INDIC = {base + n: str(n) for base in (0x0660, 0x06F0) for n in range(10)}
+NUMBER = re.compile(r"\d[\d\s()+-]*\d")
 
 
-def labels(pdf: Path) -> dict[str, Any]:
-    loaded: dict[str, Any] = json.loads(pdf.with_suffix(".json").read_text(encoding="utf-8"))
+def labels(document: Path) -> dict[str, Any]:
+    loaded: dict[str, Any] = json.loads(document.with_suffix(".json").read_text(encoding="utf-8"))
     return loaded
 
 
-def text(pdf: Path) -> str:
-    return "".join(page.get_text() for page in pymupdf.open(pdf))
+def stem(path: Path) -> str:
+    return path.stem
+
+
+DOCUMENTS = sorted([*CORPUS.glob("*.pdf"), *CORPUS.glob("*.jpg")])
+PDFS = [document for document in DOCUMENTS if document.suffix == ".pdf"]
+IMAGES = [document for document in DOCUMENTS if document.suffix == ".jpg"]
+NATIVE = [d for d in DOCUMENTS if labels(d)["document"]["capture"] == "native"]
+COPIES = [d for d in DOCUMENTS if labels(d)["document"]["copy_of"]]
+SIMULATED = [d for d in DOCUMENTS if labels(d)["document"]["simulated"]]
+
+
+def text(document: Path) -> str:
+    """The text layer, with Arabic-Indic digits read as ASCII. A photograph has none."""
+    content = "".join(page.get_text() for page in pymupdf.open(document))
+    return content.translate(ARABIC_INDIC)
+
+
+def numbers_reversed(content: str) -> str:
+    """A PDF can store right-to-left lines in visual order, which reverses every number in them."""
+    return NUMBER.sub(lambda match: match.group(0)[::-1], content)
 
 
 def test_the_corpus_is_not_empty() -> None:
-    assert PDFS
+    assert NATIVE
+    assert COPIES
 
 
 def test_every_document_has_labels_and_every_label_a_document() -> None:
-    documents = {path.stem for path in PDFS}
-    labelled = {path.stem for path in CORPUS.glob("*.json")}
-    assert documents == labelled
+    documents = [path.stem for path in DOCUMENTS]
+    assert len(documents) == len(set(documents)), "two documents share a name"
+    assert set(documents) == {path.stem for path in CORPUS.glob("*.json")}
 
 
-@pytest.mark.parametrize("pdf", PDFS, ids=lambda path: path.stem)
-def test_labels_follow_the_documented_format(pdf: Path) -> None:
-    truth = labels(pdf)
+@pytest.mark.parametrize("document", DOCUMENTS, ids=stem)
+def test_labels_follow_the_documented_format(document: Path) -> None:
+    truth = labels(document)
     assert set(truth) == {"document", "expected", "profile", "protected"}
-    document = truth["document"]
-    assert document["capture"] in {"native", "scanned", "photographed"}
-    assert document["language"] in {"en", "ar", "mixed", "fr"}
-    assert document["layout"] in {"single_column", "two_column"}
-    assert document["pages"] == pymupdf.open(pdf).page_count
+    about = truth["document"]
+    assert set(about) == {
+        "capture", "language", "layout", "pages", "origin", "copy_of", "simulated",
+    }  # fmt: skip
+    assert about["capture"] in {"native", "scanned", "photographed"}
+    assert about["language"] in {"en", "ar", "mixed", "fr"}
+    assert about["layout"] in {"single_column", "two_column"}
+    assert about["pages"] == pymupdf.open(document).page_count
+    assert about["origin"] in {"real", "synthetic"}
+    assert isinstance(about["simulated"], bool)
+    if about["copy_of"] is None:
+        assert not about["simulated"], "only a copy of a corpus document can be simulated"
+    else:
+        assert about["capture"] != "native", "a copy is a scan or a photograph"
     assert truth["expected"] in {"parsed", "unsupported_language"}
     profile = truth["profile"]
     assert set(profile) == {
@@ -66,6 +98,25 @@ def test_labels_follow_the_documented_format(pdf: Path) -> None:
     assert set(truth["protected"]) <= {
         "date_of_birth", "gender", "nationality", "marital_status", "photograph",
     }  # fmt: skip
+
+
+@pytest.mark.parametrize("copy", COPIES, ids=stem)
+def test_a_copy_carries_its_sources_labels(copy: Path) -> None:
+    """A scan or photo of a corpus document shows the same person, so only the capture differs."""
+    truth = labels(copy)
+    source = CORPUS / f"{truth['document']['copy_of']}.pdf"
+    original = labels(source)
+    assert original["document"]["capture"] == "native"
+    for key in ("expected", "profile", "protected"):
+        assert truth[key] == original[key], key
+    for key in ("language", "layout", "origin"):
+        assert truth["document"][key] == original["document"][key], key
+
+
+@pytest.mark.parametrize("copy", SIMULATED, ids=stem)
+def test_a_simulated_copy_has_no_text_layer(copy: Path) -> None:
+    """Otherwise extraction could read the text and never meet the pixels it is meant to test."""
+    assert text(copy).strip() == ""
 
 
 def without_arabic(value: str) -> str:
@@ -91,7 +142,7 @@ def label_values(truth: dict[str, Any]) -> list[tuple[str, str]]:
     return [(field, value) for field, value in values if value]
 
 
-@pytest.mark.parametrize("pdf", PDFS, ids=lambda path: path.stem)
+@pytest.mark.parametrize("pdf", NATIVE, ids=stem)
 def test_every_label_is_written_as_the_document_writes_it(pdf: Path) -> None:
     """Arabic script is left to review: a PDF text layer often stores it in visual order or as
     presentation forms, which is exactly what extraction has to repair, so only the Latin part of
@@ -106,12 +157,13 @@ def test_every_label_is_written_as_the_document_writes_it(pdf: Path) -> None:
     assert missing == []
 
 
-@pytest.mark.parametrize("pdf", PDFS, ids=lambda path: path.stem)
+@pytest.mark.parametrize("pdf", NATIVE, ids=stem)
 def test_every_labelled_phone_and_year_is_in_the_document(pdf: Path) -> None:
     profile, content = labels(pdf)["profile"], text(pdf)
-    digits = re.sub(r"\D", "", content)
-    assert [phone for phone in profile["phones"] if phone[-10:] not in digits] == []
-    years = set(re.findall(r"\d{4}", content))
+    readings = (content, numbers_reversed(content))
+    digits = [re.sub(r"\D", "", reading) for reading in readings]
+    assert [p for p in profile["phones"] if not any(p[-10:] in d for d in digits)] == []
+    years = {year for reading in readings for year in re.findall(r"\d{4}", reading)}
     dates = [
         date
         for entry in profile["employment"] + profile["education"]
@@ -121,14 +173,23 @@ def test_every_labelled_phone_and_year_is_in_the_document(pdf: Path) -> None:
     assert [date for date in dates if date[:4] not in years] == []
 
 
-@pytest.mark.parametrize("pdf", PDFS, ids=lambda path: path.stem)
-def test_no_document_carries_metadata_links_or_attachments(pdf: Path) -> None:
+@pytest.mark.parametrize("pdf", PDFS, ids=stem)
+def test_no_pdf_carries_metadata_links_or_attachments(pdf: Path) -> None:
     doc = pymupdf.open(pdf)
     metadata = doc.metadata or {}
     assert [key for key in ("author", "title", "subject", "keywords") if metadata.get(key)] == []
     assert not doc.get_xml_metadata()
     assert [link for page in doc for link in page.get_links()] == []
     assert doc.embfile_count() == 0
+
+
+@pytest.mark.parametrize("image", IMAGES, ids=stem)
+def test_no_photograph_carries_camera_metadata(image: Path) -> None:
+    """A phone photo's EXIF can hold the place it was taken, the device and the owner's name."""
+    with Image.open(image) as picture:
+        assert picture.format == "JPEG"
+        assert not picture.getexif()
+        assert not {"exif", "xmp", "comment"} & set(picture.info)
 
 
 def invented_domain(domain: str, *, squeezed: bool) -> bool:
@@ -156,22 +217,33 @@ def real_contacts(content: str) -> tuple[set[str], list[str]]:
     """Email domains and mobile numbers that are not invented ones.
 
     The text is also read with all whitespace removed, because a letter-spaced heading or a value
-    wrapped across lines hides from a pattern that expects it in one piece.
+    wrapped across lines hides from a pattern that expects it in one piece, and with every number
+    reversed, because a number stored in visual order reads backwards.
     """
+    content = content.translate(ARABIC_INDIC)
     domains: set[str] = set()
     mobiles: list[str] = []
-    for variant, squeezed in ((content, False), ("".join(content.split()), True)):
-        for match in EMAIL.finditer(variant):
+    readings = (
+        (content, False),
+        ("".join(content.split()), True),
+        (numbers_reversed(content), False),
+    )
+    for reading, squeezed in readings:
+        for match in EMAIL.finditer(reading):
             domain = match.group(0).rsplit("@", 1)[1].lower()
             if not invented_domain(domain, squeezed=squeezed):
                 domains.add(domain)
-        mobiles += [m.group(0) for m in EGYPTIAN_MOBILE.finditer(variant)]
+        mobiles += [m.group(0) for m in EGYPTIAN_MOBILE.finditer(reading)]
     return domains, [number for number in mobiles if not invented_mobile(number)]
 
 
-@pytest.mark.parametrize("pdf", PDFS, ids=lambda path: path.stem)
-def test_every_email_and_mobile_number_is_invented(pdf: Path) -> None:
-    assert real_contacts(text(pdf)) == (set(), [])
+@pytest.mark.parametrize("document", DOCUMENTS, ids=stem)
+def test_every_email_and_mobile_number_is_invented(document: Path) -> None:
+    assert real_contacts(text(document)) == (set(), [])
+
+
+def arabic_indic(ascii_text: str) -> str:
+    return "".join(chr(0x0660 + int(c)) if c.isdigit() else c for c in ascii_text)
 
 
 @pytest.mark.parametrize(
@@ -184,6 +256,8 @@ def test_every_email_and_mobile_number_is_invented(pdf: Path) -> None:
         "Email: person@gmail.com",
         "E m a i l :  p e r s o n @ g m a i l . c o m",
         "Mail: person@\ngmail.com",
+        arabic_indic("01012345678"),
+        arabic_indic("0101 234 5678")[::-1],
     ],
     ids=[
         "0020-prefix",
@@ -193,6 +267,8 @@ def test_every_email_and_mobile_number_is_invented(pdf: Path) -> None:
         "real-domain",
         "letter-spaced",
         "wrapped",
+        "arabic-indic-digits",
+        "arabic-indic-stored-reversed",
     ],
 )
 def test_the_contact_guard_catches_real_details(content: str) -> None:
@@ -208,6 +284,8 @@ def test_the_contact_guard_catches_real_details(content: str) -> None:
         "(+20) 1000000110",
         "0100 000 0103",
         "mahmoud.saeed@\nexample.com\n12 Example Street",
+        arabic_indic("0100 000 0202"),
+        arabic_indic("0100 000 0202")[::-1],
     ],
 )
 def test_the_contact_guard_accepts_invented_details(content: str) -> None:

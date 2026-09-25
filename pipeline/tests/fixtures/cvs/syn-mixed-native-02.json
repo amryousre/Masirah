@@ -1,0 +1,28 @@
+{
+  "document": { "capture": "native", "language": "mixed", "layout": "two_column", "pages": 1, "origin": "synthetic", "copy_of": null, "simulated": false },
+  "expected": "parsed",
+  "profile": {
+    "name": "Nour El-Din Mahmoud",
+    "emails": ["nour.mahmoud@example.com"],
+    "phones": ["+201000000206"],
+    "location": "Cairo",
+    "years_of_experience": 5,
+    "employment": [
+      { "employer": "Masr Digital Payments", "title": "Data Analyst", "start": "2021-04", "end": "present" },
+      { "employer": "Horus Market Research", "title": "Junior Data Analyst", "start": "2019-07", "end": "2021-03" }
+    ],
+    "education": [
+      { "institution": "Cairo University", "qualification": "B.Sc. in Statistics", "start": "2015", "end": "2019" }
+    ],
+    "skills": ["SQL", "Python", "pandas", "Power BI", "Tableau", "Excel"],
+    "languages": [
+      { "language": "Arabic", "level": "Native" },
+      { "language": "English", "level": "Fluent" }
+    ],
+    "certifications": [
+      { "name": "Google Data Analytics Professional Certificate", "issuer": "Coursera" },
+      { "name": "تحليل البيانات باستخدام Power BI", "issuer": "ITI" }
+    ]
+  },
+  "protected": {}
+}

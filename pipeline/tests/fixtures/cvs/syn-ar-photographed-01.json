@@ -1,0 +1,31 @@
+{
+  "document": { "capture": "photographed", "language": "ar", "layout": "single_column", "pages": 1, "origin": "synthetic", "copy_of": "syn-ar-native-01", "simulated": true },
+  "expected": "parsed",
+  "profile": {
+    "name": "أحمد سمير عبد الحميد",
+    "emails": ["ahmed.samir@example.com"],
+    "phones": ["+201000000201"],
+    "location": "القاهرة",
+    "years_of_experience": 7,
+    "employment": [
+      { "employer": "شركة الدلتا للصناعات الغذائية", "title": "محاسب أول", "start": "2021-03", "end": "present" },
+      { "employer": "مكتب النور للمحاسبة والمراجعة", "title": "محاسب", "start": "2017-09", "end": "2021-02" }
+    ],
+    "education": [
+      { "institution": "جامعة عين شمس", "qualification": "بكالوريوس التجارة، شعبة المحاسبة", "start": "2013", "end": "2017" }
+    ],
+    "skills": [
+      "إعداد القوائم المالية", "التسويات البنكية", "ضريبة القيمة المضافة", "Oracle Financials",
+      "Microsoft Excel", "Pivot Tables", "Power Query"
+    ],
+    "languages": [
+      { "language": "العربية", "level": "اللغة الأم" },
+      { "language": "الإنجليزية", "level": "جيد جدًا" }
+    ],
+    "certifications": [
+      { "name": "شهادة المحاسب الإداري المعتمد CMA (الجزء الأول)", "issuer": "IMA" },
+      { "name": "دورة معايير المحاسبة المصرية", "issuer": "جمعية المحاسبين والمراجعين المصرية" }
+    ]
+  },
+  "protected": {}
+}

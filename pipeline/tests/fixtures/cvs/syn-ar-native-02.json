@@ -1,0 +1,27 @@
+{
+  "document": { "capture": "native", "language": "ar", "layout": "two_column", "pages": 1, "origin": "synthetic", "copy_of": null, "simulated": false },
+  "expected": "parsed",
+  "profile": {
+    "name": "منى خالد إبراهيم",
+    "emails": ["mona.khaled@example.com"],
+    "phones": ["+201000000202"],
+    "location": "الجيزة",
+    "years_of_experience": 3,
+    "employment": [
+      { "employer": "شركة سحابة للحلول الرقمية", "title": "مطورة واجهات أمامية (Front-End Developer)", "start": "2022-01", "end": "present" },
+      { "employer": "شركة مسار للبرمجيات", "title": "مطورة ويب متدربة", "start": "2021-07", "end": "2021-12" }
+    ],
+    "education": [
+      { "institution": "جامعة القاهرة", "qualification": "بكالوريوس الحاسبات والمعلومات", "start": "2017", "end": "2021" }
+    ],
+    "skills": ["React", "TypeScript", "JavaScript", "Next.js", "HTML", "CSS", "Jest", "Git", "REST APIs", "Figma"],
+    "languages": [
+      { "language": "العربية", "level": "اللغة الأم" },
+      { "language": "الإنجليزية", "level": "ممتاز" }
+    ],
+    "certifications": [
+      { "name": "Meta Front-End Developer Professional Certificate", "issuer": "Coursera" }
+    ]
+  },
+  "protected": {}
+}

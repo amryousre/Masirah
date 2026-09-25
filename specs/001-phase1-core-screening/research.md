@@ -109,6 +109,13 @@ unsupported rather than parsed (ADR 0005). The corpus is unchanged. The conseque
 forward is that language detection became a requirement, since flagging depends on it, which is
 work the broader option would not have needed.
 
+**Amended 25 September 2026**: synthetic CVs admitted alongside the real ones, at the project
+owner's request, to cover Arabic, mixed, French and captured documents before real examples
+arrive. The rationale above still holds, so they are marked in their labels (`origin`,
+`simulated`). The gate is measured on real documents alone, and Phase 1 does not exit on
+synthetic results. Building them surfaced one fact the real corpus had not: a browser-printed
+Arabic PDF stores its text in visual order, reversing Arabic-Indic numbers.
+
 ## Verified against current documentation during planning
 
 ### Queue mechanism

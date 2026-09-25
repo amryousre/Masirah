@@ -1,5 +1,5 @@
 {
-  "document": { "capture": "native", "language": "en", "layout": "single_column", "pages": 3 },
+  "document": { "capture": "native", "language": "en", "layout": "single_column", "pages": 3, "origin": "real", "copy_of": null, "simulated": false },
   "expected": "parsed",
   "profile": {
     "name": "Sherif Magdy",
