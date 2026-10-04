@@ -117,7 +117,7 @@ Every table below carries `organisation_id` and has row level security enabled w
 - [X] T039 [P] [US1] Unit tests for language detection in `pipeline/tests/unit/test_language_detection.py`, asserting a wholly French CV is flagged unsupported and an English CV carrying a few French lines is not (SC-015)
 - [X] T040 [P] [US1] Integration test for the core loop in `pipeline/tests/integration/test_core_loop.py`: job, upload, extract, score, rank. Real queue, adapters, text extraction and row level security, with corpus CVs; the models answer with the labelled profiles, so it runs without a provider account
 - [ ] T041 [P] [US1] End-to-end test in `web/tests/e2e/core-loop.spec.ts` covering create job, upload batch, ranked list appears
-- [ ] T042 [P] [US1] End-to-end right-to-left layout test in `web/tests/e2e/rtl-layout.spec.ts` asserting the full layout mirrors including forms, tables and the score breakdown, and that no hard-coded string survives the switch
+- [X] T042 [P] [US1] End-to-end right-to-left layout test in `web/tests/e2e/rtl-layout.spec.ts` asserting the full layout mirrors including forms, tables and the score breakdown, and that no hard-coded string survives the switch
 
 ### Implementation: pipeline domain
 
