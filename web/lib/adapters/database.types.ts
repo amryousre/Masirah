@@ -498,6 +498,13 @@ export type Database = {
             referencedColumns: ["organisation_id", "id"]
           },
           {
+            foreignKeyName: "score_organisation_id_application_id_fkey"
+            columns: ["organisation_id", "application_id"]
+            isOneToOne: false
+            referencedRelation: "job_candidates"
+            referencedColumns: ["organisation_id", "application_id"]
+          },
+          {
             foreignKeyName: "score_organisation_id_fkey"
             columns: ["organisation_id"]
             isOneToOne: false
@@ -508,6 +515,51 @@ export type Database = {
       }
     }
     Views: {
+      job_candidates: {
+        Row: {
+          application_id: string | null
+          candidate_id: string | null
+          confidence: number | null
+          decided_by_email: string | null
+          decision: Database["public"]["Enums"]["application_decision"] | null
+          full_name: string | null
+          job_id: string | null
+          justification: string | null
+          organisation_id: string | null
+          scored_at: string | null
+          total: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "application_organisation_id_candidate_id_fkey"
+            columns: ["organisation_id", "candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidate"
+            referencedColumns: ["organisation_id", "id"]
+          },
+          {
+            foreignKeyName: "application_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisation"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "application_organisation_id_job_id_fkey"
+            columns: ["organisation_id", "job_id"]
+            isOneToOne: false
+            referencedRelation: "job"
+            referencedColumns: ["organisation_id", "id"]
+          },
+          {
+            foreignKeyName: "application_organisation_id_job_id_fkey"
+            columns: ["organisation_id", "job_id"]
+            isOneToOne: false
+            referencedRelation: "job_overview"
+            referencedColumns: ["organisation_id", "id"]
+          },
+        ]
+      }
       job_overview: {
         Row: {
           attention_count: number | null

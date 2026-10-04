@@ -46,6 +46,17 @@
   display: block;
   color: var(--color-text);
   font-weight: var(--weight-medium);
+  text-decoration: none;
+}
+
+.title:hover {
+  text-decoration: underline;
+}
+
+.title:focus-visible {
+  border-radius: var(--radius-xs);
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
 .meta {

@@ -29,6 +29,8 @@ export type CandidateRow =
       needsReview?: boolean;
     }
   | { kind: "processing"; id: string; fileName: string }
+  /** Read, but too doubtful to rank until someone checks it (FR-011). */
+  | { kind: "review"; id: string; fileName: string }
   | { kind: "failed"; id: string; fileName: string; reason: string };
 
 type RankedRow = Extract<CandidateRow, { kind: "ranked" }>;
@@ -140,6 +142,8 @@ export function CandidateTable({ rows, selectedId, onSelect }: CandidateTablePro
               <td colSpan={4}>
                 {row.kind === "processing" ? (
                   <DocumentStatus status="processing" />
+                ) : row.kind === "review" ? (
+                  <DocumentStatus status="needsReview" />
                 ) : (
                   <span className={styles.failed}>
                     <Icon name="xCircle" size={14} />

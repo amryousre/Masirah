@@ -414,5 +414,20 @@
       "tooMany": "Keep this to {max} skills or fewer.",
       "invalid": "Choose one of the options."
     }
+  },
+  "job": {
+    "back": "Jobs",
+    "breadcrumb": "Breadcrumb",
+    "experience": "{years, plural, one {{years}+ year} other {{years}+ years}}",
+    "addCvs": "Add CVs",
+    "unnamed": "Unnamed candidate",
+    "failedUnknown": "the file could not be read",
+    "noCandidates": "No CVs yet. Drop files above: each appears here as it is read, then takes its place in the ranking.",
+    "uploadFailed": "Couldn't upload. Check your connection and try again.",
+    "rejected": {
+      "type": "Not a PDF, Word document or image, whatever its name says.",
+      "size": "Larger than 10 MB.",
+      "empty": "The file is empty."
+    }
   }
 }

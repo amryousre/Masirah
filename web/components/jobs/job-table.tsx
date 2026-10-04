@@ -1,6 +1,7 @@
 import type { Locale } from "next-intl";
 import { getFormatter, getTranslations } from "next-intl/server";
 
+import { Link } from "@/i18n/navigation";
 import { attention, type JobSummary, rankedShare } from "@/lib/domain/jobs";
 
 import styles from "./job-table.module.css";
@@ -93,9 +94,9 @@ export async function JobTable({ jobs, locale, now }: JobTableProps) {
           return (
             <tr key={job.id} className={styles.row}>
               <td>
-                {/* The job's own page, with its ranked candidates, is T063; the title links there
-                    once it exists. */}
-                <span className={styles.title}>{job.title}</span>
+                <Link href={`/jobs/${job.id}`} className={styles.title}>
+                  {job.title}
+                </Link>
                 {meta(job).length > 0 ? (
                   <span className={styles.meta}>
                     {meta(job).map((part, index) => (
