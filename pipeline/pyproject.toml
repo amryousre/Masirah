@@ -33,9 +33,9 @@ select = [
   "ERA",          # commented-out code, which Constitution III requires be deleted
   "RUF",
 ]
-# Arabic is a working language here (ADR 0005), so its alef and heh are letters, and its digits
-# zero and one are digits, not look-alikes of Latin l, o and a full stop slipped into the code.
-allowed-confusables = ["ا", "ه", "٠", "١"]
+# Arabic is a working language here (ADR 0005), so its alef and heh are letters and its digits
+# are digits, not look-alikes of Latin l, o, V and a full stop slipped into the code.
+allowed-confusables = ["ا", "ه", "٠", "١", "٥", "٧"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S101"]
