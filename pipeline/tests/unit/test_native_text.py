@@ -203,6 +203,37 @@ class TestDocx:
         text_box(document.add_paragraph(), "Cairo")
         assert read_native_text(docx_bytes(document)).count("Cairo") == 1
 
+    def test_each_section_is_read_with_its_own_header_and_footer(self) -> None:
+        """A later section can carry its own header, and it is read where that section starts."""
+        document = Document()
+        first = document.sections[0]
+        first.header.paragraphs[0].text = "Mona Khaled"
+        first.footer.paragraphs[0].text = "Page one footer"
+        document.add_paragraph("Experience")
+        second = document.add_section()
+        second.header.is_linked_to_previous = False
+        second.header.paragraphs[0].text = "Mona Khaled, references"
+        second.footer.is_linked_to_previous = False
+        second.footer.paragraphs[0].text = "Page two footer"
+        document.add_paragraph("References on request")
+        rows = [row for row in read_native_text(docx_bytes(document)).splitlines() if row]
+        assert rows == [
+            "Mona Khaled",
+            "Experience",
+            "Page one footer",
+            "Mona Khaled, references",
+            "References on request",
+            "Page two footer",
+        ]
+
+    def test_a_header_shared_with_the_section_before_is_read_once(self) -> None:
+        document = Document()
+        document.sections[0].header.paragraphs[0].text = "Mona Khaled"
+        document.add_paragraph("Experience")
+        document.add_section()
+        document.add_paragraph("References on request")
+        assert read_native_text(docx_bytes(document)).count("Mona Khaled") == 1
+
     def test_a_docx_that_unpacks_beyond_the_limit_is_refused_unread(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:

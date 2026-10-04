@@ -22,6 +22,7 @@ from typing import Any
 
 from docx import Document
 from docx.document import Document as DocxDocument
+from docx.section import Section
 from pdfminer.high_level import extract_pages
 from pdfminer.layout import LAParams, LTContainer, LTPage, LTTextLine
 
@@ -171,15 +172,39 @@ def _mostly_right_to_left(texts: Iterator[str]) -> bool:
 
 
 def _docx_text(content: bytes) -> str:
+    """The body in document order, each section's own header before it and footer after it.
+
+    A section's header or footer linked to the previous section's is the same text, read once.
+    """
     document = _opened_docx(content)
-    section = document.sections[0] if document.sections else None
-    blocks: list[str] = []
-    if section is not None and not section.header.is_linked_to_previous:
-        blocks += _blocks(section.header.part.element)
-    blocks += _blocks(document.element.body)
-    if section is not None and not section.footer.is_linked_to_previous:
-        blocks += _blocks(section.footer.part.element)
+    sections = iter(document.sections)
+    section = next(sections, None)
+    blocks = _header(section)
+    for child in document.element.body:
+        blocks += _blocks([child])
+        if _ends_section(child):
+            blocks += _footer(section)
+            section = next(sections, None)
+            blocks += _header(section)
+    blocks += _footer(section)
     return readable("\n".join(block for block in blocks if block.strip()))
+
+
+def _ends_section(element: Any) -> bool:
+    """A section ends at its properties: inside a paragraph's, or the body's last element."""
+    return element.tag == f"{W}sectPr" or element.find(f"{W}pPr/{W}sectPr") is not None
+
+
+def _header(section: Section | None) -> list[str]:
+    if section is None or section.header.is_linked_to_previous:
+        return []
+    return list(_blocks(section.header.part.element))
+
+
+def _footer(section: Section | None) -> list[str]:
+    if section is None or section.footer.is_linked_to_previous:
+        return []
+    return list(_blocks(section.footer.part.element))
 
 
 def _opened_docx(content: bytes) -> DocxDocument:
