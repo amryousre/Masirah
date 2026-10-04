@@ -190,6 +190,17 @@ def assert_in_sequence(rows: list[str], expected: list[str]) -> None:
                 "شركة سحابة للحلول الرقمية",
             ],
         ),
+        # Word stores brackets as the characters typed, where Chromium stores the mirrored shape,
+        # and its lam-alef glyph as two letters: from the real Arabic CV ar-native-01.
+        (
+            "ar-native-01",
+            [
+                "ماكدونالدز\t-\tطاقم العمل (\t2006\t-\t2011\t)",
+                "المبيعات:",
+                "•\tموقع\tOkay Goods\t-\tمبيعات (\t2012\t-\t2014\t)",
+            ],
+        ),
+        ("ar-native-01", ["تاريخ الميلاد :\t14\\03\\1984"]),
     ],
     ids=lambda value: value if isinstance(value, str) else value[0][:24],
 )

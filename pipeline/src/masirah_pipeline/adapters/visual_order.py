@@ -26,18 +26,32 @@ MIRRORED = {
 EDGES = re.compile(r"^\W+|\W+$")
 
 
-def logical_line(stored: str, *, right_to_left: bool) -> str:
+def logical_line(stored: str, *, right_to_left: bool, mirrored: bool = True) -> str:
     """The line in reading order. right_to_left is the direction of the paragraph it is in.
 
     The characters are the stored ones, reordered. Normalising Arabic presentation forms into
     letters has to come afterwards: a lam-alef ligature is one character, and split into two
     letters first it would be reversed along with its word.
+
+    mirrored says whether a bracket in right-to-left text was stored as the shape drawn, which
+    faces the other way, as Chromium stores it, rather than as the character typed, as Word does.
     """
     chars = _without_split_marks(stored)
     levels = _levels(chars, right_to_left)
     return "".join(
-        MIRRORED.get(chars[i], chars[i]) if levels[i] % 2 else chars[i] for i in _reordered(levels)
+        MIRRORED.get(chars[i], chars[i]) if mirrored and levels[i] % 2 else chars[i]
+        for i in _reordered(levels)
     )
+
+
+def brackets_balanced(text: str) -> bool:
+    """Whether every bracket opens before it closes and none is left open."""
+    depth = 0
+    for char in text:
+        depth += {"(": 1, "[": 1, "{": 1, ")": -1, "]": -1, "}": -1}.get(char, 0)
+        if depth < 0:
+            return False
+    return depth == 0
 
 
 def is_right_to_left(char: str) -> bool:

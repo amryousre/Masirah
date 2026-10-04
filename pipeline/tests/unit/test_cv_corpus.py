@@ -120,8 +120,16 @@ def test_a_scan_or_photo_has_no_text_layer(copy: Path) -> None:
     assert text(copy).strip() == ""
 
 
-def without_arabic(value: str) -> str:
-    return "".join(char for char in value if "ARABIC" not in unicodedata.name(char, ""))
+def latin_parts(value: str) -> list[str]:
+    """The stretches of a value between its Arabic words, each compared on its own: in a mixed
+    value such as "ICDL النسخة 5" the Arabic words sit between them in the document's text."""
+    parts = [""]
+    for char in value:
+        if "ARABIC" in unicodedata.name(char, ""):
+            parts.append("")
+        else:
+            parts[-1] += char
+    return [part for part in map(normalise, parts) if part]
 
 
 def label_values(truth: dict[str, Any]) -> list[tuple[str, str]]:
@@ -146,14 +154,14 @@ def label_values(truth: dict[str, Any]) -> list[tuple[str, str]]:
 @pytest.mark.parametrize("pdf", NATIVE, ids=stem)
 def test_every_label_is_written_as_the_document_writes_it(pdf: Path) -> None:
     """Arabic script is left to review: a PDF text layer often stores it in visual order or as
-    presentation forms, which is exactly what extraction has to repair, so only the Latin part of
-    a mixed value is compared here.
+    presentation forms, which is exactly what extraction has to repair, so only the Latin parts of
+    a mixed value are compared here. test_native_text.py checks the Arabic, through extraction.
     """
     haystack = normalise(text(pdf))
     missing = [
         f"{field}: {value!r}"
         for field, value in label_values(labels(pdf))
-        if (latin := normalise(without_arabic(value))) and latin not in haystack
+        if any(part not in haystack for part in latin_parts(value))
     ]
     assert missing == []
 

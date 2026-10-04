@@ -1,0 +1,37 @@
+{
+  "document": { "capture": "native", "language": "ar", "layout": "single_column", "pages": 2, "origin": "real", "copy_of": null, "simulated": false },
+  "expected": "parsed",
+  "profile": {
+    "name": "خالد سمير عبد الرحمن النجار",
+    "emails": ["khaled.elnaggar@example.com"],
+    "phones": ["+966500000301"],
+    "location": "الرياض",
+    "years_of_experience": null,
+    "employment": [
+      { "employer": "ماكدونالدز", "title": "طاقم العمل", "start": "2006", "end": "2011" },
+      { "employer": "Okay Goods", "title": "مبيعات", "start": "2012", "end": "2014" },
+      { "employer": "مصر لتأمينات الحياة", "title": "وكيل مبيعات", "start": "2014", "end": "2016" },
+      { "employer": "مصر لتأمينات الحياة", "title": "قائد فريق مبيعات", "start": "2016", "end": "2018" },
+      { "employer": "مصر لتأمينات الحياة", "title": "مندوب مبيعات بدوام جزئي", "start": "2018", "end": "2021" },
+      { "employer": "خدمة الليموزين", "title": "قائد فريق", "start": "2018", "end": "2021" },
+      { "employer": "شركة أدوات لتقنية المعلومات", "title": "قائد فريق مبيعات", "start": "2021", "end": "2024-05" },
+      { "employer": null, "title": "اختصاصي تسويق رقمي", "start": "2023-03", "end": "2024-03" },
+      { "employer": "Go Care", "title": "قائد فريق مبيعات", "start": null, "end": null }
+    ],
+    "education": [
+      { "institution": "المعهد التجاري الفني بالإسكندرية", "qualification": null, "start": null, "end": "2005" }
+    ],
+    "skills": [
+      "تحليل الجودة والمراقبة", "التسويق للشركات التقنية", "إعداد التقارير", "أنظمة إدارة المهام",
+      "Google Sheets"
+    ],
+    "languages": [{ "language": "الإنجليزية", "level": "جيد" }],
+    "certifications": [
+      { "name": "MCSA", "issuer": null },
+      { "name": "CCNA التوجيه والتبديل", "issuer": null },
+      { "name": "ICDL النسخة 5", "issuer": null },
+      { "name": "التسويق الرقمي", "issuer": "الأكاديمية العربية للعلوم والتكنولوجيا والنقل البحري" }
+    ]
+  },
+  "protected": { "date_of_birth": "1984-03-14" }
+}

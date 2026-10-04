@@ -28,6 +28,7 @@ from pdfminer.layout import LAParams, LTContainer, LTPage, LTTextLine
 
 from masirah_pipeline.adapters.reading_order import Line, reading_order
 from masirah_pipeline.adapters.visual_order import (
+    brackets_balanced,
     is_right_to_left,
     laid_out_right_to_left,
     logical_line,
@@ -85,17 +86,17 @@ def _pdf_text(content: bytes) -> str:
     # A broken or hostile PDF fails inside pdfminer in many ways, and each means the same thing.
     except Exception as error:
         raise UnreadableDocumentError(f"the PDF cannot be read: {error}") from error
-    lines = [_page_lines(page) for page in pages]
     backwards = stored_backwards(
-        [word for page in lines for ln in page for word in ln.text.split()]
+        [word for page in pages for item in _text_lines(page) for word in item.get_text().split()]
     )
+    lines = [_page_lines(page, backwards) for page in pages]
     return "\n\n".join(_page_text(page, backwards) for page in lines).strip()
 
 
-def _page_lines(page: LTPage) -> list[Line]:
+def _page_lines(page: LTPage, backwards: bool) -> list[Line]:
     lines = []
     for item in _text_lines(page):
-        text = _without_icons(item.get_text()).strip()
+        text = _without_icons(_line_text(item, backwards)).strip()
         if text:
             x0, y0, x1, y1 = item.bbox
             lines.append(
@@ -112,6 +113,22 @@ def _text_lines(container: LTContainer[Any]) -> Iterator[LTTextLine]:
             yield from _text_lines(item)
 
 
+def _line_text(line: LTTextLine, backwards: bool) -> str:
+    """The line's text, each glyph kept whole when the line is stored backwards.
+
+    Word maps a lam-alef ligature glyph to two letters in reading order (لا), while the line
+    around it is stored backwards. Reversing the line would reverse the pair too, so a glyph's own
+    letters are reversed here first and come back in order with the rest of the line.
+    """
+    if not backwards:
+        return line.get_text()
+    return "".join(_glyph_text(item.get_text()) for item in line)
+
+
+def _glyph_text(text: str) -> str:
+    return text[::-1] if len(text) > 1 and laid_out_right_to_left(text) else text
+
+
 def _without_icons(text: str) -> str:
     """Drops private-use characters: icon fonts draw a phone or an envelope with them."""
     return "".join(char for char in text if unicodedata.category(char) != "Co")
@@ -120,15 +137,27 @@ def _without_icons(text: str) -> str:
 def _page_text(lines: list[Line], backwards: bool) -> str:
     right_to_left = _mostly_right_to_left(line.text for line in lines)
     rows = reading_order(lines, right_to_left=right_to_left)
-    return "\n".join(
-        "\t".join(_piece_text(piece.text, backwards, right_to_left) for piece in row)
-        for row in rows
-    )
+    return "\n".join(_row_text(row, backwards, right_to_left) for row in rows)
 
 
-def _piece_text(stored: str, backwards: bool, page_right_to_left: bool) -> str:
+def _row_text(row: list[Line], backwards: bool, page_right_to_left: bool) -> str:
+    """The row's pieces joined by tabs.
+
+    Chromium stores a bracket in right-to-left text as the shape drawn and Word as the character
+    typed, and the stored text cannot say which made it. Brackets that open before they close
+    can: the row is read with brackets mirrored back unless only the other reading balances.
+    """
+    readings = [
+        "\t".join(_piece_text(piece.text, backwards, page_right_to_left, mirrored) for piece in row)
+        for mirrored in (True, False)
+    ]
+    return next((text for text in readings if brackets_balanced(text)), readings[0])
+
+
+def _piece_text(stored: str, backwards: bool, page_right_to_left: bool, mirrored: bool) -> str:
     if backwards and laid_out_right_to_left(stored):
-        stored = logical_line(stored, right_to_left=_line_direction(stored, page_right_to_left))
+        direction = _line_direction(stored, page_right_to_left)
+        stored = logical_line(stored, right_to_left=direction, mirrored=mirrored)
     return _unspaced(readable(stored))
 
 
