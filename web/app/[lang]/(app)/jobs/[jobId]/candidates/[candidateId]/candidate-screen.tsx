@@ -1,10 +1,13 @@
 "use client";
 
-import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
+import { type KeyboardEvent, useId, useRef, useState } from "react";
 
+import { cx } from "@/components/cx";
 import { ScoreBreakdown } from "@/components/score/score";
 import { Tabs } from "@/components/tabs/tabs";
+import tabStyles from "@/components/tabs/tabs.module.css";
+import { direction } from "@/i18n/routing";
 import type { ProfileRow, ScorePart } from "@/lib/domain/candidate";
 
 import styles from "./candidate.module.css";
@@ -26,28 +29,120 @@ interface CandidateScreenProps {
 /**
  * Two panes, reasoning and document (T066). The reasoning sits at the inline start, where the
  * reading eye begins: on the right in Arabic, on the left in English. The justification leads and
- * the breakdown supports it below; the extracted profile is the second tab.
+ * the breakdown supports it below; the extracted profile is the second tab. Below 700 pixels the
+ * panes become tabs, reasoning first (T071): stacked, the document would fall below the fold.
  */
 export function CandidateScreen({ rank, score, profile, document }: CandidateScreenProps) {
   const t = useTranslations("candidate");
-  const [tab, setTab] = useState("reasons");
+  const [section, setSection] = useState<Section>("reasons");
+  const [documentShown, setDocumentShown] = useState(false);
+  const ids = { reasoning: useId(), document: useId() };
+  const view: View = documentShown ? "document" : section;
 
   return (
     <div className={styles.panes}>
-      <section className={styles.reasoning} aria-label={t("reasons")}>
+      <ViewTabs
+        selected={view}
+        onSelect={(next) => {
+          setDocumentShown(next === "document");
+          if (next !== "document") setSection(next);
+        }}
+        ids={ids}
+      />
+      <section
+        id={ids.reasoning}
+        className={styles.reasoning}
+        aria-label={t("reasons")}
+        data-phone-hidden={documentShown || undefined}
+      >
         <Tabs
           label={t("sections")}
           items={[
             { id: "reasons", label: t("reasons") },
             { id: "profile", label: t("profile") },
           ]}
-          selected={tab}
-          onSelect={setTab}
+          selected={section}
+          onSelect={(next) => {
+            setSection(next === "profile" ? "profile" : "reasons");
+          }}
         >
-          {tab === "reasons" ? <Reasons rank={rank} score={score} /> : <Profile rows={profile} />}
+          {section === "reasons" ? (
+            <Reasons rank={rank} score={score} />
+          ) : (
+            <Profile rows={profile} />
+          )}
         </Tabs>
       </section>
-      <DocumentPane document={document} />
+      <DocumentPane id={ids.document} document={document} phoneHidden={!documentShown} />
+    </div>
+  );
+}
+
+type Section = "reasons" | "profile";
+type View = Section | "document";
+const VIEWS: readonly View[] = ["reasons", "profile", "document"];
+
+/**
+ * The phone's one row of tabs: the reasoning pane's two sections, then the document. It replaces
+ * the pane's own tabs below 700 pixels and is hidden above, so it is never announced on a laptop.
+ * Arrow keys follow the reading direction, as in the shared tabs.
+ */
+function ViewTabs({
+  selected,
+  onSelect,
+  ids,
+}: {
+  selected: View;
+  onSelect: (view: View) => void;
+  ids: { reasoning: string; document: string };
+}) {
+  const t = useTranslations("candidate");
+  const rtl = direction(useLocale()) === "rtl";
+  const tabs = useRef(new Map<View, HTMLButtonElement>());
+  const onKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
+    const index = VIEWS.indexOf(selected);
+    const step = { ArrowRight: rtl ? -1 : 1, ArrowLeft: rtl ? 1 : -1 }[event.key];
+    const next =
+      event.key === "Home"
+        ? VIEWS[0]
+        : event.key === "End"
+          ? VIEWS[VIEWS.length - 1]
+          : step === undefined
+            ? undefined
+            : VIEWS[(index + step + VIEWS.length) % VIEWS.length];
+    if (next === undefined) return;
+    event.preventDefault();
+    onSelect(next);
+    tabs.current.get(next)?.focus();
+  };
+  const labels: Record<View, string> = {
+    reasons: t("reasons"),
+    profile: t("profile"),
+    document: t("documentTab"),
+  };
+  return (
+    <div role="tablist" aria-label={t("views")} className={cx(tabStyles.list, styles.viewTabs)}>
+      {VIEWS.map((view) => (
+        <button
+          key={view}
+          ref={(node) => {
+            if (node) tabs.current.set(view, node);
+            else tabs.current.delete(view);
+          }}
+          type="button"
+          role="tab"
+          aria-selected={view === selected}
+          aria-controls={view === "document" ? ids.document : ids.reasoning}
+          tabIndex={view === selected ? 0 : -1}
+          className={tabStyles.tab}
+          onClick={() => {
+            onSelect(view);
+          }}
+          onKeyDown={onKeyDown}
+        >
+          {labels[view]}
+        </button>
+      ))}
     </div>
   );
 }
@@ -119,10 +214,19 @@ function Profile({ rows }: { rows: ProfileRow[] | null }) {
 const SHOWN_INLINE = new Set(["application/pdf", "image/jpeg", "image/png"]);
 
 /** The retained original beside the reasoning (T067, FR-012). */
-function DocumentPane({ document }: Pick<CandidateScreenProps, "document">) {
+function DocumentPane({
+  id,
+  document,
+  phoneHidden,
+}: Pick<CandidateScreenProps, "document"> & { id: string; phoneHidden: boolean }) {
   const t = useTranslations("candidate");
   return (
-    <section className={styles.document} aria-label={t("document")}>
+    <section
+      id={id}
+      className={styles.document}
+      aria-label={t("document")}
+      data-phone-hidden={phoneHidden || undefined}
+    >
       {document === null ? (
         <p className={styles.quiet}>{t("noDocument")}</p>
       ) : (

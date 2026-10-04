@@ -155,7 +155,7 @@ Every table below carries `organisation_id` and has row level security enabled w
 - [ ] T068 [US1] **Evidence linking** in `web/components/evidence-link.tsx`: every claim in the justification that cites the CV is interactive, and activating it scrolls the document pane to that passage and highlights it. This is the centrepiece. It must work by keyboard and be announced to screen readers, never as a hover affordance
 - [ ] T069 [US1] Sort, filter and full-text search across extracted fields in both languages in `web/components/candidate-filters.tsx`, searching against `name_normalised` so transliteration variants resolve
 - [ ] T070 [US1] Language switcher in `web/components/language-switcher.tsx` toggling between Arabic and English with the full layout mirroring
-- [ ] T071 [US1] Below 700 pixels the two panes become tabs, reasoning first, with the citation link switching tabs and highlighting. Implement in `web/components/candidate-detail-responsive.tsx`. A stacked layout would put the document below the fold and break the verification motion that is the entire point
+- [X] T071 [US1] Below 700 pixels the two panes become tabs, reasoning first, with the citation link switching tabs and highlighting. Implemented in the candidate page itself (`candidate-screen.tsx`, CSS only, so a phone never shows the laptop layout first): one row of tabs, reasons, extracted profile and document, replaces the pane's own tabs. The citation switching tabs comes with T068. A stacked layout would put the document below the fold and break the verification motion that is the entire point
 
 **Checkpoint**: User Story 1 is fully functional. A folder of CVs becomes a defensible ranking, and SC-001 and SC-005 hold.
 

@@ -471,6 +471,8 @@
     "openOriginal": "Open the original",
     "noDocument": "No document is stored for this candidate.",
     "noPreview": "This file type can’t be shown here. Open the original to read it.",
-    "breakdownUnavailable": "The breakdown could not be read for this score."
+    "breakdownUnavailable": "The breakdown could not be read for this score.",
+    "views": "Candidate views",
+    "documentTab": "Document"
   }
 }

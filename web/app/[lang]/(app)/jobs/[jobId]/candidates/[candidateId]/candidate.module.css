@@ -201,7 +201,11 @@ a.step:hover {
   padding: var(--space-5);
 }
 
-/* Until T071 turns the panes into tabs on a phone, they stack, reasoning first. */
+/* The view tabs exist for phones only (T071). */
+.viewTabs {
+  display: none;
+}
+
 @media (width < 48rem) {
   .header {
     padding-inline: var(--space-4);
@@ -224,5 +228,31 @@ a.step:hover {
   .profileRow {
     grid-template-columns: 1fr;
     gap: var(--space-1);
+  }
+}
+
+/* Below 700 pixels the panes become tabs, reasoning first (T071). */
+@media (width < 43.75rem) {
+  .panes {
+    grid-template-rows: auto 1fr;
+  }
+
+  .viewTabs {
+    display: flex;
+    padding-inline: var(--space-4);
+  }
+
+  /* The row above replaces the pane's own tabs. */
+  .reasoning [role="tablist"] {
+    display: none;
+  }
+
+  .reasoning[data-phone-hidden],
+  .document[data-phone-hidden] {
+    display: none;
+  }
+
+  .document {
+    block-size: calc(100dvb - 8rem);
   }
 }

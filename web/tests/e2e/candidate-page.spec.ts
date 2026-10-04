@@ -113,6 +113,33 @@ test("the page reads in Arabic, right to left", async ({ page }) => {
   await expectAccessible(page);
 });
 
+test("on a phone the panes are tabs, reasons first", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signIn(page, recruiter);
+  await page.goto(`/en/jobs/${job}/candidates/${yasmin}`);
+  const views = page.getByRole("tablist", { name: "Candidate views" });
+  await expect(views.getByRole("tab")).toHaveText(["Reasons", "Extracted profile", "Document"]);
+  await expect(views.getByRole("tab", { name: "Reasons" })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  await expect(page.getByRole("heading", { name: "Why rank 1" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Original document" })).toBeHidden();
+
+  await views.getByRole("tab", { name: "Document" }).click();
+  await expect(page.getByRole("region", { name: "Original document" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Why rank 1" })).toBeHidden();
+  await expectAccessible(page);
+});
+
+test("on a laptop both panes show and there are no view tabs", async ({ page }) => {
+  await signIn(page, recruiter);
+  await page.goto(`/en/jobs/${job}/candidates/${yasmin}`);
+  await expect(page.getByRole("tablist", { name: "Candidate views" })).toBeHidden();
+  await expect(page.getByRole("region", { name: "Original document" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Why rank 1" })).toBeVisible();
+});
+
 test("another organisation's candidate is not found", async ({ page }) => {
   await signIn(page, recruiter);
   const response = await page.goto(`/en/jobs/${job}/candidates/${strangersCandidate}`);
