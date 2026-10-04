@@ -9,6 +9,9 @@ its settings from the environment and refuses to start with one missing:
 - MASIRAH_CHEAP_MODEL, MASIRAH_STRONG_MODEL, MASIRAH_EGP_PER_USD and a provider key per tier, as
   adapters/provider_registry.py reads them.
 
+Each worker records a heartbeat under MASIRAH_WORKER_NAME, or the host's name, which /api/health
+reads (T030).
+
 The loop polls again at once while messages arrive and waits IDLE_SECONDS when the queue is
 empty. SIGTERM, which a host sends before stopping a process, ends it between batches.
 """
@@ -17,12 +20,14 @@ import contextlib
 import logging
 import os
 import signal
+import socket
 import threading
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 
 import psycopg
 
+from masirah_pipeline.adapters.heartbeat import PostgresHeartbeat
 from masirah_pipeline.adapters.native_text import read_native_text
 from masirah_pipeline.adapters.postgres_worker_store import PostgresWorkerStore
 from masirah_pipeline.adapters.provider_registry import ConfigurationError, model_for
@@ -52,6 +57,11 @@ def settings_from(environment: Mapping[str, str]) -> Settings:
     return Settings(*(environment[name] for name in REQUIRED))
 
 
+def worker_name(environment: Mapping[str, str]) -> str:
+    """The name the heartbeat is recorded under: MASIRAH_WORKER_NAME, or the host's name."""
+    return environment.get("MASIRAH_WORKER_NAME", "").strip() or socket.gethostname()
+
+
 def poll(run_once: Callable[[], int], stop: threading.Event, wait: Callable[[float], bool]) -> None:
     """Run batches until stopped, waiting only when a batch found nothing to do."""
     while not stop.is_set():
@@ -75,6 +85,7 @@ def main(environment: Mapping[str, str] = os.environ) -> None:
             read_text=read_native_text,
             model=cheap,
             score=ApplicationScorer(PostgresScoreRepository(connection), strong, cheap),
+            beat=PostgresHeartbeat(connection, worker_name(environment)),
         )
         log.info("worker started")
         with contextlib.suppress(KeyboardInterrupt):

@@ -522,3 +522,12 @@ class TestRunOnce:
 
     def test_an_empty_queue_handles_nothing(self, setup: Setup) -> None:
         assert setup.worker.run_once() == 0
+
+    def test_the_worker_beats_before_a_batch_and_after_every_message(self, setup: Setup) -> None:
+        """T030: a long batch still shows the worker alive."""
+        beats: list[int] = []
+        worker = setup.worker
+        worker.beat = lambda: beats.append(1)
+        setup.queue.waiting = [received(message()), received("broken")]
+        worker.run_once()
+        assert len(beats) == 3

@@ -19,6 +19,7 @@ score's cost (obligation 5), sits behind the Scorer (T056, T057).
 """
 
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
 from decimal import Decimal
 from enum import Enum
@@ -84,6 +85,10 @@ class Scorer(Protocol):
     def __call__(self, request: ScoringRequest) -> None: ...
 
 
+def _silent() -> None:
+    """No heartbeat, for a worker nobody monitors."""
+
+
 class _TerminalError(Exception):
     """The file cannot be processed, however often it is tried."""
 
@@ -96,13 +101,18 @@ class Worker:
     read_text: DocumentReader
     model: StructuredModel
     score: Scorer
+    # Records that the worker is alive (T030): before each batch and after every message, so a
+    # long batch still shows it working.
+    beat: Callable[[], None] = _silent
 
     def run_once(self) -> int:
+        self.beat()
         batch = self.queue.read(
             CV_PROCESSING, visibility_seconds=VISIBILITY_SECONDS, quantity=BATCH_SIZE
         )
         for received in batch:
             self.handle(CV_PROCESSING, received)
+            self.beat()
         return len(batch)
 
     def handle(self, queue: str, received: ReceivedMessage) -> Outcome:

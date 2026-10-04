@@ -90,7 +90,7 @@ Every table below carries `organisation_id` and has row level security enabled w
 
 ### Observability and deployment
 
-- [ ] T030 Implement `GET /api/health` in `web/app/api/health/route.ts` reporting queue depth and the worker's last heartbeat, which is the cheapest early warning that the worker has stopped
+- [X] T030 Implement `GET /api/health` in `web/app/api/health/route.ts` reporting queue depth and the worker's last heartbeat, which is the cheapest early warning that the worker has stopped. The worker beats before each batch and after every message through `worker.beat`; `public.service_health()` (migration 0016) returns only queue depth, the oldest message's age and the heartbeat's age, so the endpoint needs no sign-in. 200 when ok, 503 when the worker has been silent 10 minutes or a CV has waited 30
 - [ ] T031 [P] Configure structured logging, error tracking and per-tenant usage metrics in `web/lib/adapters/telemetry.ts` and `pipeline/src/masirah_pipeline/adapters/telemetry.py`, alerting when the parse failure rate exceeds five percent per NFR-14
 - [ ] T032 Configure deployment in `netlify.toml` for `web/` and `pipeline/render.yaml` for the worker host. No code may depend on Netlify-specific behaviour, because ADR 0002 plans a migration before Phase 3. Until then `netlify.toml` publishes only `holding-page/`, because a Netlify site with no publish directory serves the whole repository; T032 replaces that and deletes the folder
 
