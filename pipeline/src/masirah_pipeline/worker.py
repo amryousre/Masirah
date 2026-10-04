@@ -109,7 +109,11 @@ class Worker:
             log.error("message %s refused, left in %s: %s", received.message_id, queue, error)
             return Outcome.LEFT
         if isinstance(message, CvRescoringMessage):
-            log.error("message %s is a rescoring request, which has no handler yet", queue)
+            log.error(
+                "message %s in %s is a rescoring request, which has no handler yet",
+                received.message_id,
+                queue,
+            )
             return Outcome.LEFT
         try:
             if received.read_count > MAX_ATTEMPTS:
@@ -136,6 +140,8 @@ class Worker:
             raise _TerminalError("the CV file does not exist")
         if cv_file.content_hash != message.content_hash:
             raise _TerminalError("the file's content does not match the content the message names")
+        if cv_file.storage_path != message.storage_path:
+            raise _TerminalError("the message names another object than the file's own")
         if cv_file.status in SETTLED:
             stored = self.store.current_profile(organisation, file_id)
             if cv_file.status == "extracted" and stored is not None:
@@ -145,7 +151,7 @@ class Worker:
                 self._score(message, cv_file.candidate_id, profile, Decimal(0))
             return
         self.store.mark_extracting(organisation, file_id)
-        text = self._text(message, cv_file)
+        text = self._text(cv_file)
         if text is None or not detect_language(text).supported:
             self.store.mark_needs_review(organisation, file_id)
             return
@@ -169,12 +175,12 @@ class Worker:
         if not doubtful:
             self._score(message, candidate_id, extracted.profile, extracted.response.cost_egp)
 
-    def _text(self, message: CvProcessingMessage, cv_file: CvFile) -> str | None:
+    def _text(self, cv_file: CvFile) -> str | None:
         """The CV's text, or None when it has none to read until OCR arrives (T076)."""
         if cv_file.mime_type.startswith("image/"):
             return None
         try:
-            content = self.files.fetch(message.storage_path)
+            content = self.files.fetch(cv_file.storage_path)
         except MissingCvError as error:
             raise _TerminalError("the original file is missing from storage") from error
         try:

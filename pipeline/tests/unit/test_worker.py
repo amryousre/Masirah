@@ -406,6 +406,13 @@ class TestTerminalFailure:
         assert setup.store.status == "failed"
         assert setup.model.calls == 0
 
+    def test_a_message_naming_another_object_than_the_files_fails(self, setup: Setup) -> None:
+        """The file read is always the row's own: another object in the folder is never read."""
+        other = PATH.replace("cv.pdf", "other.pdf")
+        assert setup.handle(message(storage_path=other)) is Outcome.ARCHIVED
+        assert setup.store.status == "failed"
+        assert setup.model.calls == 0
+
     def test_a_message_for_a_file_that_does_not_exist_is_archived_and_alerted(
         self, setup: Setup, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -424,7 +431,15 @@ class TestRefusedMessages:
             message(schema_version=2),
             message(locale="fr"),
             "not an object",
-            message(job_type="cv_rescoring"),
+            {
+                "schema_version": 1,
+                "job_type": "cv_rescoring",
+                "organisation_id": str(ORG),
+                "application_id": str(APPLICATION_ID),
+                "weights_hash": "b" * 64,
+                "locale": "en",
+                "enqueued_at": "2026-10-04T12:00:00+00:00",
+            },
         ],
         ids=["unknown-version", "malformed", "not-json-object", "rescoring-has-no-producer-yet"],
     )
@@ -434,6 +449,7 @@ class TestRefusedMessages:
         with caplog.at_level(logging.ERROR):
             assert setup.handle(body) is Outcome.LEFT
         assert caplog.records
+        assert "message 7 " in caplog.text
         assert (setup.queue.deleted, setup.queue.archived) == ([], [])
         assert setup.store.organisations == set()
 
