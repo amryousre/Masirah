@@ -39,7 +39,10 @@ set search_path = ''
 as $$
   select
     (select count(*)::integer from pgmq.q_cv_processing),
-    (select extract(epoch from now() - min(enqueued_at)) from pgmq.q_cv_processing),
+    -- Only messages waiting for a worker, by the clock pgmq.read itself uses: one already read is
+    -- hidden until its visibility timeout and is in hand, however old.
+    (select extract(epoch from now() - min(enqueued_at)) from pgmq.q_cv_processing
+      where vt <= clock_timestamp()),
     (select extract(epoch from now() - max(seen_at)) from private.worker_heartbeat)
 $$;
 revoke execute on function public.service_health() from public;

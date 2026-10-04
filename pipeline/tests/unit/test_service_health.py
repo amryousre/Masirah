@@ -70,6 +70,20 @@ def test_waiting_messages_and_the_oldest_wait_are_counted(cur: Cursor) -> None:
     assert 119 <= oldest < 125
 
 
+def test_a_message_being_worked_on_is_not_waiting(cur: Cursor) -> None:
+    """A message a worker has read is hidden until its visibility timeout. It counts towards the
+    queue's depth, but it is in hand, not waiting, so it does not make the queue look stuck."""
+    cur.execute("set local role service_role")
+    cur.execute("select * from pgmq_public.send('cv_processing', %s)", (Jsonb({}),))
+    cur.execute("reset role")
+    cur.execute(
+        "update pgmq.q_cv_processing set enqueued_at = now() - interval '2 hours',"
+        " vt = now() + interval '5 minutes'"
+    )
+    depth, oldest, _ = health(cur)
+    assert (depth, oldest) == (1, None)
+
+
 @pytest.mark.parametrize("role", ["anon", "authenticated"])
 def test_a_caller_who_has_not_signed_in_may_read_the_figures(cur: Cursor, role: str) -> None:
     assert health(cur, role)[0] == 0

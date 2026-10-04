@@ -106,14 +106,22 @@ class Worker:
     beat: Callable[[], None] = _silent
 
     def run_once(self) -> int:
-        self.beat()
+        self._beat()
         batch = self.queue.read(
             CV_PROCESSING, visibility_seconds=VISIBILITY_SECONDS, quantity=BATCH_SIZE
         )
         for received in batch:
             self.handle(CV_PROCESSING, received)
-            self.beat()
+            self._beat()
         return len(batch)
+
+    def _beat(self) -> None:
+        """The heartbeat reports on the work, so its failure is logged and the work goes on: a
+        stopped worker would leave the rest of its batch hidden until the visibility timeout."""
+        try:
+            self.beat()
+        except Exception:
+            log.exception("the heartbeat could not be recorded; processing continues")
 
     def handle(self, queue: str, received: ReceivedMessage) -> Outcome:
         try:

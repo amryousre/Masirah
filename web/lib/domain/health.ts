@@ -25,7 +25,7 @@ export interface ServiceHealth {
 
 export function serviceHealth(figures: HealthFigures): ServiceHealth {
   const problems: HealthProblem[] = [];
-  if (figures.heartbeatAgeSeconds === null || figures.heartbeatAgeSeconds > SILENT_SECONDS) {
+  if (figures.heartbeatAgeSeconds === null || figures.heartbeatAgeSeconds >= SILENT_SECONDS) {
     problems.push("worker-silent");
   }
   if (figures.oldestMessageSeconds !== null && figures.oldestMessageSeconds > BACKLOG_SECONDS) {

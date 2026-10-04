@@ -523,6 +523,22 @@ class TestRunOnce:
     def test_an_empty_queue_handles_nothing(self, setup: Setup) -> None:
         assert setup.worker.run_once() == 0
 
+    def test_a_failing_heartbeat_never_stops_the_work(
+        self, setup: Setup, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """The heartbeat only reports on the work; losing it must not leave a batch unhandled."""
+
+        def broken() -> None:
+            raise RuntimeError("heartbeat table unreachable")
+
+        worker = setup.worker
+        worker.beat = broken
+        setup.queue.waiting = [received(message())]
+        with caplog.at_level(logging.ERROR):
+            assert worker.run_once() == 1
+        assert setup.queue.deleted == [7]
+        assert "heartbeat" in caplog.text
+
     def test_the_worker_beats_before_a_batch_and_after_every_message(self, setup: Setup) -> None:
         """T030: a long batch still shows the worker alive."""
         beats: list[int] = []

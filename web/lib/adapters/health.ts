@@ -4,6 +4,8 @@ import type { HealthFigures } from "@/lib/domain/health";
 
 import type { Database } from "./database.types";
 
+const TIMEOUT_MS = 5_000;
+
 /**
  * The queue and heartbeat figures from public.service_health() (migration 0016). It is called
  * without a session, so a monitor needs no credentials: the function returns three aggregate
@@ -15,6 +17,8 @@ export async function readHealthFigures(): Promise<HealthFigures | null> {
   if (!url || !key) return null;
   const supabase = createClient<Database>(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
+    // A stalled database must still produce a prompt 503, not a monitor's own timeout.
+    db: { timeout: TIMEOUT_MS },
   });
   const { data, error } = await supabase.rpc("service_health");
   const row = data?.[0];

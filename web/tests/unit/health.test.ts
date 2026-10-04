@@ -32,6 +32,11 @@ describe("service health", () => {
     expect(serviceHealth(quiet)).toEqual({ status: "degraded", problems: ["worker-silent"] });
   });
 
+  it("counts a worker silent for exactly the threshold as silent", () => {
+    const atThreshold = { ...healthy, heartbeatAgeSeconds: SILENT_SECONDS };
+    expect(serviceHealth(atThreshold).problems).toEqual(["worker-silent"]);
+  });
+
   it("is degraded when no worker has ever beaten", () => {
     expect(serviceHealth({ ...healthy, heartbeatAgeSeconds: null }).problems).toEqual([
       "worker-silent",
