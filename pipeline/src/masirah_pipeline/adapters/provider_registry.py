@@ -30,16 +30,17 @@ KEY_VARIABLES = {"anthropic": "ANTHROPIC_API_KEY", "openai": "OPENAI_API_KEY"}
 TIMEOUT = 120.0
 
 
-def _price(input_usd: str, output_usd: str) -> Price:
-    return Price(Decimal(input_usd), Decimal(output_usd))
+def _price(input_usd: str, output_usd: str, cached_input_usd: str) -> Price:
+    return Price(Decimal(input_usd), Decimal(output_usd), Decimal(cached_input_usd))
 
 
-# List prices per million tokens, checked against each provider's pricing pages on 4 October 2026.
+# List prices per million tokens: input, output, and input read from the provider's prompt cache.
+# Checked against each provider's pricing pages on 4 October 2026.
 PRICES: dict[str, Price] = {
-    "anthropic:claude-haiku-4-5": _price("1", "5"),
-    "anthropic:claude-sonnet-5": _price("2", "10"),
-    "openai:gpt-5.6-luna": _price("0.20", "1.20"),
-    "openai:gpt-5.6-sol": _price("4", "20"),
+    "anthropic:claude-haiku-4-5": _price("1", "5", "0.10"),
+    "anthropic:claude-sonnet-5": _price("2", "10", "0.20"),
+    "openai:gpt-5.6-luna": _price("0.20", "1.20", "0.02"),
+    "openai:gpt-5.6-sol": _price("4", "20", "0.40"),
 }
 
 

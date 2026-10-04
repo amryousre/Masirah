@@ -45,9 +45,16 @@ REQUEST = StructuredRequest(
     max_output_tokens=512,
 )
 # 1,000 tokens in and 200 out at $2 and $10 a million is $0.004, which is 0.2 EGP at 50 EGP/USD.
-PRICE = Price(input_usd_per_million=Decimal(2), output_usd_per_million=Decimal(10))
+PRICE = Price(
+    input_usd_per_million=Decimal(2),
+    output_usd_per_million=Decimal(10),
+    cached_input_usd_per_million=Decimal("0.2"),
+)
 EGP_PER_USD = Decimal(50)
 COST = Decimal("0.2")
+# With 600 of the 1,000 input tokens read from the provider's cache at $0.20 a million:
+# 400 x $2 + 600 x $0.20 + 200 x $10 = $0.00292, which is 0.146 EGP.
+CACHED_COST = Decimal("0.146")
 
 
 @dataclass
@@ -67,7 +74,9 @@ class Fake:
         return sent
 
 
-def anthropic_message(text: str, stop_reason: str = "end_turn") -> dict[str, Any]:
+def anthropic_message(
+    text: str, stop_reason: str = "end_turn", *, cached: int = 0
+) -> dict[str, Any]:
     return {
         "id": "msg_test",
         "type": "message",
@@ -76,12 +85,17 @@ def anthropic_message(text: str, stop_reason: str = "end_turn") -> dict[str, Any
         "content": [{"type": "text", "text": text}],
         "stop_reason": stop_reason,
         "stop_sequence": None,
-        "usage": {"input_tokens": 1000, "output_tokens": 200},
+        # Anthropic counts tokens read from its cache apart from input_tokens.
+        "usage": {
+            "input_tokens": 1000 - cached,
+            "cache_read_input_tokens": cached,
+            "output_tokens": 200,
+        },
     }
 
 
 def openai_response(
-    text: str, *, refusal: bool = False, status: str = "completed"
+    text: str, *, refusal: bool = False, status: str = "completed", cached: int = 0
 ) -> dict[str, Any]:
     content = (
         {"type": "refusal", "refusal": "I can't help with that."}
@@ -107,7 +121,8 @@ def openai_response(
             "input_tokens": 1000,
             "output_tokens": 200,
             "total_tokens": 1200,
-            "input_tokens_details": {"cached_tokens": 0},
+            # OpenAI counts tokens read from its cache within input_tokens.
+            "input_tokens_details": {"cached_tokens": cached},
             "output_tokens_details": {"reasoning_tokens": 0},
         },
     }
@@ -224,6 +239,19 @@ class TestFailuresAreTyped:
         with pytest.raises(RateLimitedError):
             complete(provider, answering(error, status=429))
 
+    def test_an_anthropic_account_without_credit_is_unavailable(self) -> None:
+        """Anthropic answers an empty balance with 400, which no retry can fix."""
+        error = {
+            "type": "error",
+            "error": {
+                "type": "invalid_request_error",
+                "message": "Your credit balance is too low to access the Anthropic API.",
+            },
+        }
+        (anthropic_provider,) = [p for p in PROVIDERS if p.name == "anthropic"]
+        with pytest.raises(ProviderUnavailableError, match="credit"):
+            complete(anthropic_provider, answering(error, status=400))
+
     def test_running_out_of_credit_is_not_a_rate_limit(self) -> None:
         """OpenAI answers an empty balance with 429 too, but waiting will not refill it."""
         quota = {
@@ -272,3 +300,24 @@ class TestFailuresAreTyped:
         for error in (RateLimitedError, TimedOutError, RefusedError, MalformedOutputError):
             assert issubclass(error, ModelProviderError)
         assert issubclass(ProviderUnavailableError, ModelProviderError)
+
+
+class TestCachedInput:
+    """Input read from a provider's prompt cache is billed at a fraction of the input rate."""
+
+    def test_cached_input_costs_the_cached_rate(self, provider: Provider) -> None:
+        good = (
+            anthropic_message('{"name": "Mona"}', cached=600)
+            if provider.name == "anthropic"
+            else openai_response('{"name": "Mona"}', cached=600)
+        )
+        response, _ = complete(provider, answering(good))
+        assert response.usage.input_tokens == 1000
+        assert response.usage.cached_input_tokens == 600
+        assert response.cost_egp == CACHED_COST
+
+    def test_a_price_without_a_cached_rate_charges_the_input_rate(self) -> None:
+        from masirah_pipeline.ports.model_provider import Usage
+
+        plain = Price(input_usd_per_million=Decimal(2), output_usd_per_million=Decimal(10))
+        assert plain.cost_egp(Usage(1000, 200, cached_input_tokens=600), EGP_PER_USD) == COST

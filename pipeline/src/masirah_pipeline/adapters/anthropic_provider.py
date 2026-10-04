@@ -50,7 +50,9 @@ class AnthropicModel:
             raise TimedOutError(str(error)) from error
         except anthropic.APIError as error:
             raise ProviderUnavailableError(str(error)) from error
-        usage = Usage(message.usage.input_tokens, message.usage.output_tokens)
+        # Anthropic counts input read from its prompt cache apart from input_tokens.
+        cached = message.usage.cache_read_input_tokens or 0
+        usage = Usage(message.usage.input_tokens + cached, message.usage.output_tokens, cached)
         cost = self._price.cost_egp(usage, self._egp_per_usd)
         if message.stop_reason == "refusal":
             raise RefusedError("the model declined the request", cost_egp=cost)

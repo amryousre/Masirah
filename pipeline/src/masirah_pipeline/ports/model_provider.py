@@ -42,20 +42,35 @@ class ModelIdentity:
 
 @dataclass(frozen=True)
 class Usage:
+    """Tokens in and out. input_tokens counts every input token, cached_input_tokens those of
+    them the provider read from its prompt cache."""
+
     input_tokens: int
     output_tokens: int
+    cached_input_tokens: int = 0
 
 
 @dataclass(frozen=True)
 class Price:
-    """A model's list price in US dollars per million tokens."""
+    """A model's list price in US dollars per million tokens.
+
+    Input read from the provider's prompt cache is billed at its own, lower rate. A price with no
+    cached rate charges cached input at the full input rate, which overstates rather than hides
+    cost.
+    """
 
     input_usd_per_million: Decimal
     output_usd_per_million: Decimal
+    cached_input_usd_per_million: Decimal | None = None
 
     def cost_egp(self, usage: Usage, egp_per_usd: Decimal) -> Decimal:
+        cached_rate = self.cached_input_usd_per_million
+        if cached_rate is None:
+            cached_rate = self.input_usd_per_million
+        uncached = usage.input_tokens - usage.cached_input_tokens
         usd = (
-            usage.input_tokens * self.input_usd_per_million
+            uncached * self.input_usd_per_million
+            + usage.cached_input_tokens * cached_rate
             + usage.output_tokens * self.output_usd_per_million
         ) / ONE_MILLION
         return usd * egp_per_usd

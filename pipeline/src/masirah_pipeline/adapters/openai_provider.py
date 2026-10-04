@@ -62,7 +62,16 @@ class OpenAIModel:
         except openai.APIError as error:
             raise ProviderUnavailableError(str(error)) from error
         tokens = response.usage
-        usage = Usage(tokens.input_tokens, tokens.output_tokens) if tokens else Usage(0, 0)
+        # OpenAI counts input read from its prompt cache within input_tokens.
+        usage = (
+            Usage(
+                tokens.input_tokens,
+                tokens.output_tokens,
+                tokens.input_tokens_details.cached_tokens,
+            )
+            if tokens
+            else Usage(0, 0)
+        )
         cost = self._price.cost_egp(usage, self._egp_per_usd)
         contents = [c for item in response.output if item.type == "message" for c in item.content]
         if any(content.type == "refusal" for content in contents):
