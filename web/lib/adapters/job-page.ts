@@ -36,9 +36,8 @@ export async function readJobPage(
       .eq("job_id", jobId)
       .order("created_at", { ascending: true }),
   ]);
-  if (job.error || candidates.error || files.error) {
-    throw new Error("The job's page could not be read.");
-  }
+  const failed = job.error ?? candidates.error ?? files.error;
+  if (failed) throw new Error(`The job's page could not be read: ${failed.message}`);
   if (job.data === null) return null;
   return {
     job: {
