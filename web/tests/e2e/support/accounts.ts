@@ -259,3 +259,16 @@ export async function addCvFile(
     .insert({ organisation_id: organisationId, candidate_id: candidateId, job_id: jobId });
   if (application.error) throw new Error(application.error.message);
 }
+
+/** An application to a job with no CV sent for it, as a candidate added to a second job is. */
+export async function addApplication(
+  account: Account,
+  candidateId: string,
+  jobId: string,
+): Promise<void> {
+  if (account.organisationId === null) throw new Error("The account belongs to no organisation.");
+  const { error } = await admin()
+    .from("application")
+    .insert({ organisation_id: account.organisationId, candidate_id: candidateId, job_id: jobId });
+  if (error) throw new Error(error.message);
+}

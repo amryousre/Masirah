@@ -64,9 +64,12 @@ export async function readCandidatePage(
   if (application.error) throw unreadable("job_candidates", application.error);
   if (files.error) throw unreadable("cv_file", files.error);
   // The CV sent for this job, beside this job's score. A file uploaded before files carried their
-  // job (migration 0017) has none, and then the candidate's latest CV is the one there is.
+  // job (migration 0017) has none; the latest such file stands in. A CV sent for another job never
+  // does: its document and extraction would sit beside a score they did not produce.
   const file =
-    files.data.find((candidateFile) => candidateFile.job_id === jobId) ?? files.data[0] ?? null;
+    files.data.find((candidateFile) => candidateFile.job_id === jobId) ??
+    files.data.find((candidateFile) => candidateFile.job_id === null) ??
+    null;
   if (ranking === null || job.data === null) return null;
   const applied = application.data;
   if (applied?.application_id == null || applied.decision === null) return null;

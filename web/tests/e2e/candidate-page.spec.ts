@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 
 import {
   type Account,
+  addApplication,
   addCvFile,
   addJob,
   addRankedCandidate,
@@ -162,6 +163,16 @@ test("each job shows the CV sent for it, with that CV's extraction", async ({ pa
   await page.goto(`/en/jobs/${job}/candidates/${yasmin}`);
   await expect(document).toContainText("Yasmin Farouk.pdf");
   await expect(document).not.toContainText("Yasmin for finance.pdf");
+});
+
+test("a job with no CV sent for it shows no other job's CV", async ({ page }) => {
+  const thirdJob = await addJob(recruiter, { title: "Audit Lead" });
+  await addApplication(recruiter, omar, thirdJob);
+  await signIn(page, recruiter);
+  await page.goto(`/en/jobs/${thirdJob}/candidates/${omar}`);
+  await expect(page.getByRole("region", { name: "Original document" })).toHaveText(
+    "No document is stored for this candidate.",
+  );
 });
 
 test("another organisation's candidate is not found", async ({ page }) => {
