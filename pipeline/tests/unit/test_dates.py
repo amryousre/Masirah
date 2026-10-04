@@ -113,3 +113,15 @@ def test_what_is_not_a_date_is_none(written: str) -> None:
 )
 def test_arabic_indic_numerals_are_read_as_digits(written: str, read: str) -> None:
     assert interpret_numerals(written) == read
+
+
+@pytest.mark.parametrize(
+    ("written", "normalised"),
+    [("15 March 2021", "2021-03"), ("١٥ مارس ٢٠٢١", "2021-03"), ("1st Jan 2020", "2020-01")],
+)
+def test_a_day_beside_a_named_month(written: str, normalised: str) -> None:
+    assert normalise_date(written) == normalised
+
+
+def test_a_number_beside_a_named_month_that_is_no_day_is_refused() -> None:
+    assert normalise_date("45 March 2021") is None

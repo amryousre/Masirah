@@ -17,6 +17,7 @@ PRESENT = "present"
 
 # Gregorian years a CV date can sensibly name, and Hijri years written without a marker.
 GREGORIAN_YEARS = range(1900, 2101)
+MAX_DAY = 31
 HIJRI_YEARS = range(1300, 1501)
 
 ARABIC_INDIC = {base + n: str(n) for base in (0x0660, 0x06F0) for n in range(10)}
@@ -131,7 +132,9 @@ def _year_and_month(numbers: list[int], named: int | None) -> tuple[int, int | N
         return None
     year = years[0]
     if named is not None:
-        return (year, named) if not others else None
+        # A month in words may come with its day, as in 15 March 2021; the day is not kept.
+        day_only = not others or (len(others) == 1 and 1 <= others[0] <= MAX_DAY)
+        return (year, named) if day_only else None
     if not others:
         return year, None
     if len(others) == 1:
@@ -139,7 +142,7 @@ def _year_and_month(numbers: list[int], named: int | None) -> tuple[int, int | N
     elif len(others) == 2:
         # Day before month, as Egypt writes it, unless the second number cannot be a month.
         day, month = others if others[1] <= 12 else reversed(others)
-        if day > 31:
+        if day > MAX_DAY:
             return None
     else:
         return None

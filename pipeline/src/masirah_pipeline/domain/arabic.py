@@ -8,8 +8,11 @@ Mahmoud both mhmd, Hassan and Hussein both hsn, and Amr and Omar both mr: differ
 among the commonest in Egypt. So the common names are listed, each with its Arabic spellings and
 the Latin spellings Egyptian CVs use, and every spelling maps to the name's Arabic form. Compound
 names built on Abd (Abdel Rahman, Abdallah) are generated from their attribute. A name not listed
-keeps its own spelling, folded for case, marks and spacing: an unknown name matches itself
-exactly, and is never merged with a different one.
+keeps its own spelling, folded only for case, marks and spacing, so it matches itself exactly and
+is never merged with a different one.
+
+The article is dropped from every name, listed or not. Egyptian names take or drop it freely, so
+El Shafei and Shafei name one family, and a search for one must find the other.
 """
 
 import re
@@ -204,14 +207,16 @@ def _canonical(part: str) -> str:
 
 
 def _fold(text: str) -> str:
-    """Arabic without marks and with its letter variants as one; Latin lower-case and plain,
-    with doubled letters single, since Egyptian spelling doubles them freely."""
+    """Arabic without marks and with its letter variants as one; Latin lower-case and plain.
+
+    Doubled letters stay doubled: Hanna (حنا) and Hana (هناء) are different names, so a listed
+    name's doubled spellings (Mohammed, Hossam) are listed rather than folded away.
+    """
     if any("؀" <= char <= "ۿ" for char in text):
         return ARABIC_MARKS.sub("", text).translate(ARABIC_LETTERS)
-    plain = "".join(
+    return "".join(
         char for char in unicodedata.normalize("NFKD", text.casefold()) if char.isascii()
     )
-    return re.sub(r"(.)\1+", r"\1", plain)
 
 
 def _entries(table: str) -> Iterable[tuple[list[str], list[str]]]:

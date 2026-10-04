@@ -95,3 +95,14 @@ def test_case_spacing_and_punctuation_do_not_matter() -> None:
 
 def test_a_name_without_letters_has_an_empty_form() -> None:
     assert name_normalised(" - ") == ""
+
+
+def test_an_unlisted_name_keeps_its_doubled_letters() -> None:
+    """Hanna (حنا) is not Hana (هناء): folding doubled letters would merge two names."""
+    assert name_normalised("Hanna") != name_normalised("Hana")
+    assert name_normalised("Hana") == name_normalised("هناء")
+
+
+def test_the_article_is_part_of_no_name() -> None:
+    """Egyptian surnames drop the article freely: El Shafei and Shafei are one family."""
+    assert name_normalised("El Shafei") == name_normalised("Shafei")

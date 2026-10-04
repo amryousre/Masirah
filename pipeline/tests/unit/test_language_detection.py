@@ -76,3 +76,29 @@ def test_text_with_nothing_to_go_on_is_not_flagged() -> None:
 
 def test_empty_text_is_not_flagged() -> None:
     assert detect_language("").supported
+
+
+@pytest.mark.parametrize(
+    ("text", "language"),
+    [
+        # A short French CV with no function words at all.
+        (
+            "Expérience professionnelle\nResponsable commercial gestion clientèle\n"
+            "Développement stratégie commerciale",
+            "fr",
+        ),
+        # A short Persian CV whose lines each hold too little to decide alone.
+        ("سوابق تحصیلی\nمدیر پروژه در شرکت بزرگ\nمسئول تیم فروش و توسعه", "fa"),
+        # Another script altogether.
+        ("Опыт работы\nРуководитель крупных проектов", "other"),  # noqa: RUF001 Cyrillic on purpose
+    ],
+    ids=["short-french", "short-persian", "cyrillic"],
+)
+def test_a_short_cv_in_another_language_is_unsupported(text: str, language: str) -> None:
+    verdict = detect_language(text)
+    assert (verdict.language, verdict.supported) == (language, False)
+
+
+def test_digits_are_not_letters_of_either_script() -> None:
+    """A phone number in Arabic-Indic digits does not make an English CV Arabic."""
+    assert detect_language("Ahmed Ali\n٠١٢٣٤٥٦٧٨٩\nSQL").language == "en"
