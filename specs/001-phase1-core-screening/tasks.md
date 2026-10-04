@@ -112,19 +112,19 @@ Every table below carries `organisation_id` and has row level security enabled w
 - [ ] T034 [P] [US1] Contract test for the model provider port in `pipeline/tests/unit/test_model_provider_port.py`, run against both adapters: structured output only, identity returned not assumed, cost returned, payload hashable, failures typed as rate limit, timeout, refusal and malformed output
 - [ ] T035 [P] [US1] Accuracy gate test for native PDF extraction at 95 percent field accuracy in `pipeline/tests/accuracy/test_native_pdf_accuracy.py` (SC-002)
 - [X] T036 [P] [US1] Unit tests for reading order on two-column layouts in `pipeline/tests/unit/test_reading_order.py`
-- [ ] T037 [P] [US1] Unit tests for Arabic name variant folding in `pipeline/tests/unit/test_arabic_names.py`, asserting Mohamed, Mohammed, Muhammad and محمد resolve to one searchable form
-- [ ] T038 [P] [US1] Unit tests for Hijri and Gregorian date normalisation and Arabic-Indic numeral interpretation in `pipeline/tests/unit/test_dates.py`
-- [ ] T039 [P] [US1] Unit tests for language detection in `pipeline/tests/unit/test_language_detection.py`, asserting a wholly French CV is flagged unsupported and an English CV carrying a few French lines is not (SC-015)
+- [X] T037 [P] [US1] Unit tests for Arabic name variant folding in `pipeline/tests/unit/test_arabic_names.py`, asserting Mohamed, Mohammed, Muhammad and محمد resolve to one searchable form
+- [X] T038 [P] [US1] Unit tests for Hijri and Gregorian date normalisation and Arabic-Indic numeral interpretation in `pipeline/tests/unit/test_dates.py`
+- [X] T039 [P] [US1] Unit tests for language detection in `pipeline/tests/unit/test_language_detection.py`, asserting a wholly French CV is flagged unsupported and an English CV carrying a few French lines is not (SC-015)
 - [ ] T040 [P] [US1] Integration test for the core loop in `pipeline/tests/integration/test_core_loop.py`: job, upload, extract, score, rank
 - [ ] T041 [P] [US1] End-to-end test in `web/tests/e2e/core-loop.spec.ts` covering create job, upload batch, ranked list appears
 - [ ] T042 [P] [US1] End-to-end right-to-left layout test in `web/tests/e2e/rtl-layout.spec.ts` asserting the full layout mirrors including forms, tables and the score breakdown, and that no hard-coded string survives the switch
 
 ### Implementation: pipeline domain
 
-- [ ] T043 [P] [US1] Arabic name variant normalisation in `pipeline/src/masirah_pipeline/domain/arabic.py`, producing the derived `name_normalised` form. Derived, never entered
-- [ ] T044 [P] [US1] Hijri and Gregorian date normalisation and Arabic-Indic numeral interpretation in `pipeline/src/masirah_pipeline/domain/dates.py`
+- [X] T043 [P] [US1] Arabic name variant normalisation in `pipeline/src/masirah_pipeline/domain/arabic.py`, producing the derived `name_normalised` form. Derived, never entered
+- [X] T044 [P] [US1] Hijri and Gregorian date normalisation and Arabic-Indic numeral interpretation in `pipeline/src/masirah_pipeline/domain/dates.py`
 - [ ] T045 [P] [US1] Structured profile model in `pipeline/src/masirah_pipeline/domain/profile.py` covering name, contact details, location, years of experience, dated employment history, education, skills, languages and certifications
-- [ ] T046 [P] [US1] Language detection in `pipeline/src/masirah_pipeline/domain/language.py`, tolerating a minority of third-language text without flagging the whole document (ADR 0005)
+- [X] T046 [P] [US1] Language detection in `pipeline/src/masirah_pipeline/domain/language.py`, tolerating a minority of third-language text without flagging the whole document (ADR 0005)
 - [ ] T047 [P] [US1] Score composition and component weighting in `pipeline/src/masirah_pipeline/domain/scoring.py` across skills match, experience relevance, education, tenure stability, language and location
 
 ### Implementation: pipeline ports and adapters
