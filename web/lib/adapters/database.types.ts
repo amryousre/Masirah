@@ -533,6 +533,10 @@ export type Database = {
       }
     }
     Functions: {
+      enqueue_cv_processing: {
+        Args: { cv_file_id: string; locale: string }
+        Returns: number
+      }
       service_health: {
         Args: never
         Returns: {

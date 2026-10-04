@@ -37,6 +37,12 @@ application and add a score. It cannot decide an application, edit a profile or 
 corrections, change or delete a score, or delete anything. The original files are read from
 Storage with the project's secret key, the one place the worker uses it, for that read alone.
 
+The web application does not send `cv_processing` messages itself either: it holds no secret key.
+After storing an upload it calls `public.enqueue_cv_processing(cv_file_id, locale)`
+(`supabase/migrations/0018_enqueue_cv.sql`), which a signed-in member may call only for a file of
+their own organisation. The function builds the message from the file's row, so the message always
+describes the stored file: its organisation, path, content hash and job.
+
 Worked examples of every message, valid and refused, live in
 [queue-message.examples.json](./queue-message.examples.json). The web and pipeline test suites
 both read that file, so producer and consumer cannot drift apart.

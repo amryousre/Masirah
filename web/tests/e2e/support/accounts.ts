@@ -51,7 +51,15 @@ export async function createAccount(organisation: string | null): Promise<Accoun
     // Deleting the user removes its app_user row with it.
     await client.auth.admin.deleteUser(userId);
     if (organisationId !== null) {
-      // Jobs hang off the organisation, so they go first.
+      // CV files, their stored originals and jobs hang off the organisation, so they go first.
+      const { data: files } = await client
+        .from("cv_file")
+        .select("storage_path")
+        .eq("organisation_id", organisationId);
+      if (files && files.length > 0) {
+        await client.storage.from("cv-originals").remove(files.map((file) => file.storage_path));
+      }
+      await client.from("cv_file").delete().eq("organisation_id", organisationId);
       await client.from("job").delete().eq("organisation_id", organisationId);
       await client.from("organisation").delete().eq("id", organisationId);
     }
