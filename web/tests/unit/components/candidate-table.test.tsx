@@ -84,4 +84,28 @@ describe("CandidateTable", () => {
     expect(screen.getByText("قيد المعالجة")).toBeInTheDocument();
     expect(screen.getByText("تعذّرت القراءة: the image is blurred")).toBeInTheDocument();
   });
+
+  it("marks where scores fall off, between the last strong candidate and the next", () => {
+    renderIn(
+      "en",
+      <CandidateTable rows={rows} dropOff={{ above: 2, gap: 30 }} onSelect={vi.fn()} />,
+    );
+    const texts = screen.getAllByRole("row").map((row) => row.textContent);
+    const marker = texts.findIndex((text) => text.includes("Scores drop 30 points below here"));
+    expect(texts[marker - 1]).toContain("Mahmoud Ali");
+    expect(texts[marker + 1]).toContain("Hana Adel");
+  });
+
+  it("marks nothing when the scores have no break", () => {
+    renderIn("en", <CandidateTable rows={rows} onSelect={vi.fn()} />);
+    expect(screen.queryByText(/Scores drop/)).not.toBeInTheDocument();
+  });
+
+  it("says the fall in Arabic, the noun agreeing with the number", () => {
+    renderIn(
+      "ar",
+      <CandidateTable rows={rows} dropOff={{ above: 2, gap: 12 }} onSelect={vi.fn()} />,
+    );
+    expect(screen.getByText("تنخفض الدرجات 12 نقطة بعد هذا الحد")).toBeInTheDocument();
+  });
 });

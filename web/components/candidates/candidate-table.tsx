@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useId } from "react";
+import { Fragment, useId } from "react";
 
 import { cx } from "../cx";
 import { Icon } from "../icon/icon";
@@ -14,6 +14,7 @@ import {
   DocumentStatus,
 } from "../status/status";
 import styles from "./candidate-table.module.css";
+import { DropOffMarker } from "./drop-off-marker";
 
 export type CandidateRow =
   | {
@@ -39,14 +40,18 @@ interface CandidateTableProps {
   rows: readonly CandidateRow[];
   selectedId?: string | undefined;
   onSelect: (id: string) => void;
+  /** Where the scores break, if they do: how many rank above it and the fall in points. */
+  dropOff?: { above: number; gap: number } | null | undefined;
 }
+
+const COLUMNS = 6;
 
 /**
  * The ranked list, modelled on Linear: 36px rows, the reason in the widest column and the score
  * after it. Selection is the only amber. Documents still processing or unreadable sit in a
  * labelled group below the ranking, never hidden (Principle 5).
  */
-export function CandidateTable({ rows, selectedId, onSelect }: CandidateTableProps) {
+export function CandidateTable({ rows, selectedId, onSelect, dropOff }: CandidateTableProps) {
   const t = useTranslations("candidates");
   const unrankedId = useId();
   const ranked = rows.filter((row): row is RankedRow => row.kind === "ranked");
@@ -75,61 +80,65 @@ export function CandidateTable({ rows, selectedId, onSelect }: CandidateTablePro
         </tr>
       </thead>
       <tbody>
-        {ranked.map((row) => {
+        {ranked.map((row, index) => {
           const selected = row.id === selectedId;
           return (
-            <tr
-              key={row.id}
-              className={styles.row}
-              data-selected={selected || undefined}
-              data-rejected={row.decision.kind === "rejected" || undefined}
-              onClick={() => {
-                onSelect(row.id);
-              }}
-            >
-              <td className={styles.rank}>{row.rank}</td>
-              <th scope="row" className={styles.name}>
-                <button
-                  type="button"
-                  className={styles.select}
-                  aria-current={selected || undefined}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onSelect(row.id);
-                  }}
-                >
-                  {row.name}
-                </button>
-              </th>
-              <td className={styles.reason}>{row.reason}</td>
-              <td>
-                <ScoreBar value={row.score} />
-              </td>
-              <td>
-                <Confidence level={row.confidence} />
-              </td>
-              <td>
-                {row.needsReview ? (
-                  <span className={styles.review}>
-                    <Icon name="alert" size={14} />
-                    {t("lowConfidence")}
-                  </span>
-                ) : (
-                  <Decision
-                    kind={row.decision.kind}
-                    compact
-                    {...(row.decision.by !== undefined && { by: row.decision.by })}
-                  />
-                )}
-              </td>
-            </tr>
+            <Fragment key={row.id}>
+              {index > 0 && index === dropOff?.above && (
+                <DropOffMarker gap={dropOff.gap} columns={COLUMNS} />
+              )}
+              <tr
+                className={styles.row}
+                data-selected={selected || undefined}
+                data-rejected={row.decision.kind === "rejected" || undefined}
+                onClick={() => {
+                  onSelect(row.id);
+                }}
+              >
+                <td className={styles.rank}>{row.rank}</td>
+                <th scope="row" className={styles.name}>
+                  <button
+                    type="button"
+                    className={styles.select}
+                    aria-current={selected || undefined}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onSelect(row.id);
+                    }}
+                  >
+                    {row.name}
+                  </button>
+                </th>
+                <td className={styles.reason}>{row.reason}</td>
+                <td>
+                  <ScoreBar value={row.score} />
+                </td>
+                <td>
+                  <Confidence level={row.confidence} />
+                </td>
+                <td>
+                  {row.needsReview ? (
+                    <span className={styles.review}>
+                      <Icon name="alert" size={14} />
+                      {t("lowConfidence")}
+                    </span>
+                  ) : (
+                    <Decision
+                      kind={row.decision.kind}
+                      compact
+                      {...(row.decision.by !== undefined && { by: row.decision.by })}
+                    />
+                  )}
+                </td>
+              </tr>
+            </Fragment>
           );
         })}
       </tbody>
       {unranked.length > 0 && (
         <tbody aria-labelledby={unrankedId}>
           <tr>
-            <td id={unrankedId} colSpan={6} className={styles.group}>
+            <td id={unrankedId} colSpan={COLUMNS} className={styles.group}>
               {t("notRanked")}
             </td>
           </tr>

@@ -15,6 +15,7 @@ let recruiter: Account;
 let stranger: Account;
 let rankedJob: string;
 let emptyJob: string;
+let brokenJob: string;
 let strangersJob: string;
 
 test.beforeAll(async () => {
@@ -23,6 +24,21 @@ test.beforeAll(async () => {
   rankedJob = await addJob(recruiter, { title: "Senior Accountant", location: "Giza" });
   emptyJob = await addJob(recruiter, { title: "HR Coordinator" });
   strangersJob = await addJob(stranger, { title: "Someone Else's Job" });
+  brokenJob = await addJob(recruiter, { title: "Payroll Officer" });
+  for (const [name, total] of [
+    ["Nadia Samir", 90],
+    ["Karim Fathy", 88],
+    ["Laila Mostafa", 86],
+    ["Sherif Adel", 60],
+    ["Dina Wahba", 58],
+  ] as const) {
+    await addRankedCandidate(recruiter, brokenJob, {
+      name,
+      total,
+      justification: "Payroll in Cairo.",
+      confidence: 0.95,
+    });
+  }
   await addRankedCandidate(recruiter, rankedJob, {
     name: "Omar Hassan",
     total: 74,
@@ -112,6 +128,23 @@ test("a second batch dropped while the first is sending keeps both in view", asy
   await expect(page.getByRole("listitem").filter({ hasText: "Second batch.pdf" })).toContainText(
     "Processing",
   );
+});
+
+test("the ranking marks where the scores fall off", async ({ page }) => {
+  await signIn(page, recruiter);
+  await page.goto(`/en/jobs/${brokenJob}`);
+  const rows = page.getByRole("table", { name: "Candidates ranked by score" }).locator("tbody tr");
+  await expect(rows.nth(2)).toContainText("Laila Mostafa");
+  await expect(rows.nth(3)).toHaveText("Scores drop 26 points below here");
+  await expect(rows.nth(4)).toContainText("Sherif Adel");
+  await expectAccessible(page);
+});
+
+test("a ranking without a break carries no marker", async ({ page }) => {
+  await signIn(page, recruiter);
+  await page.goto(`/en/jobs/${rankedJob}`);
+  await expect(page.getByRole("table", { name: "Candidates ranked by score" })).toBeVisible();
+  await expect(page.getByText(/Scores drop/)).toHaveCount(0);
 });
 
 test("the page reads in Arabic, right to left", async ({ page }) => {

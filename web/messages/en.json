@@ -104,7 +104,8 @@
     "status": "Status",
     "notRanked": "Not ranked yet",
     "lowConfidence": "Low confidence · review",
-    "readFailed": "Couldn't read: {reason}"
+    "readFailed": "Couldn't read: {reason}",
+    "dropOff": "{gap, plural, one {Scores drop {gap} point below here} other {Scores drop {gap} points below here}}"
   },
   "upload": {
     "drop": "Drag up to {max} files here, or choose files",

@@ -123,6 +123,28 @@
   cursor: default;
 }
 
+/* The drop-off (T064): words and a rule across the list, no colour of its own (Greyscale Rule). */
+.dropOff {
+  padding-block: var(--space-3);
+  color: var(--color-text-secondary);
+  font-size: var(--size-label);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-label);
+}
+
+.dropOff > span {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.dropOff > span::after {
+  flex: 1;
+  block-size: 0;
+  border-block-start: var(--border-control);
+  content: "";
+}
+
 .file {
   font-family: var(--font-mono);
   font-weight: var(--weight-regular);
