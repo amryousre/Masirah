@@ -93,8 +93,11 @@ has three consequences:
 - One prompt is maintained, not two.
 - A schema only one provider can satisfy fails in one place.
 
-Only `extract_profile` exists so far. `summarise_candidate` and `score_application` arrive with the
-domain they need, in T047 and T056.
+`extract_profile` is in `extraction.py`. `score_application` is in `assessment.py`, with
+`summarise_candidate` folded into it: one call to the strong tier rates the components and writes
+the justification, then one call to the cheap tier writes the summary, both from the same redacted
+profile. The total is not part of either output; the domain computes it from the ratings and the
+job's weights.
 
 The failure types are `RateLimitedError`, `TimedOutError`, `RefusedError`, `MalformedOutputError`
 and `ProviderUnavailableError`, all under `ModelProviderError`. A failure after the model answered
