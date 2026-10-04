@@ -12,7 +12,8 @@ import styles from "./job.module.css";
 
 interface UploadOutcome {
   name: string;
-  status: "queued" | "rejected" | "failed";
+  /** pending: stored, and queued again by the worker's reconciliation within minutes. */
+  status: "queued" | "pending" | "rejected" | "failed";
   reason?: "type" | "size" | "empty";
 }
 
@@ -102,7 +103,9 @@ export function JobScreen({
       setUploads(
         batch.map((item, index) => {
           const outcome = outcomes[index];
-          if (outcome?.status === "queued") return { ...item, status: { kind: "processing" } };
+          if (outcome?.status === "queued" || outcome?.status === "pending") {
+            return { ...item, status: { kind: "processing" } };
+          }
           const reason =
             outcome?.status === "rejected" && outcome.reason !== undefined
               ? t(`rejected.${outcome.reason}`)
