@@ -158,3 +158,14 @@ def test_the_job_table_agrees(cur: Cursor, weights: Any, valid: bool) -> None:
         cur.execute("rollback to savepoint attempt")
         accepted = False
     assert accepted is valid
+
+
+@pytest.mark.parametrize(
+    "value", [float("nan"), float("inf"), float("-inf")], ids=["nan", "inf", "-inf"]
+)
+def test_a_value_that_is_not_finite_is_refused_as_invalid(value: float) -> None:
+    """JSON from outside can carry them; they must fail as invalid input, not as a crash."""
+    with pytest.raises(InvalidWeightsError):
+        weights_from(WEIGHTS | {"location": value})
+    with pytest.raises(InvalidComponentsError):
+        components_from(EVEN | {"location": value})

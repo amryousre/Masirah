@@ -12,6 +12,7 @@ a change of weights can be told from a score that is merely stale (AI-04).
 
 import hashlib
 import json
+import math
 from collections.abc import Mapping
 from dataclasses import dataclass
 from decimal import ROUND_HALF_UP, Decimal
@@ -91,6 +92,8 @@ def _whole_numbers(raw: object, what: str, error: type[ValueError]) -> dict[str,
         value = raw[name]
         if isinstance(value, bool) or not isinstance(value, int | float):
             raise error(f"{name} is not a number")
+        if not math.isfinite(value):
+            raise error(f"{name} is not a finite number")
         if value != int(value):
             raise error(f"{name} is not a whole number")
         values[name] = int(value)
