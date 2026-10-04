@@ -13,7 +13,7 @@ from uuid import UUID
 import psycopg
 from psycopg.types.json import Jsonb
 
-from masirah_pipeline.ports.worker_store import CvFile, Extraction, StoredProfile
+from masirah_pipeline.ports.worker_store import CachedProfile, CvFile, Extraction, StoredProfile
 
 Cursor = psycopg.Cursor[tuple[Any, ...]]
 
@@ -39,6 +39,20 @@ class PostgresWorkerStore:
                 (cv_file_id,),
             ).fetchone()
         return None if row is None else StoredProfile(*row)
+
+    def profile_for_content(
+        self, organisation_id: UUID, content_hash: str, other_than: UUID
+    ) -> CachedProfile | None:
+        with self._acting_for(organisation_id) as cur:
+            row = cur.execute(
+                "select f.id, f.candidate_id, p.extraction_source::text, p.confidence, p.profile"
+                " from public.cv_file f join public.parsed_profile p"
+                "   on p.cv_file_id = f.id and p.is_current"
+                " where f.content_hash = %s and f.id <> %s"
+                " order by p.extracted_at desc limit 1",
+                (content_hash, other_than),
+            ).fetchone()
+        return None if row is None else CachedProfile(*row)
 
     def mark_extracting(self, organisation_id: UUID, cv_file_id: UUID) -> None:
         self._set_status(organisation_id, cv_file_id, "extracting", None)
@@ -67,7 +81,8 @@ class PostgresWorkerStore:
             ).fetchone()
             if row is None:
                 raise LookupError(f"CV file {cv_file_id} is not in organisation {organisation_id}")
-            candidate_id = _candidate(cur, organisation_id, row[0], fields)
+            existing = row[0] or extraction.candidate_id
+            candidate_id = _candidate(cur, organisation_id, existing, fields)
             cur.execute(
                 "update public.parsed_profile set is_current = false"
                 " where cv_file_id = %s and is_current",

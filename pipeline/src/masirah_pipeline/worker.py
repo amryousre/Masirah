@@ -11,9 +11,11 @@ The worker reads a batch of messages and handles each one to one of three outcom
 
 A CV is never dropped (SC-006). It ends extracted, in the review queue, or failed with a reason.
 A retry is safe (obligation 1): a file that already has its profile is not extracted again, and
-a file already in review is left there. Every database operation is scoped to the message's
-organisation (obligation 3). Scoring, with the redaction that keeps protected attributes from
-the model (obligation 6) and the score's cost (obligation 5), sits behind the Scorer (T056, T057).
+a file already in review is left there. A file whose content the organisation has extracted
+before reuses that profile and its candidate without reading the file or calling the model
+(AI-03). Every database operation is scoped to the message's organisation (obligation 3).
+Scoring, with the redaction that keeps protected attributes from the model (obligation 6) and the
+score's cost (obligation 5), sits behind the Scorer (T056, T057).
 """
 
 import logging
@@ -41,6 +43,7 @@ from masirah_pipeline.ports.queue_message import (
     parse_queue_message,
 )
 from masirah_pipeline.ports.worker_store import (
+    CachedProfile,
     CandidateDetails,
     CvFile,
     Extraction,
@@ -151,6 +154,10 @@ class Worker:
                 self._score(message, cv_file.candidate_id, profile, Decimal(0))
             return
         self.store.mark_extracting(organisation, file_id)
+        cached = self.store.profile_for_content(organisation, message.content_hash, file_id)
+        if cached is not None:
+            self._reuse(message, cached)
+            return
         text = self._text(cv_file)
         if text is None or not detect_language(text).supported:
             self.store.mark_needs_review(organisation, file_id)
@@ -174,6 +181,25 @@ class Worker:
         )
         if not doubtful:
             self._score(message, candidate_id, extracted.profile, extracted.response.cost_egp)
+
+    def _reuse(self, message: CvProcessingMessage, cached: CachedProfile) -> None:
+        """The same bytes were extracted before: take that profile, at no model cost (AI-03)."""
+        profile = profile_from_output(cached.profile)
+        doubtful = needs_review(float(cached.confidence))
+        candidate_id = self.store.record_extraction(
+            message.organisation_id,
+            message.cv_file_id,
+            Extraction(
+                source=cached.source,
+                confidence=cached.confidence,
+                profile=cached.profile,
+                candidate=_candidate(profile),
+                status="needs_review" if doubtful else "extracted",
+                candidate_id=cached.candidate_id,
+            ),
+        )
+        if not doubtful:
+            self._score(message, candidate_id, profile, Decimal(0))
 
     def _text(self, cv_file: CvFile) -> str | None:
         """The CV's text, or None when it has none to read until OCR arrives (T076)."""

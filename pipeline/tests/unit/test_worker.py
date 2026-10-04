@@ -28,7 +28,7 @@ from masirah_pipeline.ports.model_provider import (
     Usage,
 )
 from masirah_pipeline.ports.queue_message import CV_PROCESSING
-from masirah_pipeline.ports.worker_store import CvFile, Extraction, StoredProfile
+from masirah_pipeline.ports.worker_store import CachedProfile, CvFile, Extraction, StoredProfile
 from masirah_pipeline.worker import MAX_ATTEMPTS, Outcome, ScoringRequest, Worker
 
 ORG = uuid.uuid4()
@@ -116,6 +116,15 @@ class FakeStore:
     extraction: Extraction | None = None
     applications: list[tuple[uuid.UUID, uuid.UUID]] = field(default_factory=list)
     organisations: set[uuid.UUID] = field(default_factory=set)
+    cached: CachedProfile | None = None
+    looked_up: list[tuple[str, uuid.UUID]] = field(default_factory=list)
+
+    def profile_for_content(
+        self, organisation_id: uuid.UUID, content_hash: str, other_than: uuid.UUID
+    ) -> CachedProfile | None:
+        self.organisations.add(organisation_id)
+        self.looked_up.append((content_hash, other_than))
+        return self.cached
 
     def cv_file(self, organisation_id: uuid.UUID, cv_file_id: uuid.UUID) -> CvFile | None:
         self.organisations.add(organisation_id)
@@ -266,6 +275,53 @@ class TestExtraction:
         assert setup.store.extraction is not None
         assert setup.store.extraction.confidence < Decimal("0.8")
         assert setup.scorer.requests == []
+
+
+class TestSameContent:
+    """AI-03: the same bytes uploaded again are not paid for again."""
+
+    EARLIER = CachedProfile(
+        cv_file_id=uuid.uuid4(),
+        candidate_id=CANDIDATE_ID,
+        source="native_text",
+        confidence=Decimal("0.97"),
+        profile=OUTPUT,
+    )
+
+    def test_a_profile_of_the_same_content_is_reused_without_a_model_call(
+        self, setup: Setup
+    ) -> None:
+        setup.store.cached = self.EARLIER
+        assert setup.handle() is Outcome.DONE
+        assert setup.model.calls == 0
+        assert setup.store.looked_up == [(HASH, FILE_ID)]
+        extraction = setup.store.extraction
+        assert extraction is not None
+        assert (extraction.profile, extraction.confidence, extraction.status) == (
+            OUTPUT,
+            Decimal("0.97"),
+            "extracted",
+        )
+        assert extraction.candidate_id == CANDIDATE_ID
+
+    def test_the_reused_profile_is_scored_at_no_extraction_cost(self, setup: Setup) -> None:
+        setup.store.cached = self.EARLIER
+        setup.handle()
+        [request] = setup.scorer.requests
+        assert request.extraction_cost_egp == 0
+
+    def test_a_doubtful_profile_stays_doubtful_when_reused(self, setup: Setup) -> None:
+        setup.store.cached = CachedProfile(
+            self.EARLIER.cv_file_id, None, "native_text", Decimal("0.5"), OUTPUT
+        )
+        setup.handle()
+        assert setup.store.status == "needs_review"
+        assert setup.scorer.requests == []
+
+    def test_the_original_is_not_read_when_its_content_is_known(self, setup: Setup) -> None:
+        setup.store.cached = self.EARLIER
+        setup.files.error = AssertionError("the file should not be fetched")
+        assert setup.handle() is Outcome.DONE
 
 
 class TestReviewWithoutExtraction:

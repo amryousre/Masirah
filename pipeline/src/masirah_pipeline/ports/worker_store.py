@@ -35,6 +35,17 @@ class StoredProfile:
 
 
 @dataclass(frozen=True)
+class CachedProfile:
+    """The current profile of another file with the same content in the organisation (AI-03)."""
+
+    cv_file_id: UUID
+    candidate_id: UUID | None
+    source: ExtractionSource
+    confidence: Decimal
+    profile: dict[str, Any]
+
+
+@dataclass(frozen=True)
 class CandidateDetails:
     """Who the CV describes, as the candidate record holds it."""
 
@@ -52,12 +63,21 @@ class Extraction:
     profile: dict[str, Any]
     candidate: CandidateDetails
     status: ExtractedStatus
+    # The candidate to link when the file has none yet, as when the same content was uploaded
+    # before; otherwise a new candidate is created.
+    candidate_id: UUID | None = None
 
 
 class WorkerStore(Protocol):
     def cv_file(self, organisation_id: UUID, cv_file_id: UUID) -> CvFile | None: ...
 
     def current_profile(self, organisation_id: UUID, cv_file_id: UUID) -> StoredProfile | None: ...
+
+    def profile_for_content(
+        self, organisation_id: UUID, content_hash: str, other_than: UUID
+    ) -> CachedProfile | None:
+        """The current profile of another file in the organisation with the same content."""
+        ...
 
     def mark_extracting(self, organisation_id: UUID, cv_file_id: UUID) -> None: ...
 
