@@ -216,3 +216,46 @@ export async function addRankedCandidate(
   );
   return person.data.id;
 }
+
+/**
+ * Another CV for a candidate already in the organisation, uploaded for a job and applied with:
+ * the candidate who sends a second CV for a second job.
+ */
+export async function addCvFile(
+  account: Account,
+  candidateId: string,
+  jobId: string,
+  fileName: string,
+): Promise<void> {
+  const organisationId = account.organisationId;
+  if (organisationId === null) throw new Error("The account belongs to no organisation.");
+  const client = admin();
+  const fileId = randomUUID();
+  const file = await client.from("cv_file").insert({
+    id: fileId,
+    organisation_id: organisationId,
+    candidate_id: candidateId,
+    job_id: jobId,
+    storage_path: `organisations/${organisationId}/cv/${fileId}/cv.pdf`,
+    original_filename: fileName,
+    mime_type: "application/pdf",
+    byte_size: 1024,
+    content_hash: randomUUID().replaceAll("-", "").repeat(2),
+    status: "extracted",
+  });
+  if (file.error) throw new Error(file.error.message);
+  const profile = await client.from("parsed_profile").insert({
+    organisation_id: organisationId,
+    cv_file_id: fileId,
+    version: 1,
+    is_current: true,
+    extraction_source: "native_text",
+    confidence: 0.95,
+    profile: { name: fileName },
+  });
+  if (profile.error) throw new Error(profile.error.message);
+  const application = await client
+    .from("application")
+    .insert({ organisation_id: organisationId, candidate_id: candidateId, job_id: jobId });
+  if (application.error) throw new Error(application.error.message);
+}

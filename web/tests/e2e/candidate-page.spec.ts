@@ -1,6 +1,12 @@
 import { expect, test } from "@playwright/test";
 
-import { type Account, addJob, addRankedCandidate, createAccount } from "./support/accounts";
+import {
+  type Account,
+  addCvFile,
+  addJob,
+  addRankedCandidate,
+  createAccount,
+} from "./support/accounts";
 import { expectAccessible, signIn } from "./support/pages";
 
 // A candidate's own page (T065, T066): reached from the ranked list, the written reasons lead,
@@ -138,6 +144,24 @@ test("on a laptop both panes show and there are no view tabs", async ({ page }) 
   await expect(page.getByRole("tablist", { name: "Candidate views" })).toBeHidden();
   await expect(page.getByRole("region", { name: "Original document" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Why rank 1" })).toBeVisible();
+});
+
+test("each job shows the CV sent for it, with that CV's extraction", async ({ page }) => {
+  const laterJob = await addJob(recruiter, { title: "Finance Manager" });
+  await addCvFile(recruiter, yasmin, laterJob, "Yasmin for finance.pdf");
+  await signIn(page, recruiter);
+
+  await page.goto(`/en/jobs/${laterJob}/candidates/${yasmin}`);
+  const document = page.getByRole("region", { name: "Original document" });
+  await expect(document).toContainText("Yasmin for finance.pdf");
+  await page.getByRole("tab", { name: "Extracted profile" }).click();
+  await expect(
+    page.getByRole("definition").filter({ hasText: "Yasmin for finance.pdf" }),
+  ).toBeVisible();
+
+  await page.goto(`/en/jobs/${job}/candidates/${yasmin}`);
+  await expect(document).toContainText("Yasmin Farouk.pdf");
+  await expect(document).not.toContainText("Yasmin for finance.pdf");
 });
 
 test("another organisation's candidate is not found", async ({ page }) => {

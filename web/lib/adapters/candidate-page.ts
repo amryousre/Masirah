@@ -35,16 +35,17 @@ function unreadable(read: string, error: { message: string }): Error {
 
 /**
  * One candidate's page within a job (T066): their score for the job with its components, the
- * written reasoning and summary, the extracted profile and the original document. Row level
- * security limits each read to the member's organisation, so another organisation's candidate,
- * or one who never applied to this job, reads as missing.
+ * written reasoning and summary, and the CV sent for the job with its extraction, so the document
+ * and the profile beside it are always the same file's. Row level security limits each read to
+ * the member's organisation, so another organisation's candidate, or one who never applied to
+ * this job, reads as missing.
  */
 export async function readCandidatePage(
   supabase: SupabaseClient,
   jobId: string,
   candidateId: string,
 ): Promise<CandidatePage | null> {
-  const [ranking, job, application, file] = await Promise.all([
+  const [ranking, job, application, files] = await Promise.all([
     readJobPage(supabase, jobId),
     supabase.from("job").select("id, title, weights").eq("id", jobId).maybeSingle(),
     supabase
@@ -55,15 +56,17 @@ export async function readCandidatePage(
       .maybeSingle(),
     supabase
       .from("cv_file")
-      .select("id, original_filename, mime_type, storage_path")
+      .select("id, original_filename, mime_type, storage_path, job_id")
       .eq("candidate_id", candidateId)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
+      .order("created_at", { ascending: false }),
   ]);
   if (job.error) throw unreadable("job", job.error);
   if (application.error) throw unreadable("job_candidates", application.error);
-  if (file.error) throw unreadable("cv_file", file.error);
+  if (files.error) throw unreadable("cv_file", files.error);
+  // The CV sent for this job, beside this job's score. A file uploaded before files carried their
+  // job (migration 0017) has none, and then the candidate's latest CV is the one there is.
+  const file =
+    files.data.find((candidateFile) => candidateFile.job_id === jobId) ?? files.data[0] ?? null;
   if (ranking === null || job.data === null) return null;
   const applied = application.data;
   if (applied?.application_id == null || applied.decision === null) return null;
@@ -76,12 +79,12 @@ export async function readCandidatePage(
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
-    file.data === null
+    file === null
       ? Promise.resolve({ data: null, error: null })
       : supabase
           .from("parsed_profile")
           .select("profile, confidence")
-          .eq("cv_file_id", file.data.id)
+          .eq("cv_file_id", file.id)
           .eq("is_current", true)
           .maybeSingle(),
   ]);
@@ -99,12 +102,12 @@ export async function readCandidatePage(
         ? null
         : { values: profile.data.profile, confidence: profile.data.confidence },
     document:
-      file.data === null
+      file === null
         ? null
         : {
-            fileName: file.data.original_filename,
-            mimeType: file.data.mime_type,
-            storagePath: file.data.storage_path,
+            fileName: file.original_filename,
+            mimeType: file.mime_type,
+            storagePath: file.storage_path,
           },
   };
 }
