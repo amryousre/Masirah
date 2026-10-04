@@ -15,6 +15,9 @@ from masirah_pipeline.domain.justification import JobSpec
 from masirah_pipeline.domain.scoring import weights_from
 from masirah_pipeline.ports.score_repository import ScoreRecord
 
+# The web stores a job's language requirement as a code (T059); the model reads it in words.
+LANGUAGE_REQUIREMENTS = {"ar": "Arabic", "en": "English", "both": "Arabic and English"}
+
 
 class PostgresScoreRepository:
     def __init__(self, connection: psycopg.Connection[Any]) -> None:
@@ -38,7 +41,7 @@ class PostgresScoreRepository:
             preferred_skills=tuple(preferred),
             minimum_experience_years=minimum,
             location=location,
-            language_requirement=language,
+            language_requirement=LANGUAGE_REQUIREMENTS.get(language, language),
             weights=weights_from(weights),
         )
 

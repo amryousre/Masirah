@@ -1,0 +1,131 @@
+.table {
+  inline-size: 100%;
+  border-collapse: collapse;
+  border-block-start: var(--border);
+  font-size: var(--size-body-sm);
+  line-height: var(--leading-body-sm);
+}
+
+/* Read by screen readers, not shown: the page heading gives the table its visible context. */
+.caption {
+  position: absolute;
+  overflow: hidden;
+  inline-size: 1px;
+  block-size: 1px;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.table th,
+.table td {
+  padding-block: var(--space-2);
+  padding-inline: var(--space-3);
+  text-align: start;
+  vertical-align: middle;
+}
+
+.table thead th {
+  border-block-end: var(--border);
+  color: var(--color-text-secondary);
+  font-size: var(--size-label);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-label);
+  white-space: nowrap;
+}
+
+.row {
+  border-block-end: var(--border-divider);
+  transition: background-color var(--duration-base) var(--ease);
+}
+
+.row:hover {
+  background: var(--color-fill-hover);
+}
+
+.title {
+  display: block;
+  color: var(--color-text);
+  font-weight: var(--weight-medium);
+}
+
+.meta {
+  display: block;
+  color: var(--color-text-secondary);
+  font-size: var(--size-caption);
+  line-height: var(--leading-caption);
+}
+
+.number {
+  inline-size: 5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.progressText {
+  display: block;
+  margin-block-end: var(--space-1);
+  color: var(--color-text-secondary);
+  font-size: var(--size-caption);
+  line-height: var(--leading-caption);
+  font-variant-numeric: tabular-nums;
+}
+
+.track {
+  display: flex;
+  max-inline-size: 15rem;
+  block-size: 4px;
+  border-radius: 2px;
+  background: var(--score-track);
+}
+
+.fill {
+  display: block;
+  inline-size: var(--fill);
+  block-size: 100%;
+  border-radius: inherit;
+  background: var(--score-bar);
+}
+
+.attention {
+  font-size: var(--size-caption);
+  line-height: var(--leading-caption);
+}
+
+.attention[data-need="no-cvs"],
+.attention[data-need="nothing"] {
+  color: var(--color-text-secondary);
+}
+
+.updated {
+  color: var(--color-text-secondary);
+  font-size: var(--size-caption);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Below 48rem each row stacks: the job, its progress, what it needs and when it last changed. */
+@media (width < 48rem) {
+  .table thead {
+    display: none;
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-1);
+    padding-block: var(--space-3);
+  }
+
+  .table td {
+    padding-block: 0;
+  }
+
+  /* The count repeats the progress text; the update time stays, since it says which jobs are
+     active. */
+  .number {
+    display: none;
+  }
+
+  .updated {
+    white-space: normal;
+  }
+}

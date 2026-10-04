@@ -2,7 +2,7 @@ import path from "node:path";
 
 import { ESLint } from "eslint";
 import tseslint from "typescript-eslint";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 // Constitution II: dependencies point inward. These run the real eslint.config.mjs against
 // virtual files, so type-aware rules are switched off: the files have no type information.
@@ -31,6 +31,9 @@ const dynamicImports = {
 async function dynamicImportViolations(filePath: string, source: string): Promise<number> {
   return violations(filePath, source, "no-restricted-syntax");
 }
+
+// Each case runs the real ESLint, whose first run in a busy suite takes longer than 5 seconds.
+vi.setConfig({ testTimeout: 30_000 });
 
 describe("domain", () => {
   it.each([

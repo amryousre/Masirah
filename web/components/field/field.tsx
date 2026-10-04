@@ -5,6 +5,7 @@ import {
   type InputHTMLAttributes,
   type ReactNode,
   type SelectHTMLAttributes,
+  type TextareaHTMLAttributes,
   useId,
   useState,
 } from "react";
@@ -23,6 +24,8 @@ interface FieldProps {
   loading?: string | undefined;
   /** A value the system proposed, marked until someone saves it. */
   suggested?: boolean;
+  /** Spans the form's width, for long text such as a job description. */
+  wide?: boolean | undefined;
 }
 
 interface FrameProps extends FieldProps {
@@ -35,11 +38,11 @@ interface FrameProps extends FieldProps {
 const tagIdOf = (id: string) => `${id}-suggested`;
 const messageIdOf = (id: string) => `${id}-message`;
 
-function FieldFrame({ id, label, help, error, loading, suggested, children }: FrameProps) {
+function FieldFrame({ id, label, help, error, loading, suggested, wide, children }: FrameProps) {
   const t = useTranslations("field");
   const message = error ?? loading ?? help;
   return (
-    <div className={styles.field}>
+    <div className={styles.field} data-wide={wide || undefined}>
       <div className={styles.labelRow}>
         <label htmlFor={id} className={styles.label}>
           {label}
@@ -82,15 +85,42 @@ export function TextField({
   error,
   loading,
   suggested,
+  wide,
   className,
   ...input
 }: TextFieldProps) {
   const id = useId();
   const field = { label, help, error, loading, suggested: suggested ?? false };
   return (
-    <FieldFrame id={id} {...field}>
+    <FieldFrame id={id} wide={wide} {...field}>
       <input className={cx(styles.input, className)} {...controlProps(field, id)} {...input} />
       {loading !== undefined && <Icon name="spinner" size={14} className={styles.adornment} />}
+    </FieldFrame>
+  );
+}
+
+type TextAreaFieldProps = FieldProps & Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, "id">;
+
+/** Several lines of text: a job description pasted whole, or written out. */
+export function TextAreaField({
+  label,
+  help,
+  error,
+  loading,
+  suggested,
+  wide,
+  className,
+  ...area
+}: TextAreaFieldProps) {
+  const id = useId();
+  const field = { label, help, error, loading, suggested: suggested ?? false };
+  return (
+    <FieldFrame id={id} wide={wide} {...field}>
+      <textarea
+        className={cx(styles.input, styles.area, className)}
+        {...controlProps(field, id)}
+        {...area}
+      />
     </FieldFrame>
   );
 }

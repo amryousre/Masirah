@@ -36,7 +36,9 @@
   "field": {
     "suggested": "Suggested",
     "choose": "Choose…",
-    "showPassword": "Show password"
+    "showPassword": "Show password",
+    "addSkill": "Type a skill and press Enter",
+    "removeSkill": "Remove {skill}"
   },
   "dialog": {
     "close": "Close"
@@ -171,7 +173,35 @@
     "useAnotherProgress": "Signing out…"
   },
   "jobs": {
-    "title": "Jobs"
+    "title": "Jobs",
+    "createJob": "Create job",
+    "pasteDescription": "Paste a job description",
+    "caption": "Your jobs, most recently active first",
+    "empty": {
+      "title": "No jobs yet",
+      "body": "Every ranking starts with a job. Create one, add CVs to it, and each candidate is ranked with a written reason.",
+      "stepCreate": "Create a job: title, required skills and minimum experience.",
+      "stepDrop": "Drop CVs onto the job, up to {max} files at a time.",
+      "stepReview": "Review the ranking: each candidate has a written reason quoting their CV."
+    },
+    "column": {
+      "job": "Job",
+      "cvs": "CVs",
+      "progress": "Progress",
+      "attention": "Needs you",
+      "updated": "Updated"
+    },
+    "experience": "{years, plural, one {{years}+ year} other {{years}+ years}}",
+    "progress": "{ranked} of {total} ranked",
+    "noCvs": "No CVs yet",
+    "attention": {
+      "noCvs": "Drop files onto the job to start ranking",
+      "processing": "{processing} processing · {decisions, plural, one {{decisions} needs a decision} other {{decisions} need a decision}}",
+      "decisions": "{decisions, plural, one {{decisions} needs a decision} other {{decisions} need a decision}}",
+      "nothing": "Nothing"
+    },
+    "updatedToday": "Today {time}",
+    "updatedYesterday": "Yesterday"
   },
   "gallery": {
     "title": "Design system",
@@ -340,6 +370,49 @@
       "user": "Nourhan Saeed",
       "email": "nourhan@deltasoft.example",
       "heading": "Senior Front-end Developer"
+    }
+  },
+  "newJob": {
+    "title": "Create job",
+    "back": "Jobs",
+    "breadcrumb": "Breadcrumb",
+    "modes": "How to start the job",
+    "mode": {
+      "paste": "Paste a description",
+      "manual": "Fill in manually"
+    },
+    "field": {
+      "pasted": "Job description",
+      "title": "Job title",
+      "description": "Description",
+      "requiredSkills": "Required skills",
+      "preferredSkills": "Preferred skills",
+      "minimumExperience": "Minimum experience",
+      "location": "Location",
+      "languageRequirement": "Language requirement"
+    },
+    "help": {
+      "pasted": "Paste the text as it is, in Arabic or English. You review the proposed specification before saving.",
+      "requiredSkills": "Counted in Skills match at full weight.",
+      "preferredSkills": "Raise the score; their absence doesn't lower it."
+    },
+    "years": "{years, plural, one {{years} year} other {{years} years}}",
+    "language": {
+      "ar": "Arabic",
+      "en": "English",
+      "both": "Arabic and English"
+    },
+    "propose": "Propose specification",
+    "proposing": "Proposing a specification…",
+    "unavailable": "A proposed specification isn't available yet. Your description is kept below; fill in the rest and save.",
+    "save": "Save job",
+    "saving": "Saving job…",
+    "failed": "The job couldn't be saved. Try again; nothing on this page was lost.",
+    "error": {
+      "missing": "Enter the job title.",
+      "tooLong": "Shorten this to {max} characters or fewer.",
+      "tooMany": "Keep this to {max} skills or fewer.",
+      "invalid": "Choose one of the options."
     }
   }
 }

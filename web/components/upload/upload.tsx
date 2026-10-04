@@ -3,6 +3,8 @@
 import { useTranslations } from "next-intl";
 import { type DragEvent, useId, useState } from "react";
 
+import { MAX_BATCH_FILES } from "@/lib/domain/uploads";
+
 import { Button } from "../button/button";
 import { Icon, type IconName } from "../icon/icon";
 import styles from "./upload.module.css";
@@ -121,7 +123,7 @@ interface DropZoneProps {
   limitReached?: { limit: number; renewsOn: string };
 }
 
-export function DropZone({ job, onFiles, max = 25, limitReached }: DropZoneProps) {
+export function DropZone({ job, onFiles, max = MAX_BATCH_FILES, limitReached }: DropZoneProps) {
   const t = useTranslations("upload");
   const promptId = useId();
   const hintId = useId();

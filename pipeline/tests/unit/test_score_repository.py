@@ -56,6 +56,30 @@ def test_it_reads_the_job(scores: PostgresScoreRepository, tenants: tuple[Tenant
     assert job.weights == weights_from(WEIGHTS)
 
 
+@pytest.mark.parametrize(
+    ("code", "words"),
+    [("ar", "Arabic"), ("en", "English"), ("both", "Arabic and English"), (None, None)],
+)
+def test_the_language_requirement_reaches_the_model_in_words(
+    scores: PostgresScoreRepository,
+    tenants: tuple[Tenant, Tenant],
+    cur: Cursor,
+    code: str | None,
+    words: str | None,
+) -> None:
+    """The web stores a code (T059); the scoring prompt reads a language, not "both"."""
+    alpha, _ = tenants
+    cur.execute("reset role")
+    cur.execute(
+        "update public.job set language_requirement = %s where id = %s",
+        (code, alpha.row_ids["job"]),
+    )
+    cur.execute("set local role masirah_worker")
+    job = scores.job(alpha.organisation_id, alpha.row_ids["job"])
+    assert job is not None
+    assert job.language_requirement == words
+
+
 def test_another_tenants_job_is_not_there(
     scores: PostgresScoreRepository, tenants: tuple[Tenant, Tenant]
 ) -> None:

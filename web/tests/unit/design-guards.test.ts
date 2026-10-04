@@ -1,6 +1,6 @@
 import { ESLint } from "eslint";
 import tseslint from "typescript-eslint";
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 
 // DESIGN.md section 2: one token file, one component library, enforced by lint. These tests run
 // the real ESLint configuration, so a guard that stops firing fails here rather than silently.
@@ -20,6 +20,9 @@ async function rulesBroken(filePath: string, code: string): Promise<(string | nu
   const [result] = await eslint.lintText(code, { filePath });
   return result?.messages.map((message) => message.ruleId) ?? [];
 }
+
+// Each case runs the real ESLint, whose first run in a busy suite takes longer than 5 seconds.
+vi.setConfig({ testTimeout: 30_000 });
 
 describe("CSS outside the token file", () => {
   const css = "components/example.module.css";
