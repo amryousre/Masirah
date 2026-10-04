@@ -1,0 +1,468 @@
+"""The worker's consume loop (T054, contracts/queue-message.md worker obligations).
+
+Each test hands the worker one queue message and checks what it recorded and what became of the
+message: deleted once the work is committed, left in the queue to retry, or archived when it can
+never succeed. A file is never dropped: it ends extracted, in the review queue, or failed with a
+reason (SC-006).
+"""
+
+import logging
+import uuid
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
+from decimal import Decimal
+from typing import Any
+
+import pytest
+
+from masirah_pipeline.domain.profile import Profile
+from masirah_pipeline.ports.cv_store import CvStoreUnavailableError, MissingCvError
+from masirah_pipeline.ports.document_text import UnreadableDocumentError
+from masirah_pipeline.ports.job_queue import ReceivedMessage
+from masirah_pipeline.ports.model_provider import (
+    ModelIdentity,
+    RateLimitedError,
+    RefusedError,
+    StructuredRequest,
+    StructuredResponse,
+    Usage,
+)
+from masirah_pipeline.ports.queue_message import CV_PROCESSING
+from masirah_pipeline.ports.worker_store import CvFile, Extraction, StoredProfile
+from masirah_pipeline.worker import MAX_ATTEMPTS, Outcome, ScoringRequest, Worker
+
+ORG = uuid.uuid4()
+FILE_ID = uuid.uuid4()
+JOB_ID = uuid.uuid4()
+APPLICATION_ID = uuid.uuid4()
+CANDIDATE_ID = uuid.uuid4()
+HASH = "a" * 64
+PATH = f"organisations/{ORG}/cv/{FILE_ID}/cv.pdf"
+COST = Decimal("0.42")
+
+TEXT = """\
+منى عبد الله
+القاهرة | mona@mail.test | 01001234567
+محاسبة في شركة النيل للأدوية 2019 - حتى الآن
+بكالوريوس تجارة جامعة القاهرة
+المهارات: Excel
+"""
+OUTPUT: dict[str, Any] = {
+    "name": "منى عبد الله",
+    "emails": ["mona@mail.test"],
+    "phones": ["+201001234567"],
+    "location": "القاهرة",
+    "years_of_experience": None,
+    "employment": [
+        {"employer": "شركة النيل للأدوية", "title": "محاسبة", "start": "2019", "end": "present"}
+    ],
+    "education": [
+        {"institution": "جامعة القاهرة", "qualification": "بكالوريوس تجارة", "start": None,
+         "end": None}
+    ],
+    "skills": ["Excel"],
+    "languages": [],
+    "certifications": [],
+}  # fmt: skip
+
+
+def message(**changes: Any) -> dict[str, Any]:
+    return {
+        "schema_version": 1,
+        "job_type": CV_PROCESSING,
+        "organisation_id": str(ORG),
+        "cv_file_id": str(FILE_ID),
+        "job_id": str(JOB_ID),
+        "content_hash": HASH,
+        "storage_path": PATH,
+        "locale": "ar",
+        "enqueued_at": "2026-10-04T12:00:00+00:00",
+    } | changes
+
+
+def received(body: Any, read_count: int = 1) -> ReceivedMessage:
+    return ReceivedMessage(7, read_count, datetime(2026, 10, 4, tzinfo=UTC), body)
+
+
+@dataclass
+class FakeQueue:
+    waiting: list[ReceivedMessage] = field(default_factory=list)
+    deleted: list[int] = field(default_factory=list)
+    archived: list[int] = field(default_factory=list)
+    reads: list[tuple[str, int, int]] = field(default_factory=list)
+
+    def read(self, queue: str, *, visibility_seconds: int, quantity: int) -> list[ReceivedMessage]:
+        self.reads.append((queue, visibility_seconds, quantity))
+        batch, self.waiting = self.waiting[:quantity], self.waiting[quantity:]
+        return batch
+
+    def delete(self, queue: str, message_id: int) -> bool:
+        self.deleted.append(message_id)
+        return True
+
+    def archive(self, queue: str, message_id: int) -> bool:
+        self.archived.append(message_id)
+        return True
+
+
+@dataclass
+class FakeStore:
+    file: CvFile | None = field(
+        default_factory=lambda: CvFile(FILE_ID, PATH, "application/pdf", HASH, "queued", None)
+    )
+    profile: StoredProfile | None = None
+    status: str = "queued"
+    failure: str | None = None
+    extraction: Extraction | None = None
+    applications: list[tuple[uuid.UUID, uuid.UUID]] = field(default_factory=list)
+    organisations: set[uuid.UUID] = field(default_factory=set)
+
+    def cv_file(self, organisation_id: uuid.UUID, cv_file_id: uuid.UUID) -> CvFile | None:
+        self.organisations.add(organisation_id)
+        return self.file if cv_file_id == FILE_ID else None
+
+    def current_profile(
+        self, organisation_id: uuid.UUID, cv_file_id: uuid.UUID
+    ) -> StoredProfile | None:
+        self.organisations.add(organisation_id)
+        return self.profile
+
+    def mark_extracting(self, organisation_id: uuid.UUID, cv_file_id: uuid.UUID) -> None:
+        self.organisations.add(organisation_id)
+        self.status = "extracting"
+
+    def record_extraction(
+        self, organisation_id: uuid.UUID, cv_file_id: uuid.UUID, extraction: Extraction
+    ) -> uuid.UUID:
+        self.organisations.add(organisation_id)
+        self.extraction, self.status = extraction, extraction.status
+        return CANDIDATE_ID
+
+    def mark_needs_review(self, organisation_id: uuid.UUID, cv_file_id: uuid.UUID) -> None:
+        self.organisations.add(organisation_id)
+        self.status = "needs_review"
+
+    def mark_failed(self, organisation_id: uuid.UUID, cv_file_id: uuid.UUID, reason: str) -> None:
+        self.organisations.add(organisation_id)
+        self.status, self.failure = "failed", reason
+
+    def ensure_application(
+        self, organisation_id: uuid.UUID, candidate_id: uuid.UUID, job_id: uuid.UUID
+    ) -> uuid.UUID:
+        self.organisations.add(organisation_id)
+        self.applications.append((candidate_id, job_id))
+        return APPLICATION_ID
+
+
+@dataclass
+class FakeFiles:
+    content: bytes = b"%PDF-1.7 a CV"
+    error: Exception | None = None
+
+    def fetch(self, storage_path: str) -> bytes:
+        if self.error is not None:
+            raise self.error
+        assert storage_path == PATH
+        return self.content
+
+
+@dataclass
+class FakeModel:
+    output: dict[str, Any] = field(default_factory=lambda: dict(OUTPUT))
+    error: Exception | None = None
+    calls: int = 0
+
+    def complete(self, request: StructuredRequest) -> StructuredResponse:
+        self.calls += 1
+        if self.error is not None:
+            raise self.error
+        return StructuredResponse(
+            output=self.output,
+            identity=ModelIdentity("anthropic", "claude-haiku-4-5", request.prompt_version),
+            usage=Usage(1000, 200),
+            cost_egp=COST,
+            payload=b"{}",
+        )
+
+
+@dataclass
+class FakeScorer:
+    requests: list[ScoringRequest] = field(default_factory=list)
+    error: Exception | None = None
+
+    def __call__(self, request: ScoringRequest) -> None:
+        if self.error is not None:
+            raise self.error
+        self.requests.append(request)
+
+
+@dataclass
+class Setup:
+    queue: FakeQueue = field(default_factory=FakeQueue)
+    store: FakeStore = field(default_factory=FakeStore)
+    files: FakeFiles = field(default_factory=FakeFiles)
+    model: FakeModel = field(default_factory=FakeModel)
+    scorer: FakeScorer = field(default_factory=FakeScorer)
+    text: str | Exception = TEXT
+
+    def read_text(self, content: bytes) -> str:
+        if isinstance(self.text, Exception):
+            raise self.text
+        return self.text
+
+    @property
+    def worker(self) -> Worker:
+        return Worker(
+            queue=self.queue,
+            store=self.store,
+            files=self.files,
+            read_text=self.read_text,
+            model=self.model,
+            score=self.scorer,
+        )
+
+    def handle(self, body: Any = None, read_count: int = 1) -> Outcome:
+        return self.worker.handle(
+            CV_PROCESSING, received(message() if body is None else body, read_count)
+        )
+
+
+@pytest.fixture
+def setup() -> Setup:
+    return Setup()
+
+
+class TestExtraction:
+    def test_a_cv_is_extracted_recorded_and_its_message_deleted(self, setup: Setup) -> None:
+        assert setup.handle() is Outcome.DONE
+        extraction = setup.store.extraction
+        assert extraction is not None
+        assert (extraction.status, extraction.source) == ("extracted", "native_text")
+        assert extraction.confidence == 1
+        assert extraction.profile["name"] == "منى عبد الله"
+        assert setup.queue.deleted == [7]
+        assert setup.queue.archived == []
+
+    def test_the_candidate_is_who_the_cv_describes(self, setup: Setup) -> None:
+        setup.handle()
+        assert setup.store.extraction is not None
+        candidate = setup.store.extraction.candidate
+        assert (candidate.full_name, candidate.email, candidate.phone, candidate.location) == (
+            "منى عبد الله",
+            "mona@mail.test",
+            "+201001234567",
+            "القاهرة",
+        )
+        assert candidate.name_normalised
+
+    def test_every_operation_is_scoped_to_the_messages_organisation(self, setup: Setup) -> None:
+        setup.handle()
+        assert setup.store.organisations == {ORG}
+
+    def test_a_profile_the_text_does_not_support_goes_to_review(self, setup: Setup) -> None:
+        setup.model.output = OUTPUT | {"skills": ["Oracle", "SAP", "Python", "Java", "Go"]}
+        assert setup.handle() is Outcome.DONE
+        assert setup.store.status == "needs_review"
+        assert setup.store.extraction is not None
+        assert setup.store.extraction.confidence < Decimal("0.8")
+        assert setup.scorer.requests == []
+
+
+class TestReviewWithoutExtraction:
+    def test_an_unsupported_language_is_not_sent_to_the_model(self, setup: Setup) -> None:
+        setup.text = (
+            "Je suis comptable avec dix ans d'expérience dans la gestion des comptes.\n" * 5
+        )
+        assert setup.handle() is Outcome.DONE
+        assert setup.store.status == "needs_review"
+        assert setup.model.calls == 0
+        assert setup.queue.deleted == [7]
+
+    def test_a_document_without_text_waits_for_ocr_in_review(self, setup: Setup) -> None:
+        setup.text = "   \n"
+        assert setup.handle() is Outcome.DONE
+        assert setup.store.status == "needs_review"
+        assert setup.model.calls == 0
+
+    def test_a_photograph_waits_for_ocr_in_review(self, setup: Setup) -> None:
+        setup.store.file = CvFile(FILE_ID, PATH, "image/jpeg", HASH, "queued", None)
+        setup.text = UnreadableDocumentError("not a PDF")
+        assert setup.handle() is Outcome.DONE
+        assert setup.store.status == "needs_review"
+        assert setup.model.calls == 0
+
+
+class TestScoring:
+    def test_a_cv_uploaded_against_a_job_is_scored_with_its_extraction_cost(
+        self, setup: Setup
+    ) -> None:
+        setup.handle()
+        assert setup.store.applications == [(CANDIDATE_ID, JOB_ID)]
+        [request] = setup.scorer.requests
+        assert (request.organisation_id, request.application_id, request.job_id) == (
+            ORG,
+            APPLICATION_ID,
+            JOB_ID,
+        )
+        assert isinstance(request.profile, Profile)
+        assert (request.locale, request.extraction_cost_egp) == ("ar", COST)
+
+    def test_a_cv_uploaded_without_a_job_is_only_extracted(self, setup: Setup) -> None:
+        assert setup.handle(message(job_id=None)) is Outcome.DONE
+        assert setup.scorer.requests == []
+        assert setup.store.applications == []
+
+    def test_a_failed_score_leaves_the_message_to_retry(self, setup: Setup) -> None:
+        setup.scorer.error = RateLimitedError("slow down")
+        assert setup.handle() is Outcome.LEFT
+        assert setup.queue.deleted == []
+
+
+class TestRetries:
+    def test_a_transient_model_failure_leaves_the_message(self, setup: Setup) -> None:
+        setup.model.error = RateLimitedError("slow down")
+        assert setup.handle() is Outcome.LEFT
+        assert setup.store.status == "extracting"
+        assert setup.store.failure is None
+        assert (setup.queue.deleted, setup.queue.archived) == ([], [])
+
+    def test_an_unreachable_file_store_leaves_the_message(self, setup: Setup) -> None:
+        setup.files.error = CvStoreUnavailableError("timeout")
+        assert setup.handle() is Outcome.LEFT
+        assert setup.store.failure is None
+
+    def test_an_unexpected_error_leaves_the_message_and_is_logged(
+        self, setup: Setup, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        setup.text = RuntimeError("a bug")
+        with caplog.at_level(logging.ERROR):
+            assert setup.handle() is Outcome.LEFT
+        assert "a bug" in caplog.text
+
+    def test_a_retry_after_the_profile_was_recorded_does_not_extract_again(
+        self, setup: Setup
+    ) -> None:
+        """Obligation 1: a second run of a message must not create a second profile."""
+        setup.store.file = CvFile(FILE_ID, PATH, "application/pdf", HASH, "extracted", CANDIDATE_ID)
+        setup.store.profile = StoredProfile(1, Decimal("0.95"), OUTPUT)
+        assert setup.handle() is Outcome.DONE
+        assert setup.model.calls == 0
+        assert setup.store.extraction is None
+        [request] = setup.scorer.requests
+        assert request.extraction_cost_egp == 0
+
+    def test_a_file_already_in_review_is_not_scored_on_retry(self, setup: Setup) -> None:
+        setup.store.file = CvFile(FILE_ID, PATH, "application/pdf", HASH, "needs_review", None)
+        assert setup.handle() is Outcome.DONE
+        assert setup.model.calls == 0
+        assert setup.scorer.requests == []
+
+
+class TestTerminalFailure:
+    def test_after_the_last_attempt_the_file_fails_and_the_message_is_archived(
+        self, setup: Setup
+    ) -> None:
+        assert setup.handle(read_count=MAX_ATTEMPTS + 1) is Outcome.ARCHIVED
+        assert setup.store.status == "failed"
+        assert setup.store.failure is not None
+        assert str(MAX_ATTEMPTS) in setup.store.failure
+        assert setup.model.calls == 0
+        assert setup.queue.archived == [7]
+
+    def test_scoring_that_keeps_failing_does_not_fail_an_extracted_file(
+        self, setup: Setup, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        setup.store.file = CvFile(FILE_ID, PATH, "application/pdf", HASH, "extracted", CANDIDATE_ID)
+        setup.store.status = "extracted"
+        with caplog.at_level(logging.ERROR):
+            assert setup.handle(read_count=MAX_ATTEMPTS + 1) is Outcome.ARCHIVED
+        assert (setup.store.status, setup.store.failure) == ("extracted", None)
+        assert caplog.records
+
+    def test_the_last_attempt_is_still_made(self, setup: Setup) -> None:
+        assert setup.handle(read_count=MAX_ATTEMPTS) is Outcome.DONE
+
+    def test_an_unreadable_file_fails_at_once(self, setup: Setup) -> None:
+        setup.text = UnreadableDocumentError("the PDF is encrypted")
+        assert setup.handle() is Outcome.ARCHIVED
+        assert setup.store.status == "failed"
+        assert setup.store.failure is not None
+        assert "encrypted" in setup.store.failure
+        assert setup.model.calls == 0
+
+    def test_a_missing_original_fails_at_once(self, setup: Setup) -> None:
+        setup.files.error = MissingCvError(PATH)
+        assert setup.handle() is Outcome.ARCHIVED
+        assert setup.store.status == "failed"
+
+    def test_a_refusal_fails_at_once(self, setup: Setup) -> None:
+        setup.model.error = RefusedError("declined")
+        assert setup.handle() is Outcome.ARCHIVED
+        assert setup.store.status == "failed"
+
+    def test_a_file_whose_bytes_changed_fails(self, setup: Setup) -> None:
+        setup.store.file = CvFile(FILE_ID, PATH, "application/pdf", "b" * 64, "queued", None)
+        assert setup.handle() is Outcome.ARCHIVED
+        assert setup.store.status == "failed"
+        assert setup.model.calls == 0
+
+    def test_a_message_naming_another_object_than_the_files_fails(self, setup: Setup) -> None:
+        """The file read is always the row's own: another object in the folder is never read."""
+        other = PATH.replace("cv.pdf", "other.pdf")
+        assert setup.handle(message(storage_path=other)) is Outcome.ARCHIVED
+        assert setup.store.status == "failed"
+        assert setup.model.calls == 0
+
+    def test_a_message_for_a_file_that_does_not_exist_is_archived_and_alerted(
+        self, setup: Setup, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        gone = uuid.uuid4()
+        body = message(cv_file_id=str(gone), storage_path=f"organisations/{ORG}/cv/{gone}/cv.pdf")
+        with caplog.at_level(logging.ERROR):
+            outcome = setup.handle(body)
+        assert outcome is Outcome.ARCHIVED
+        assert caplog.records
+
+
+class TestRefusedMessages:
+    @pytest.mark.parametrize(
+        "body",
+        [
+            message(schema_version=2),
+            message(locale="fr"),
+            "not an object",
+            {
+                "schema_version": 1,
+                "job_type": "cv_rescoring",
+                "organisation_id": str(ORG),
+                "application_id": str(APPLICATION_ID),
+                "weights_hash": "b" * 64,
+                "locale": "en",
+                "enqueued_at": "2026-10-04T12:00:00+00:00",
+            },
+        ],
+        ids=["unknown-version", "malformed", "not-json-object", "rescoring-has-no-producer-yet"],
+    )
+    def test_a_message_the_worker_cannot_handle_stays_and_raises_an_alert(
+        self, setup: Setup, body: Any, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        with caplog.at_level(logging.ERROR):
+            assert setup.handle(body) is Outcome.LEFT
+        assert caplog.records
+        assert "message 7 " in caplog.text
+        assert (setup.queue.deleted, setup.queue.archived) == ([], [])
+        assert setup.store.organisations == set()
+
+
+class TestRunOnce:
+    def test_it_reads_a_batch_and_handles_every_message(self, setup: Setup) -> None:
+        setup.queue.waiting = [received(message()), received("broken")]
+        assert setup.worker.run_once() == 2
+        [(queue, visibility, quantity)] = setup.queue.reads
+        assert queue == CV_PROCESSING
+        assert visibility > 0
+        assert quantity >= 1
+        assert setup.queue.deleted == [7]
+
+    def test_an_empty_queue_handles_nothing(self, setup: Setup) -> None:
+        assert setup.worker.run_once() == 0
