@@ -172,6 +172,24 @@ def assert_in_sequence(rows: list[str], expected: list[str]) -> None:
                 "Backend Software Engineer(Asp.Net / C# / RestfulApis)",
             ],
         ),
+        # An Arabic page is read right to left: the right-hand sidebar whole, then the main
+        # column, and a job title before the date set to its left.
+        (
+            "syn-ar-native-02",
+            ["بيانات التواصل", "الجيزة، مصر", "٠١٠٠ ٠٠٠ ٠٢٠٢", "mona.khaled@example.com"],
+        ),
+        (
+            "syn-ar-native-02",
+            ["اللغات", "العربية - اللغة الأم", "الإنجليزية - ممتاز", "منى خالد إبراهيم"],
+        ),
+        (
+            "syn-ar-native-02",
+            [
+                "الخبرة العملية",
+                "مطورة واجهات أمامية (Front-End Developer)\tيناير ٢٠٢٢ - الآن",
+                "شركة سحابة للحلول الرقمية",
+            ],
+        ),
     ],
     ids=lambda value: value if isinstance(value, str) else value[0][:24],
 )
