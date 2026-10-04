@@ -125,7 +125,7 @@ Every table below carries `organisation_id` and has row level security enabled w
 - [ ] T044 [P] [US1] Hijri and Gregorian date normalisation and Arabic-Indic numeral interpretation in `pipeline/src/masirah_pipeline/domain/dates.py`
 - [X] T045 [P] [US1] Structured profile model in `pipeline/src/masirah_pipeline/domain/profile.py` covering name, contact details, location, years of experience, dated employment history, education, skills, languages and certifications
 - [ ] T046 [P] [US1] Language detection in `pipeline/src/masirah_pipeline/domain/language.py`, tolerating a minority of third-language text without flagging the whole document (ADR 0005)
-- [ ] T047 [P] [US1] Score composition and component weighting in `pipeline/src/masirah_pipeline/domain/scoring.py` across skills match, experience relevance, education, tenure stability, language and location
+- [X] T047 [P] [US1] Score composition and component weighting in `pipeline/src/masirah_pipeline/domain/scoring.py` across skills match, experience relevance, education, tenure stability, language and location
 
 ### Implementation: pipeline ports and adapters
 
