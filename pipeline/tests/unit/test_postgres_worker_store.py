@@ -42,7 +42,7 @@ def store(cur: Cursor, tenants: tuple[Tenant, Tenant]) -> PostgresWorkerStore:
     return PostgresWorkerStore(cur.connection)
 
 
-def new_file(cur: Cursor, tenant: Tenant) -> uuid.UUID:
+def new_file(cur: Cursor, tenant: Tenant, content_hash: str = "d" * 64) -> uuid.UUID:
     """A freshly uploaded CV file with no candidate and no profile yet."""
     file_id = uuid.uuid4()
     cur.execute("reset role")
@@ -54,7 +54,7 @@ def new_file(cur: Cursor, tenant: Tenant) -> uuid.UUID:
             file_id,
             tenant.organisation_id,
             tenant.storage_path.replace(str(tenant.row_ids["cv_file"]), str(file_id)),
-            "d" * 64,
+            content_hash,
         ),
     )
     cur.execute("set local role masirah_worker")
@@ -206,3 +206,66 @@ def test_a_new_application_is_created_once(
     assert first == second
     cur.execute("select decision from public.application where id = %s", (first,))
     assert cur.fetchone() == ("undecided",)
+
+
+class TestSameContent:
+    """AI-03: a file whose content the organisation extracted before reuses that profile."""
+
+    SEEDED_HASH = "a" * 64  # every seeded tenant's CV file has this content hash
+
+    def test_the_profile_of_the_same_content_is_found(
+        self, store: PostgresWorkerStore, tenants: tuple[Tenant, Tenant], cur: Cursor
+    ) -> None:
+        alpha, _ = tenants
+        again = new_file(cur, alpha, self.SEEDED_HASH)
+        cached = store.profile_for_content(alpha.organisation_id, self.SEEDED_HASH, again)
+        assert cached is not None
+        assert (cached.cv_file_id, cached.candidate_id, cached.source) == (
+            alpha.row_ids["cv_file"],
+            alpha.row_ids["candidate"],
+            "native_text",
+        )
+        assert cached.profile == {"full_name": "alpha"}
+
+    def test_a_file_is_not_its_own_cache(
+        self, store: PostgresWorkerStore, tenants: tuple[Tenant, Tenant]
+    ) -> None:
+        alpha, _ = tenants
+        found = store.profile_for_content(
+            alpha.organisation_id, self.SEEDED_HASH, alpha.row_ids["cv_file"]
+        )
+        assert found is None
+
+    def test_another_tenants_extraction_is_never_reused(
+        self, store: PostgresWorkerStore, tenants: tuple[Tenant, Tenant], cur: Cursor
+    ) -> None:
+        """The same CV sent to two companies is extracted for each: nothing crosses tenants."""
+        alpha, beta = tenants
+        cur.execute("reset role")
+        cur.execute(
+            "update public.cv_file set content_hash = %s where id = %s",
+            ("f" * 64, beta.row_ids["cv_file"]),
+        )
+        cur.execute("set local role masirah_worker")
+        mine = new_file(cur, alpha, "f" * 64)
+        assert store.profile_for_content(alpha.organisation_id, "f" * 64, mine) is None
+
+    def test_the_reused_candidate_is_linked_to_the_new_file(
+        self, store: PostgresWorkerStore, tenants: tuple[Tenant, Tenant], cur: Cursor
+    ) -> None:
+        alpha, _ = tenants
+        again = new_file(cur, alpha, self.SEEDED_HASH)
+        reused = Extraction(
+            source="native_text",
+            confidence=Decimal("0.95"),
+            profile={"name": "Mona Abdallah"},
+            candidate=DETAILS,
+            status="extracted",
+            candidate_id=alpha.row_ids["candidate"],
+        )
+        assert (
+            store.record_extraction(alpha.organisation_id, again, reused)
+            == (alpha.row_ids["candidate"])
+        )
+        cur.execute("select count(*) from public.candidate")
+        assert cur.fetchone() == (1,)

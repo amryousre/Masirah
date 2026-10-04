@@ -172,7 +172,7 @@ An evaluation of one application. Immutable once written; rescoring creates a ne
 | organisation_id | uuid | Tenant |
 | application_id | uuid | |
 | total | integer | 0 to 100 |
-| components | jsonb | Skills match, experience relevance, education, tenure stability, language, location |
+| components | jsonb | Skills match, experience relevance, education, tenure stability, language, location: each `{rating, evidence}` |
 | justification | text | Written explanation citing evidence, in the interface language |
 | summary | text | Three to five lines per FR-016 |
 | model_id | text | Provider and model identity, for AI-02 |
@@ -180,7 +180,8 @@ An evaluation of one application. Immutable once written; rescoring creates a ne
 | prompt_version | text | For AI-02 |
 | input_hash | text | Fingerprint of exactly what the model received, for AI-02 |
 | weights_hash | text | Part of the cache key for AI-04 |
-| cost_egp | numeric | Per-CV cost tracking against NFR-13 |
+| cost_egp | numeric | Per-CV cost tracking against NFR-13: extraction, scoring and summary in the run that produced it |
+| summary_model_id, summary_provider, summary_prompt_version | text, enum, text | The summary call's identity, since the cheap tier writes the summary (AI-05); `model_id`, `provider` and `prompt_version` are the scoring call's |
 | created_at | timestamptz | |
 
 The cache key for scoring is the triple of candidate, job and weights, expressed here as

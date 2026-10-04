@@ -5,17 +5,14 @@ Row level security then confines the transaction to that tenant, so an operation
 tenant's identifier finds nothing and raises LookupError rather than writing.
 """
 
-from collections.abc import Iterator
-from contextlib import contextmanager
 from typing import Any
 from uuid import UUID
 
 import psycopg
 from psycopg.types.json import Jsonb
 
-from masirah_pipeline.ports.worker_store import CvFile, Extraction, StoredProfile
-
-Cursor = psycopg.Cursor[tuple[Any, ...]]
+from masirah_pipeline.adapters.tenant_transaction import Cursor, acting_for
+from masirah_pipeline.ports.worker_store import CachedProfile, CvFile, Extraction, StoredProfile
 
 
 class PostgresWorkerStore:
@@ -23,7 +20,7 @@ class PostgresWorkerStore:
         self._connection = connection
 
     def cv_file(self, organisation_id: UUID, cv_file_id: UUID) -> CvFile | None:
-        with self._acting_for(organisation_id) as cur:
+        with acting_for(self._connection, organisation_id) as cur:
             row = cur.execute(
                 "select id, storage_path, mime_type, content_hash, status::text, candidate_id"
                 " from public.cv_file where id = %s",
@@ -32,13 +29,27 @@ class PostgresWorkerStore:
         return None if row is None else CvFile(*row)
 
     def current_profile(self, organisation_id: UUID, cv_file_id: UUID) -> StoredProfile | None:
-        with self._acting_for(organisation_id) as cur:
+        with acting_for(self._connection, organisation_id) as cur:
             row = cur.execute(
                 "select version, confidence, profile from public.parsed_profile"
                 " where cv_file_id = %s and is_current",
                 (cv_file_id,),
             ).fetchone()
         return None if row is None else StoredProfile(*row)
+
+    def profile_for_content(
+        self, organisation_id: UUID, content_hash: str, other_than: UUID
+    ) -> CachedProfile | None:
+        with acting_for(self._connection, organisation_id) as cur:
+            row = cur.execute(
+                "select f.id, f.candidate_id, p.extraction_source::text, p.confidence, p.profile"
+                " from public.cv_file f join public.parsed_profile p"
+                "   on p.cv_file_id = f.id and p.is_current"
+                " where f.content_hash = %s and f.id <> %s"
+                " order by p.extracted_at desc limit 1",
+                (content_hash, other_than),
+            ).fetchone()
+        return None if row is None else CachedProfile(*row)
 
     def mark_extracting(self, organisation_id: UUID, cv_file_id: UUID) -> None:
         self._set_status(organisation_id, cv_file_id, "extracting", None)
@@ -60,14 +71,15 @@ class PostgresWorkerStore:
             details.location,
             details.name_normalised,
         )
-        with self._acting_for(organisation_id) as cur:
+        with acting_for(self._connection, organisation_id) as cur:
             # Locks the file so two workers handling the same message cannot both add a version.
             row = cur.execute(
                 "select candidate_id from public.cv_file where id = %s for update", (cv_file_id,)
             ).fetchone()
             if row is None:
                 raise LookupError(f"CV file {cv_file_id} is not in organisation {organisation_id}")
-            candidate_id = _candidate(cur, organisation_id, row[0], fields)
+            existing = row[0] or extraction.candidate_id
+            candidate_id = _candidate(cur, organisation_id, existing, fields)
             cur.execute(
                 "update public.parsed_profile set is_current = false"
                 " where cv_file_id = %s and is_current",
@@ -95,7 +107,7 @@ class PostgresWorkerStore:
         return candidate_id
 
     def ensure_application(self, organisation_id: UUID, candidate_id: UUID, job_id: UUID) -> UUID:
-        with self._acting_for(organisation_id) as cur:
+        with acting_for(self._connection, organisation_id) as cur:
             cur.execute(
                 "insert into public.application (organisation_id, candidate_id, job_id)"
                 " values (%s, %s, %s) on conflict (job_id, candidate_id) do nothing",
@@ -113,21 +125,13 @@ class PostgresWorkerStore:
     def _set_status(
         self, organisation_id: UUID, cv_file_id: UUID, status: str, reason: str | None
     ) -> None:
-        with self._acting_for(organisation_id) as cur:
+        with acting_for(self._connection, organisation_id) as cur:
             cur.execute(
                 "update public.cv_file set status = %s, failure_reason = %s where id = %s",
                 (status, reason, cv_file_id),
             )
             if cur.rowcount != 1:
                 raise LookupError(f"CV file {cv_file_id} is not in organisation {organisation_id}")
-
-    @contextmanager
-    def _acting_for(self, organisation_id: UUID) -> Iterator[Cursor]:
-        with self._connection.transaction(), self._connection.cursor() as cur:
-            cur.execute(
-                "select set_config('masirah.organisation_id', %s, true)", (str(organisation_id),)
-            )
-            yield cur
 
 
 def _candidate(
