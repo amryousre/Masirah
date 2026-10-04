@@ -24,15 +24,15 @@ export async function JobTable({ jobs, locale, now }: JobTableProps) {
   const t = await getTranslations({ locale, namespace: "jobs" });
   const format = await getFormatter({ locale });
 
+  // A job's place and experience, each in its own direction: an English place name beside
+  // "3+ سنوات" would otherwise be reordered by the surrounding Arabic.
   const meta = (job: JobSummary) =>
     [
       job.location,
       job.minimumExperienceYears === null
         ? null
         : t("experience", { years: job.minimumExperienceYears }),
-    ]
-      .filter((part): part is string => Boolean(part))
-      .join(" · ");
+    ].filter((part): part is string => Boolean(part));
 
   const needs = (job: JobSummary) => {
     const need = attention(job);
@@ -97,7 +97,16 @@ export async function JobTable({ jobs, locale, now }: JobTableProps) {
                 <Link href={`/jobs/${job.id}`} className={styles.title}>
                   {job.title}
                 </Link>
-                {meta(job) ? <span className={styles.meta}>{meta(job)}</span> : null}
+                {meta(job).length > 0 ? (
+                  <span className={styles.meta}>
+                    {meta(job).map((part, index) => (
+                      <span key={part}>
+                        {index > 0 ? " · " : null}
+                        <bdi>{part}</bdi>
+                      </span>
+                    ))}
+                  </span>
+                ) : null}
               </td>
               <td className={styles.number}>{job.cvCount}</td>
               <td>
