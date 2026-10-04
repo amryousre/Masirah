@@ -23,7 +23,7 @@ from masirah_pipeline.adapters.native_text import (
     read_native_text,
     readable,
 )
-from masirah_pipeline.adapters.visual_order import logical_line
+from masirah_pipeline.adapters.visual_order import brackets_balanced, logical_line
 
 CORPUS = Path(__file__).resolve().parents[1] / "fixtures" / "cvs"
 
@@ -144,6 +144,23 @@ class TestVisualOrder:
         keeps its order rather than joining the Arabic before it."""
         stored = "ﺓﺮﻫﺎﻘﻟا | 2017 - 2020"
         assert readable(logical_line(stored, right_to_left=False)) == "القاهرة | 2017 - 2020"
+
+    @pytest.mark.parametrize(
+        ("text", "balanced"),
+        [
+            ("طاقم العمل ( 2006 - 2011 )", True),
+            ("no brackets", True),
+            ("(a [b] c)", True),
+            (") 2006 - 2011 )", False),
+            ("(a ] b [ c)", False),  # every depth is fine, but the pairs cross
+            ("(a [b) c]", False),
+            ("(open", False),
+        ],
+    )
+    def test_brackets_must_open_and_close_in_matching_pairs(
+        self, text: str, balanced: bool
+    ) -> None:
+        assert brackets_balanced(text) is balanced
 
     def test_arabic_in_a_left_to_right_line_is_reversed_in_place(self) -> None:
         stored = "Native: ﺔﯿﺑﺮﻌﻟا"

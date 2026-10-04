@@ -81,7 +81,11 @@ npx playwright test tests/e2e/sign-in.spec.ts
 
 ### Pipeline
 
-Run from `pipeline/` with uv. On Windows, prefix with `PYTHONUTF8=1`: Arabic output and `lint-imports` fail under cp1252.
+Run from `pipeline/` with uv. On Windows, Arabic output and `lint-imports` fail under cp1252 unless `PYTHONUTF8` is set first:
+
+- Git Bash: prefix the command, as in `PYTHONUTF8=1 uv run pytest`.
+- PowerShell: run `$env:PYTHONUTF8 = "1"` once per session.
+- cmd: run `set PYTHONUTF8=1`.
 
 ```sh
 uv sync

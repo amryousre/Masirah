@@ -22,6 +22,7 @@ MIRRORED = {
     **{"(": ")", ")": "(", "[": "]", "]": "[", "{": "}", "}": "{", "<": ">", ">": "<"},
     **{"«": "»", "»": "«"},
 }
+OPENING = {"(": ")", "[": "]", "{": "}"}
 # Punctuation around a word, which a word stored backwards carries at the other end.
 EDGES = re.compile(r"^\W+|\W+$")
 
@@ -45,13 +46,15 @@ def logical_line(stored: str, *, right_to_left: bool, mirrored: bool = True) -> 
 
 
 def brackets_balanced(text: str) -> bool:
-    """Whether every bracket opens before it closes and none is left open."""
-    depth = 0
+    """Whether every bracket opens before it closes, closes the latest one still open, and none
+    is left open."""
+    opened: list[str] = []
     for char in text:
-        depth += {"(": 1, "[": 1, "{": 1, ")": -1, "]": -1, "}": -1}.get(char, 0)
-        if depth < 0:
+        if char in OPENING:
+            opened.append(char)
+        elif char in OPENING.values() and (not opened or OPENING[opened.pop()] != char):
             return False
-    return depth == 0
+    return not opened
 
 
 def is_right_to_left(char: str) -> bool:
