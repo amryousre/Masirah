@@ -31,7 +31,7 @@ export async function readJobPage(
     supabase
       .from("job_candidates")
       .select(
-        "application_id, candidate_id, full_name, total, justification, confidence, decision, decided_by_email",
+        "application_id, candidate_id, full_name, total, justification, confidence, decision, decided_by_email, name_normalised, search_text, scored_at",
       )
       .eq("job_id", jobId),
     supabase
@@ -65,6 +65,9 @@ export async function readJobPage(
               confidence: row.confidence,
               decision: row.decision satisfies Decision,
               decidedBy: row.decided_by_email,
+              nameNormalised: row.name_normalised,
+              searchText: row.search_text ?? "",
+              scoredAt: row.scored_at,
             },
           ],
     ),

@@ -21,3 +21,11 @@ export async function expectAccessible(page: Page) {
     .analyze();
   expect(violations.map((violation) => violation.id)).toEqual([]);
 }
+
+/**
+ * Repeats a page's first interaction until it takes effect. Under a full parallel run the page can
+ * render before React has hydrated it, and a change made in that moment is lost.
+ */
+export async function untilHydrated(page: Page, interact: () => Promise<void>) {
+  await expect(interact).toPass({ timeout: 20_000 });
+}

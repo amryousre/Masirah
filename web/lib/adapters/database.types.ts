@@ -525,8 +525,10 @@ export type Database = {
           full_name: string | null
           job_id: string | null
           justification: string | null
+          name_normalised: string | null
           organisation_id: string | null
           scored_at: string | null
+          search_text: string | null
           total: number | null
         }
         Relationships: [

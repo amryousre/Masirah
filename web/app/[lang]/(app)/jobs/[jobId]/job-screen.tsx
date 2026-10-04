@@ -1,11 +1,21 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 
+import { Button } from "@/components/button/button";
+import { CandidateFilters } from "@/components/candidates/candidate-filters";
 import { type CandidateRow, CandidateTable } from "@/components/candidates/candidate-table";
 import { DropZone, type UploadItem, UploadList } from "@/components/upload/upload";
+import {
+  DEFAULT_VIEW,
+  isNarrowed,
+  type ListView,
+  paramsFromView,
+  viewFromParams,
+  viewRanking,
+} from "@/lib/domain/candidate-search";
 import type { DropOff } from "@/lib/domain/drop-off";
 import type { RankingEntry } from "@/lib/domain/ranking";
 
@@ -21,7 +31,9 @@ interface UploadOutcome {
 /**
  * The job's working area (T062, T063). Dropping files navigates nowhere: the files appear with
  * their progress, and the ranked list below fills in as the worker reads them (design-brief.md
- * section 5). The list is the server's; refreshing re-reads it after each batch.
+ * section 5). The list is the server's; refreshing re-reads it after each batch. Search, filters
+ * and sort (T069) work on the list in the page and live in its address, so going back from a
+ * candidate finds the list as it was left.
  */
 export function JobScreen({
   jobId,
@@ -39,8 +51,24 @@ export function JobScreen({
   const router = useRouter();
   const [selected, setSelected] = useState<string | undefined>(undefined);
   const [uploads, setUploads] = useState<UploadItem[]>([]);
+  // The view is the page's own state, seeded from the address and written back to it.
+  const searchParams = useSearchParams();
+  const [view, setViewState] = useState(() => viewFromParams(searchParams));
+  const setView = (next: ListView) => {
+    setViewState(next);
+    // The history API rather than the router: the list is already here, so the server need not
+    // render the page again for every letter typed.
+    const query = paramsFromView(next).toString();
+    window.history.replaceState(null, "", query === "" ? window.location.pathname : `?${query}`);
+  };
+  const shown = viewRanking(entries, view, locale);
+  const rankedCount = (list: readonly RankingEntry[]) =>
+    list.filter((entry) => entry.kind === "ranked").length;
+  // The drop-off belongs to the whole ranking in score order; narrowed or resorted, it would mark
+  // a break between candidates who are not neighbours.
+  const marker = view.sort === "score" && !isNarrowed(view) ? dropOff : null;
 
-  const rows: CandidateRow[] = entries.map((entry): CandidateRow => {
+  const rows: CandidateRow[] = shown.map((entry): CandidateRow => {
     switch (entry.kind) {
       case "ranked":
         return {
@@ -139,14 +167,35 @@ export function JobScreen({
         <DropZone job={jobTitle} onFiles={upload} />
         {uploads.length > 0 && <UploadList items={uploads} />}
       </section>
-      {rows.length === 0 ? (
+      {entries.length > 0 && (
+        <CandidateFilters
+          values={view}
+          onChange={setView}
+          shown={rankedCount(shown)}
+          total={rankedCount(entries)}
+        />
+      )}
+      {entries.length === 0 ? (
         <p className={styles.empty}>{t("noCandidates")}</p>
+      ) : rows.length === 0 ? (
+        <div className={styles.noMatch}>
+          <p className={styles.empty}>{t("noMatch")}</p>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setView(DEFAULT_VIEW);
+            }}
+          >
+            {t("clearFilters")}
+          </Button>
+        </div>
       ) : (
         <CandidateTable
           rows={rows}
           selectedId={selected}
           onSelect={setSelected}
-          dropOff={dropOff}
+          dropOff={marker}
+          sortedBy={view.sort === "recent" ? "none" : view.sort}
         />
       )}
     </div>

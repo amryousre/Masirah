@@ -1,0 +1,35 @@
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3) var(--space-4);
+}
+
+.query {
+  flex: 1 1 18rem;
+  max-inline-size: 28rem;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: var(--control-height);
+  color: var(--color-text);
+  font-size: var(--size-body-sm);
+  line-height: var(--leading-body-sm);
+}
+
+.check input {
+  inline-size: 16px;
+  block-size: 16px;
+  margin: 0;
+  accent-color: var(--color-ink);
+}
+
+.count {
+  flex-basis: 100%;
+  color: var(--color-text-secondary);
+  font-size: var(--size-caption);
+  line-height: var(--leading-caption);
+}

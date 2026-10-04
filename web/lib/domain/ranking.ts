@@ -19,6 +19,11 @@ export interface CandidateFigures {
   confidence: number | null;
   decision: Decision;
   decidedBy: string | null;
+  /** The worker's folded name, null until it has one (T069). */
+  nameNormalised: string | null;
+  /** The extracted fields search compares. */
+  searchText: string;
+  scoredAt: string | null;
 }
 
 /** A CV uploaded for the job (cv_file with job_id). */
@@ -44,6 +49,9 @@ export type RankingEntry =
       needsReview: boolean;
       decision: Decision;
       decidedBy: string | null;
+      nameNormalised: string | null;
+      searchText: string;
+      scoredAt: string | null;
     }
   | { kind: "processing"; id: string; label: string | null }
   | { kind: "review"; id: string; label: string }
@@ -86,6 +94,9 @@ export function rankJob(
     needsReview: candidate.confidence === null || candidate.confidence < REVIEW_BELOW,
     decision: candidate.decision,
     decidedBy: candidate.decidedBy,
+    nameNormalised: candidate.nameNormalised,
+    searchText: candidate.searchText,
+    scoredAt: candidate.scoredAt,
   }));
   const scoring: RankingEntry[] = candidates
     .filter((candidate) => candidate.total === null)

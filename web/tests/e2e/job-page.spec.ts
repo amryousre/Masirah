@@ -4,7 +4,7 @@ import path from "node:path";
 import { expect, test } from "@playwright/test";
 
 import { type Account, addJob, addRankedCandidate, createAccount } from "./support/accounts";
-import { expectAccessible, signIn } from "./support/pages";
+import { expectAccessible, signIn, untilHydrated } from "./support/pages";
 
 // A job's own page (T062, T063): ranked candidates in order with the reason for each, files still
 // on their way listed below, and CVs added by dropping them on the page, which navigates nowhere.
@@ -145,6 +145,74 @@ test("a ranking without a break carries no marker", async ({ page }) => {
   await page.goto(`/en/jobs/${rankedJob}`);
   await expect(page.getByRole("table", { name: "Candidates ranked by score" })).toBeVisible();
   await expect(page.getByText(/Scores drop/)).toHaveCount(0);
+});
+
+test("search finds a name however it is spelled, and the address keeps it", async ({ page }) => {
+  await signIn(page, recruiter);
+  await page.goto(`/en/jobs/${rankedJob}`);
+  // A change made before the page hydrates is lost, so the first one is repeated until it lands.
+  await untilHydrated(page, async () => {
+    await page.getByRole("searchbox", { name: "Search candidates" }).fill("Yasmine");
+    await expect(page).toHaveURL(/\?q=Yasmine$/, { timeout: 1_000 });
+  });
+  const table = page.getByRole("table", { name: "Candidates ranked by score" });
+  await expect(table.locator("tbody tr")).toHaveCount(1);
+  await expect(table).toContainText("Yasmin Farouk");
+  await expect(page.getByRole("status").filter({ hasText: "Showing" })).toHaveText(
+    "Showing 1 of 2",
+  );
+  await expect(page).toHaveURL(/\?q=Yasmine$/);
+  await page.reload();
+  await expect(page.getByRole("searchbox", { name: "Search candidates" })).toHaveValue("Yasmine");
+  await expect(table.locator("tbody tr")).toHaveCount(1);
+  await expectAccessible(page);
+});
+
+test("filters keep only what needs review, and an empty result can be cleared", async ({
+  page,
+}) => {
+  await signIn(page, recruiter);
+  await page.goto(`/en/jobs/${rankedJob}`);
+  await untilHydrated(page, async () => {
+    await page.getByRole("checkbox", { name: "Needs review only" }).setChecked(false);
+    await page.getByRole("checkbox", { name: "Needs review only" }).check();
+    await expect(page).toHaveURL(/\?review=1$/, { timeout: 1_000 });
+  });
+  const table = page.getByRole("table", { name: "Candidates ranked by score" });
+  await expect(table.locator("tbody tr")).toHaveCount(1);
+  await expect(table).toContainText("Yasmin Farouk");
+
+  await page.getByRole("searchbox", { name: "Search candidates" }).fill("Omar");
+  await expect(page.getByText("No candidates match.", { exact: false })).toBeVisible();
+  await page.getByRole("button", { name: "Clear search and filters" }).click();
+  await expect(table.locator("tbody tr")).toHaveCount(2);
+  await expect(page).toHaveURL(new RegExp(`/en/jobs/${rankedJob}$`));
+});
+
+test("sorting by name keeps each candidate's rank by score", async ({ page }) => {
+  await signIn(page, recruiter);
+  await page.goto(`/en/jobs/${rankedJob}`);
+  await untilHydrated(page, async () => {
+    await page.getByRole("combobox", { name: "Sort by" }).selectOption("score");
+    await page.getByRole("combobox", { name: "Sort by" }).selectOption("name");
+    await expect(page).toHaveURL(/\?sort=name$/, { timeout: 1_000 });
+  });
+  const rows = page.getByRole("table", { name: "Candidates ranked by score" }).locator("tbody tr");
+  await expect(rows.nth(0)).toContainText("Omar Hassan");
+  await expect(rows.nth(0).locator("td").first()).toHaveText("2");
+  await expect(page.getByRole("columnheader", { name: "Candidate" })).toHaveAttribute(
+    "aria-sort",
+    "ascending",
+  );
+});
+
+test("the language switch opens the same job in the other language", async ({ page }) => {
+  await signIn(page, recruiter);
+  await page.goto(`/ar/jobs/${rankedJob}`);
+  await page.getByRole("link", { name: "English" }).click();
+  await expect(page).toHaveURL(new RegExp(`/en/jobs/${rankedJob}$`));
+  await expect(page.locator("html")).toHaveAttribute("dir", "ltr");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Senior Accountant");
 });
 
 test("the page reads in Arabic, right to left", async ({ page }) => {
