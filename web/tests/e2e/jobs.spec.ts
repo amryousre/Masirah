@@ -62,10 +62,10 @@ test("a recruiter's jobs are listed, and only theirs", async ({ page }) => {
   await expect(accountant).toContainText("Giza · 5+ years");
   await expect(accountant).toContainText("No CVs yet");
   await expect(accountant).toContainText("Drop files onto the job to start ranking");
-  // The job's own page is T063; until then the title is text, not a link to nowhere.
-  await expect(accountant.getByRole("link")).toHaveCount(0);
   await expect(table).not.toContainText("Someone Else's Job");
   await expectAccessible(page);
+  await accountant.getByRole("link", { name: "Senior Accountant" }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Senior Accountant");
 });
 
 test("the list reads in Arabic, right to left", async ({ page }) => {

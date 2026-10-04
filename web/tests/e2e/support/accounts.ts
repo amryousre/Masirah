@@ -59,7 +59,12 @@ export async function createAccount(organisation: string | null): Promise<Accoun
       if (files && files.length > 0) {
         await client.storage.from("cv-originals").remove(files.map((file) => file.storage_path));
       }
+      // Scores, applications, profiles and candidates hang off files and jobs; they go first.
+      for (const table of ["score", "application", "parsed_profile"] as const) {
+        await client.from(table).delete().eq("organisation_id", organisationId);
+      }
       await client.from("cv_file").delete().eq("organisation_id", organisationId);
+      await client.from("candidate").delete().eq("organisation_id", organisationId);
       await client.from("job").delete().eq("organisation_id", organisationId);
       await client.from("organisation").delete().eq("id", organisationId);
     }
@@ -116,4 +121,85 @@ export async function addJob(
     .single();
   if (error) throw error;
   return data.id;
+}
+
+/**
+ * A candidate already read and scored for a job, as the worker leaves one: a candidate, their
+ * extracted CV file with its current profile, an application to the job and a score.
+ */
+export async function addRankedCandidate(
+  account: Account,
+  jobId: string,
+  candidate: { name: string; total: number; justification: string; confidence: number },
+): Promise<void> {
+  const organisationId = account.organisationId;
+  if (organisationId === null) throw new Error("The account belongs to no organisation.");
+  const client = admin();
+  const fail = (error: { message: string } | null) => {
+    if (error) throw new Error(error.message);
+  };
+
+  const person = await client
+    .from("candidate")
+    .insert({ organisation_id: organisationId, full_name: candidate.name })
+    .select("id")
+    .single();
+  if (person.error) throw new Error(person.error.message);
+
+  const fileId = randomUUID();
+  fail(
+    (
+      await client.from("cv_file").insert({
+        id: fileId,
+        organisation_id: organisationId,
+        candidate_id: person.data.id,
+        job_id: jobId,
+        storage_path: `organisations/${organisationId}/cv/${fileId}/cv.pdf`,
+        original_filename: `${candidate.name}.pdf`,
+        mime_type: "application/pdf",
+        byte_size: 1024,
+        content_hash: randomUUID().replaceAll("-", "").repeat(2),
+        status: "extracted",
+      })
+    ).error,
+  );
+  fail(
+    (
+      await client.from("parsed_profile").insert({
+        organisation_id: organisationId,
+        cv_file_id: fileId,
+        version: 1,
+        is_current: true,
+        extraction_source: "native_text",
+        confidence: candidate.confidence,
+        profile: { name: candidate.name },
+      })
+    ).error,
+  );
+
+  const application = await client
+    .from("application")
+    .insert({ organisation_id: organisationId, candidate_id: person.data.id, job_id: jobId })
+    .select("id")
+    .single();
+  if (application.error) throw new Error(application.error.message);
+
+  fail(
+    (
+      await client.from("score").insert({
+        organisation_id: organisationId,
+        application_id: application.data.id,
+        total: candidate.total,
+        components: {},
+        justification: candidate.justification,
+        summary: "Summary.",
+        model_id: "test-model",
+        provider: "anthropic",
+        prompt_version: "test",
+        input_hash: "a".repeat(64),
+        weights_hash: "b".repeat(64),
+        cost_egp: 0,
+      })
+    ).error,
+  );
 }
