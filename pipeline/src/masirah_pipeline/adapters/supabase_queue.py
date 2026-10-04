@@ -1,0 +1,48 @@
+"""Supabase Queues, through the pgmq_public functions (T053, contracts/queue-message.md).
+
+The connection belongs to the caller, who decides its transactions. The worker opens it in
+autocommit mode as the masirah_worker role, so a read's visibility timeout takes effect at once
+and no transaction stays open while a CV is processed. Tests pass a connection inside a
+transaction they roll back.
+"""
+
+from typing import Any
+
+import psycopg
+
+from masirah_pipeline.ports.job_queue import ReceivedMessage
+from masirah_pipeline.ports.queue_message import CV_PROCESSING, CV_RESCORING
+
+QUEUES = frozenset({CV_PROCESSING, CV_RESCORING})
+
+
+class UnknownQueueError(ValueError):
+    """A queue the contract does not name."""
+
+
+class SupabaseQueue:
+    def __init__(self, connection: psycopg.Connection[Any]) -> None:
+        self._connection = connection
+
+    def read(self, queue: str, *, visibility_seconds: int, quantity: int) -> list[ReceivedMessage]:
+        rows = self._connection.execute(
+            "select msg_id, read_ct, enqueued_at, message from pgmq_public.read(%s, %s, %s)",
+            (_known(queue), visibility_seconds, quantity),
+        ).fetchall()
+        return [ReceivedMessage(*row) for row in rows]
+
+    def delete(self, queue: str, message_id: int) -> bool:
+        return self._called("select pgmq_public.delete(%s, %s)", queue, message_id)
+
+    def archive(self, queue: str, message_id: int) -> bool:
+        return self._called("select pgmq_public.archive(%s, %s)", queue, message_id)
+
+    def _called(self, statement: str, queue: str, message_id: int) -> bool:
+        row = self._connection.execute(statement, (_known(queue), message_id)).fetchone()
+        return bool(row and row[0])
+
+
+def _known(queue: str) -> str:
+    if queue not in QUEUES:
+        raise UnknownQueueError(f"{queue!r} is not a queue in the contract")
+    return queue
