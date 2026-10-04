@@ -10,7 +10,7 @@ Three kinds, told apart in each document's labels:
 
 | Kind | Files | `origin` | `simulated` |
 |---|---|---|---|
-| Real CVs, anonymised | `en-native-*` | `real` | `false` |
+| Real CVs, anonymised | `en-native-*`, `ar-native-*` | `real` | `false` |
 | Synthetic CVs, invented from scratch | `syn-*-native-*` | `synthetic` | `false` |
 | Scans and photographs simulated from a document above | `*-scanned-*`, `*-photographed-*` | its source's | `true` |
 
@@ -48,6 +48,14 @@ survives in its text, metadata, links or raw objects, if an original photo's pix
 embedded, if an annotation or form field remains, if any line reads differently from what was
 intended, or if a check cannot run at all.
 
+`ar-native-01` was anonymised another way, because `anonymise_cv.py` writes replacements in Latin
+fonts only. Its owner supplied the CV as a Word document and as the PDF Word exported from it. The
+identifying values in the Word document were replaced in place: the name, district, email, phone
+number and date of birth. Word then exported the PDF again, so it keeps exactly how Word stores
+Arabic. `anonymise_cv.py` then stripped the metadata and checked that no original value survives,
+and a second check read the text in reading order, so a value stored backwards could not slip past.
+The candidate lives in Saudi Arabia, so the invented phone number is a Saudi one, `+966500000301`.
+
 ## How the synthetic CVs and simulated captures were made
 
 The sources are HTML files in `pipeline/tools/synthetic_cvs/`, each in a different template and
@@ -73,6 +81,11 @@ changed. The sources use Windows fonts, so rendering elsewhere gives different P
 Chromium stores right-to-left lines in visual order, so the Arabic CVs' text layers read backwards
 and Arabic-Indic numbers come out reversed (`٢٠٢٢` reads `٢٢٠٢`). Real PDFs do the same, and
 extraction has to put it right.
+
+Word, as in the real `ar-native-01`, also stores Arabic lines in visual order, with two differences.
+A lam-alef ligature glyph maps to its two letters (`لا`) rather than to one ligature character. A
+bracket in right-to-left text is stored as the character typed, where Chromium stores the shape
+drawn, which faces the other way.
 
 ## The checks
 
@@ -206,7 +219,7 @@ than extraction. The unit tests in `tests/unit/test_field_accuracy_harness.py` p
 | English, native PDF | 8 | 1 | `en-native-01` to `08`, `syn-en-native-01` |
 | Two-column layout | 3 | 2 | `en-native-03`, `05`, `06`, `syn-ar-native-02`, `syn-mixed-native-02` |
 | Photo on the CV | 1 | 1 | `en-native-06`, `syn-ar-native-03` |
-| Arabic | 0 | 3 | `syn-ar-native-01` to `03` |
+| Arabic | 1 | 3 | `ar-native-01`, `syn-ar-native-01` to `03` |
 | Mixed Arabic and English | 0 | 2 | `syn-mixed-native-01`, `02` |
 | Scanned | 0 | 2 | `en-scanned-01`, `syn-ar-scanned-01` |
 | Photographed | 1 | 2 | `en-photographed-01`, `syn-ar-photographed-01`, `syn-en-photographed-01` |
@@ -215,8 +228,9 @@ than extraction. The unit tests in `tests/unit/test_field_accuracy_harness.py` p
 
 Every row still needs real documents before the gate can close on it. On 26 September 2026 the
 project owner reported that no real mixed Arabic and English CV could be found, so that row rests on
-synthetic CVs for now. Until real Arabic CVs arrive as well, the gate measures accuracy on English
-only.
+synthetic CVs for now. The first real Arabic CV, `ar-native-01`, arrived on 4 October 2026. It
+is a Word export, so Arabic PDFs printed by browsers and online CV builders are still represented
+only by synthetic CVs.
 
 ## Adding a real scan or photo
 
