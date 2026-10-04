@@ -66,7 +66,8 @@ def test_a_file_uploaded_without_a_job_counts_for_none(
 ) -> None:
     alpha, _ = tenants
     add_file(cur, alpha, "queued", job=False)
-    assert figures(cur, alpha) == (0, 1, 0, 0)
+    # One CV: the seeded ranked candidate's. The file uploaded without a job adds nothing.
+    assert figures(cur, alpha) == (1, 1, 0, 0)
 
 
 def test_a_member_sees_only_their_organisations_jobs(
@@ -106,3 +107,45 @@ def test_a_file_cannot_be_filed_under_another_organisations_job(
                 "e" * 64,
             ),
         )
+
+
+def test_a_job_never_shows_fewer_cvs_than_it_has_ranked(
+    cur: Cursor, tenants: tuple[Tenant, Tenant]
+) -> None:
+    """The seeded CV file predates cv_file.job_id: its scored application still counts as a CV."""
+    alpha, _ = tenants
+    cur.execute(
+        "update public.cv_file set job_id = null where id = %s", (alpha.row_ids["cv_file"],)
+    )
+    cv_count, ranked, _, _ = figures(cur, alpha)
+    assert (cv_count, ranked) == (1, 1)
+
+
+def test_a_decision_on_an_application_counts_as_activity(
+    cur: Cursor, tenants: tuple[Tenant, Tenant]
+) -> None:
+    alpha, _ = tenants
+    # The updated_at triggers would stamp these rows with now(); this test needs them old.
+    cur.execute("alter table public.job disable trigger set_updated_at")
+    cur.execute(
+        "update public.job set updated_at = now() - interval '3 days' where id = %s",
+        (alpha.row_ids["job"],),
+    )
+    cur.execute("alter table public.job enable trigger set_updated_at")
+    cur.execute(
+        "update public.score set created_at = now() - interval '3 days' where application_id = %s",
+        (alpha.row_ids["application"],),
+    )
+    cur.execute("alter table public.cv_file disable trigger set_updated_at")
+    cur.execute("update public.cv_file set updated_at = now() - interval '3 days'")
+    cur.execute("alter table public.cv_file enable trigger set_updated_at")
+    cur.execute(
+        "update public.application set updated_at = now() where id = %s",
+        (alpha.row_ids["application"],),
+    )
+    act_as(cur, alpha.user_id)
+    cur.execute(
+        "select updated_at > now() - interval '1 minute' from public.job_overview where id = %s",
+        (alpha.row_ids["job"],),
+    )
+    assert cur.fetchone() == (True,)

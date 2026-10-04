@@ -10,7 +10,6 @@ let newcomer: Account;
 let recruiter: Account;
 let stranger: Account;
 const made: Account[] = [];
-let accountantId: string;
 
 test.beforeAll(async () => {
   newcomer = await createAccount("Newcomer Co");
@@ -19,7 +18,7 @@ test.beforeAll(async () => {
   made.push(recruiter);
   stranger = await createAccount("Elsewhere Ltd");
   made.push(stranger);
-  accountantId = await addJob(recruiter, {
+  await addJob(recruiter, {
     title: "Senior Accountant",
     location: "Giza",
     minimumExperienceYears: 5,
@@ -63,10 +62,8 @@ test("a recruiter's jobs are listed, and only theirs", async ({ page }) => {
   await expect(accountant).toContainText("Giza · 5+ years");
   await expect(accountant).toContainText("No CVs yet");
   await expect(accountant).toContainText("Drop files onto the job to start ranking");
-  await expect(accountant.getByRole("link", { name: "Senior Accountant" })).toHaveAttribute(
-    "href",
-    `/en/jobs/${accountantId}`,
-  );
+  // The job's own page is T063; until then the title is text, not a link to nowhere.
+  await expect(accountant.getByRole("link")).toHaveCount(0);
   await expect(table).not.toContainText("Someone Else's Job");
   await expectAccessible(page);
 });
@@ -79,9 +76,12 @@ test("the list reads in Arabic, right to left", async ({ page }) => {
   await expectAccessible(page);
 });
 
-test("on a phone the list never scrolls sideways", async ({ page }) => {
+test("on a phone the list never scrolls sideways, and keeps each job's update time", async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 360, height: 760 });
   await signIn(page, recruiter);
+  await expect(page.locator("time").first()).toBeVisible();
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
   );

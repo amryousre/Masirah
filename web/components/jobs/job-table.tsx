@@ -1,7 +1,6 @@
 import type { Locale } from "next-intl";
 import { getFormatter, getTranslations } from "next-intl/server";
 
-import { Link } from "@/i18n/navigation";
 import { attention, type JobSummary, rankedShare } from "@/lib/domain/jobs";
 
 import styles from "./job-table.module.css";
@@ -17,8 +16,8 @@ interface JobTableProps {
 }
 
 /**
- * The job list (T058): one row per job, the title a link to its ranked candidates. Rows, not
- * cards, as with candidates: a recruiter scans down the progress and "needs you" columns.
+ * The job list (T058): one row per job. Rows, not cards, as with candidates: a recruiter scans
+ * down the progress and "needs you" columns.
  */
 export async function JobTable({ jobs, locale, now }: JobTableProps) {
   const t = await getTranslations({ locale, namespace: "jobs" });
@@ -94,9 +93,9 @@ export async function JobTable({ jobs, locale, now }: JobTableProps) {
           return (
             <tr key={job.id} className={styles.row}>
               <td>
-                <Link href={`/jobs/${job.id}`} className={styles.title}>
-                  {job.title}
-                </Link>
+                {/* The job's own page, with its ranked candidates, is T063; the title links there
+                    once it exists. */}
+                <span className={styles.title}>{job.title}</span>
                 {meta(job).length > 0 ? (
                   <span className={styles.meta}>
                     {meta(job).map((part, index) => (

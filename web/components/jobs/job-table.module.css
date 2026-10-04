@@ -42,23 +42,10 @@
   background: var(--color-fill-hover);
 }
 
-/* The title is the row's link; its hit area stays the text, so the row reads as one item without
-   a click handler on the row itself. */
 .title {
   display: block;
   color: var(--color-text);
   font-weight: var(--weight-medium);
-  text-decoration: none;
-}
-
-.title:hover {
-  text-decoration: underline;
-}
-
-.title:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 2px;
-  border-radius: var(--radius-xs);
 }
 
 .meta {
@@ -115,7 +102,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Below 48rem the table keeps the job and what it needs; the figures move under the title. */
+/* Below 48rem each row stacks: the job, its progress, what it needs and when it last changed. */
 @media (width < 48rem) {
   .table thead {
     display: none;
@@ -132,8 +119,13 @@
     padding-block: 0;
   }
 
-  .number,
-  .updated {
+  /* The count repeats the progress text; the update time stays, since it says which jobs are
+     active. */
+  .number {
     display: none;
+  }
+
+  .updated {
+    white-space: normal;
   }
 }
