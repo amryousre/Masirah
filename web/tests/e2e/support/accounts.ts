@@ -25,6 +25,7 @@ export interface Account {
   email: string;
   password: string;
   organisation: string | null;
+  organisationId: string | null;
   remove: () => Promise<void>;
 }
 
@@ -50,6 +51,8 @@ export async function createAccount(organisation: string | null): Promise<Accoun
     // Deleting the user removes its app_user row with it.
     await client.auth.admin.deleteUser(userId);
     if (organisationId !== null) {
+      // Jobs hang off the organisation, so they go first.
+      await client.from("job").delete().eq("organisation_id", organisationId);
       await client.from("organisation").delete().eq("id", organisationId);
     }
   };
@@ -74,5 +77,35 @@ export async function createAccount(organisation: string | null): Promise<Accoun
     }
   }
 
-  return { email, password, organisation, remove };
+  return { email, password, organisation, organisationId, remove };
+}
+
+const WEIGHTS = {
+  skills_match: 30,
+  experience_relevance: 25,
+  education: 15,
+  tenure_stability: 10,
+  language: 10,
+  location: 10,
+};
+
+/** A job in the account's organisation, made as the web application will make it (T059). */
+export async function addJob(
+  account: Account,
+  job: { title: string; location?: string; minimumExperienceYears?: number },
+): Promise<string> {
+  if (account.organisationId === null) throw new Error("The account belongs to no organisation.");
+  const { data, error } = await admin()
+    .from("job")
+    .insert({
+      organisation_id: account.organisationId,
+      title: job.title,
+      location: job.location ?? null,
+      minimum_experience_years: job.minimumExperienceYears ?? null,
+      weights: WEIGHTS,
+    })
+    .select("id")
+    .single();
+  if (error) throw error;
+  return data.id;
 }

@@ -171,7 +171,35 @@
     "useAnotherProgress": "جارٍ تسجيل الخروج…"
   },
   "jobs": {
-    "title": "الوظائف"
+    "title": "الوظائف",
+    "createJob": "إنشاء وظيفة",
+    "pasteDescription": "لصق وصف وظيفي",
+    "caption": "وظائفك، الأحدث نشاطًا أولًا",
+    "empty": {
+      "title": "لا توجد وظائف بعد",
+      "body": "كل ترتيب يبدأ بوظيفة. أنشئ واحدة، ثم أضف السير الذاتية إليها، وستُرتَّب مع سبب مكتوب لكل مرشح.",
+      "stepCreate": "أنشئ وظيفة: المسمى والمهارات المطلوبة والخبرة الدنيا.",
+      "stepDrop": "اسحب السير الذاتية على الوظيفة، حتى {max} ملفًا في المرة.",
+      "stepReview": "راجع الترتيب: لكل مرشح سبب مكتوب يقتبس من سيرته."
+    },
+    "column": {
+      "job": "الوظيفة",
+      "cvs": "السير",
+      "progress": "التقدم",
+      "attention": "ما يحتاج انتباهك",
+      "updated": "آخر تحديث"
+    },
+    "experience": "{years, plural, one {سنة+} two {سنتان+} few {{years}+ سنوات} many {{years}+ سنة} other {{years}+ سنة}}",
+    "progress": "{ranked} من {total} مرتبة",
+    "noCvs": "لا توجد سير بعد",
+    "attention": {
+      "noCvs": "اسحب الملفات على الوظيفة لبدء الترتيب",
+      "processing": "{processing} قيد المعالجة · {decisions} تحتاج قرارًا",
+      "decisions": "{decisions} تحتاج قرارًا",
+      "nothing": "لا شيء"
+    },
+    "updatedToday": "اليوم {time}",
+    "updatedYesterday": "أمس"
   },
   "gallery": {
     "title": "نظام التصميم",

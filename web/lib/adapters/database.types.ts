@@ -154,6 +154,13 @@ export type Database = {
             referencedRelation: "job"
             referencedColumns: ["organisation_id", "id"]
           },
+          {
+            foreignKeyName: "application_organisation_id_job_id_fkey"
+            columns: ["organisation_id", "job_id"]
+            isOneToOne: false
+            referencedRelation: "job_overview"
+            referencedColumns: ["organisation_id", "id"]
+          },
         ]
       }
       candidate: {
@@ -208,6 +215,7 @@ export type Database = {
           created_at: string
           failure_reason: string | null
           id: string
+          job_id: string | null
           mime_type: string
           organisation_id: string
           original_filename: string
@@ -222,6 +230,7 @@ export type Database = {
           created_at?: string
           failure_reason?: string | null
           id?: string
+          job_id?: string | null
           mime_type: string
           organisation_id: string
           original_filename: string
@@ -236,6 +245,7 @@ export type Database = {
           created_at?: string
           failure_reason?: string | null
           id?: string
+          job_id?: string | null
           mime_type?: string
           organisation_id?: string
           original_filename?: string
@@ -244,6 +254,20 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "cv_file_job_in_same_organisation"
+            columns: ["organisation_id", "job_id"]
+            isOneToOne: false
+            referencedRelation: "job"
+            referencedColumns: ["organisation_id", "id"]
+          },
+          {
+            foreignKeyName: "cv_file_job_in_same_organisation"
+            columns: ["organisation_id", "job_id"]
+            isOneToOne: false
+            referencedRelation: "job_overview"
+            referencedColumns: ["organisation_id", "id"]
+          },
           {
             foreignKeyName: "cv_file_organisation_id_candidate_id_fkey"
             columns: ["organisation_id", "candidate_id"]
@@ -484,7 +508,29 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      job_overview: {
+        Row: {
+          attention_count: number | null
+          cv_count: number | null
+          id: string | null
+          location: string | null
+          minimum_experience_years: number | null
+          organisation_id: string | null
+          processing_count: number | null
+          ranked_count: number | null
+          title: string | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisation"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       service_health: {

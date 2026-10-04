@@ -1,0 +1,139 @@
+.table {
+  inline-size: 100%;
+  border-collapse: collapse;
+  border-block-start: var(--border);
+  font-size: var(--size-body-sm);
+  line-height: var(--leading-body-sm);
+}
+
+/* Read by screen readers, not shown: the page heading gives the table its visible context. */
+.caption {
+  position: absolute;
+  overflow: hidden;
+  inline-size: 1px;
+  block-size: 1px;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.table th,
+.table td {
+  padding-block: var(--space-2);
+  padding-inline: var(--space-3);
+  text-align: start;
+  vertical-align: middle;
+}
+
+.table thead th {
+  border-block-end: var(--border);
+  color: var(--color-text-secondary);
+  font-size: var(--size-label);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-label);
+  white-space: nowrap;
+}
+
+.row {
+  border-block-end: var(--border-divider);
+  transition: background-color var(--duration-base) var(--ease);
+}
+
+.row:hover {
+  background: var(--color-fill-hover);
+}
+
+/* The title is the row's link; its hit area stays the text, so the row reads as one item without
+   a click handler on the row itself. */
+.title {
+  display: block;
+  color: var(--color-text);
+  font-weight: var(--weight-medium);
+  text-decoration: none;
+}
+
+.title:hover {
+  text-decoration: underline;
+}
+
+.title:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-xs);
+}
+
+.meta {
+  display: block;
+  color: var(--color-text-secondary);
+  font-size: var(--size-caption);
+  line-height: var(--leading-caption);
+}
+
+.number {
+  inline-size: 5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.progressText {
+  display: block;
+  margin-block-end: var(--space-1);
+  color: var(--color-text-secondary);
+  font-size: var(--size-caption);
+  line-height: var(--leading-caption);
+  font-variant-numeric: tabular-nums;
+}
+
+.track {
+  display: flex;
+  max-inline-size: 15rem;
+  block-size: 4px;
+  border-radius: 2px;
+  background: var(--score-track);
+}
+
+.fill {
+  display: block;
+  inline-size: var(--fill);
+  block-size: 100%;
+  border-radius: inherit;
+  background: var(--score-bar);
+}
+
+.attention {
+  font-size: var(--size-caption);
+  line-height: var(--leading-caption);
+}
+
+.attention[data-need="no-cvs"],
+.attention[data-need="nothing"] {
+  color: var(--color-text-secondary);
+}
+
+.updated {
+  color: var(--color-text-secondary);
+  font-size: var(--size-caption);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Below 48rem the table keeps the job and what it needs; the figures move under the title. */
+@media (width < 48rem) {
+  .table thead {
+    display: none;
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-1);
+    padding-block: var(--space-3);
+  }
+
+  .table td {
+    padding-block: 0;
+  }
+
+  .number,
+  .updated {
+    display: none;
+  }
+}
