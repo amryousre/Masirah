@@ -10,25 +10,74 @@ create role masirah_worker nologin noinherit;
 -- Lets the migration owner act as the role, as the tests do with `set local role`.
 grant masirah_worker to postgres;
 
-grant usage on schema pgmq_public to masirah_worker;
-grant execute on function pgmq_public.read(text, integer, integer) to masirah_worker;
-grant execute on function pgmq_public.delete(text, bigint) to masirah_worker;
-grant execute on function pgmq_public.archive(text, bigint) to masirah_worker;
+-- The role touches no queue table. pgmq's own functions run with the caller's rights and would
+-- need the tables granted, which would let the role push a message's visibility out forever,
+-- rewrite its read count, or forge archived messages. Instead it calls these three functions,
+-- which run as their owner and do only what the worker needs, within bounds. The schema is not
+-- exposed through the Data API: the worker connects to Postgres directly.
+create schema worker;
 
--- pgmq's functions run with the caller's rights, so the role needs the tables underneath. A read
--- locks rows and moves only their visibility timeout and read count; the message is never
--- rewritten. An archive deletes from the queue and inserts into its archive, returning only the
--- message id, which is all of an archived message the worker can see.
-grant usage on schema pgmq to masirah_worker;
-grant select, delete on pgmq.q_cv_processing, pgmq.q_cv_rescoring to masirah_worker;
-grant update (vt, read_ct) on pgmq.q_cv_processing, pgmq.q_cv_rescoring to masirah_worker;
-grant insert, select (msg_id) on pgmq.a_cv_processing, pgmq.a_cv_rescoring to masirah_worker;
+create function worker.read(queue_name text, visibility_seconds integer, quantity integer)
+returns setof pgmq.message_record
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  perform worker.check_queue(queue_name);
+  -- Long enough for the slowest CV, short enough that a crashed worker's message returns.
+  if visibility_seconds not between 0 and 3600 then
+    raise exception 'visibility_seconds % is outside 0 to 3600', visibility_seconds
+      using errcode = '22023';
+  end if;
+  if quantity not between 1 and 100 then
+    raise exception 'quantity % is outside 1 to 100', quantity using errcode = '22023';
+  end if;
+  return query select * from pgmq.read(queue_name, visibility_seconds, quantity);
+end
+$$;
 
-create policy "the worker takes messages" on pgmq.q_cv_processing
-  for all to masirah_worker using (true);
-create policy "the worker takes messages" on pgmq.q_cv_rescoring
-  for all to masirah_worker using (true);
-create policy "the worker archives failed messages" on pgmq.a_cv_processing
-  for all to masirah_worker using (true);
-create policy "the worker archives failed messages" on pgmq.a_cv_rescoring
-  for all to masirah_worker using (true);
+create function worker.delete(queue_name text, message_id bigint)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  perform worker.check_queue(queue_name);
+  return pgmq.delete(queue_name, message_id);
+end
+$$;
+
+create function worker.archive(queue_name text, message_id bigint)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  perform worker.check_queue(queue_name);
+  return pgmq.archive(queue_name, message_id);
+end
+$$;
+
+-- Only the contract's queues: the definer could otherwise reach any queue pgmq holds.
+create function worker.check_queue(queue_name text)
+returns void
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if queue_name is distinct from 'cv_processing' and queue_name is distinct from 'cv_rescoring'
+  then
+    raise exception 'queue % is not in the contract', queue_name using errcode = '22023';
+  end if;
+end
+$$;
+
+revoke all on schema worker from public, anon, authenticated, service_role;
+revoke execute on all functions in schema worker from public, anon, authenticated, service_role;
+grant usage on schema worker to masirah_worker;
+grant execute on function worker.read(text, integer, integer) to masirah_worker;
+grant execute on function worker.delete(text, bigint) to masirah_worker;
+grant execute on function worker.archive(text, bigint) to masirah_worker;

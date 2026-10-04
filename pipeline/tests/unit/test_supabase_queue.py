@@ -1,14 +1,16 @@
 """The Supabase queue adapter and the worker's own database role (T053, contracts/queue-message.md).
 
-The worker reads, deletes and archives messages as masirah_worker, a role granted exactly that:
-it cannot send a message, so a compromised worker cannot plant work for itself, and it does not
-need the service role, which bypasses row level security everywhere.
+The worker reads, deletes and archives messages as masirah_worker, a role granted exactly that,
+through three functions and no queue table: it cannot send a message, hide one for good or forge
+an archived one, and it does not need the service role, which bypasses row level security
+everywhere.
 """
 
 from typing import Any
 
 import psycopg
 import pytest
+from psycopg import sql
 from psycopg.types.json import Jsonb
 
 from masirah_pipeline.adapters.supabase_queue import SupabaseQueue, UnknownQueueError
@@ -136,17 +138,62 @@ def test_a_queue_outside_the_contract_is_refused(queue: SupabaseQueue) -> None:
     [
         "select * from pgmq_public.send('cv_processing', '{}'::jsonb)",
         "select * from pgmq.send('cv_processing', '{}'::jsonb)",
+        "select * from pgmq_public.read('cv_processing', 30, 1)",
+        "select * from pgmq.q_cv_processing",
         "insert into pgmq.q_cv_processing (message) values ('{}'::jsonb)",
         "update pgmq.q_cv_processing set message = '{}'::jsonb",
-        "select * from pgmq_public.pop('cv_processing')",
+        "update pgmq.q_cv_processing set vt = 'infinity'",
+        "update pgmq.q_cv_processing set read_ct = 0",
+        "insert into pgmq.a_cv_processing (msg_id, message) values (1, '{}'::jsonb)",
         "select message from pgmq.a_cv_processing",
     ],
-    ids=["send", "pgmq-send", "insert", "rewrite", "pop", "read-archive"],
+    ids=[
+        "send",
+        "pgmq-send",
+        "pgmq-read",
+        "read-table",
+        "insert",
+        "rewrite",
+        "hide-forever",
+        "reset-read-count",
+        "forge-archive",
+        "read-archive",
+    ],
 )
-def test_the_worker_cannot_send_rewrite_or_reread_messages(cur: Cursor, statement: str) -> None:
+def test_the_worker_touches_no_queue_table(cur: Cursor, statement: str) -> None:
+    """Everything goes through worker.read, worker.delete and worker.archive, so a compromised
+    worker cannot plant work, hide a message for good, reset its retries or forge an archive."""
     as_worker(cur)
     with pytest.raises(psycopg.errors.InsufficientPrivilege):
         cur.execute(statement)
+
+
+@pytest.mark.parametrize(
+    ("visibility_seconds", "quantity"),
+    [(-1, 1), (3601, 1), (30, 0), (30, 101)],
+    ids=["negative-timeout", "timeout-past-an-hour", "no-messages", "too-many-messages"],
+)
+def test_a_read_outside_its_bounds_is_refused(
+    cur: Cursor, queue: SupabaseQueue, visibility_seconds: int, quantity: int
+) -> None:
+    as_worker(cur)
+    with pytest.raises(psycopg.errors.InvalidParameterValue):
+        queue.read(CV_PROCESSING, visibility_seconds=visibility_seconds, quantity=quantity)
+
+
+def test_the_database_refuses_a_queue_outside_the_contract(cur: Cursor) -> None:
+    """The functions run as their owner, so they check the queue themselves."""
+    cur.execute("select pgmq.create('not_in_the_contract')")
+    as_worker(cur)
+    with pytest.raises(psycopg.errors.InvalidParameterValue):
+        cur.execute("select * from worker.read('not_in_the_contract', 30, 1)")
+
+
+@pytest.mark.parametrize("role", ["anon", "authenticated", "service_role"])
+def test_only_the_worker_calls_the_worker_functions(cur: Cursor, role: str) -> None:
+    cur.execute(sql.SQL("set local role {}").format(sql.Identifier(role)))
+    with pytest.raises(psycopg.errors.InsufficientPrivilege):
+        cur.execute("select * from worker.read('cv_processing', 30, 1)")
 
 
 def test_the_migration_gives_the_worker_role_no_login(cur: Cursor) -> None:

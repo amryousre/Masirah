@@ -22,7 +22,10 @@ grants above still keep every role except the service role out.
 
 The worker does not use the service role. It connects directly to Postgres as `masirah_worker`
 (`supabase/migrations/0013_worker_role.sql`), which may read, delete and archive messages and
-nothing more: it cannot send one or rewrite one, and of an archived message it sees only the id.
+nothing more. It touches no queue table and not `pgmq_public`: it calls `worker.read`,
+`worker.delete` and `worker.archive`, which accept only the two queues above and bound the
+visibility timeout to an hour, so it cannot send a message, hide one for good, reset its read
+count or forge an archived one. The `worker` schema is not exposed through the Data API.
 The migration creates the role without login; where the worker is deployed, an operator grants
 login with a password kept out of git. The role's access to tenant tables, under row level
 security per worker obligation 3, arrives with the consume loop (T054).
