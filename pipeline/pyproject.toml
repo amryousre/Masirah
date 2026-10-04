@@ -55,7 +55,7 @@ follow_imports = "skip"
 [tool.pytest.ini_options]
 # Plain `pytest` runs the unit suite. The accuracy suite is a release gate and
 # runs on its own: `pytest tests/accuracy`.
-testpaths = ["tests/unit"]
+testpaths = ["tests/unit", "tests/integration"]
 pythonpath = ["."]
 addopts = ["--strict-markers", "--strict-config", "-ra", "--import-mode=importlib"]
 xfail_strict = true

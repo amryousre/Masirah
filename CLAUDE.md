@@ -92,9 +92,10 @@ uv sync
 uv run ruff format --check && uv run ruff check
 uv run mypy                 # strict
 uv run lint-imports         # architecture contracts
-uv run pytest               # unit suite (tests/unit); database-marked tests need local Supabase
+uv run pytest               # unit and integration suites; database-marked tests need local Supabase
 uv run pytest -m "not database"
 uv run pytest tests/unit/test_native_text.py -k docx
+uv run --env-file .env python -m masirah_pipeline   # the worker; settings in .env.example
 ```
 
 ### The release gate (SC-002 / SC-003)
