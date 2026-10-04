@@ -27,8 +27,8 @@ name variants and Hijri dates are markedly stronger in Python.
 processing pipeline.
 
 **Primary Dependencies**: Next.js App Router for the interface and server routes. Supabase client
-libraries in both languages for data, auth, storage and queue access. PyMuPDF for layout-aware text
-extraction. Anthropic and OpenAI SDKs behind a single provider port. Tesseract as OCR fallback
+libraries in both languages for data, auth, storage and queue access. pdfminer.six for layout-aware
+text extraction from PDFs and python-docx for DOCX (research.md explains why not PyMuPDF). Anthropic and OpenAI SDKs behind a single provider port. Tesseract as OCR fallback
 behind an OCR port.
 
 **Storage**: Supabase PostgreSQL 17 in `eu-central-1` (project `skgetonknlshzrvykrpf`) for

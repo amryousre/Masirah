@@ -157,6 +157,16 @@ run a real Egyptian CV through any extraction pipeline. PyMuPDF is the starting 
 layout-aware extraction because of its reading-order handling, but it is a starting choice rather
 than a validated one.
 
+**Amended 26 September 2026**: pdfminer.six replaces PyMuPDF for extraction in the worker.
+PyMuPDF is licensed under the AGPL, which obliges a service built on it to publish its source or
+buy a commercial licence, and nothing recorded that choice. pdfminer.six is MIT licensed. Tried on
+the corpus's two-column CVs, neither library reads columns in order unaided: PyMuPDF's sorted text
+interleaves them line by line, and pdfminer.six's own box order threads a sidebar's skills between
+the main column's entries. Both give each line's box, so reading order is decided by Masirah's
+own code from the geometry (T036, T052). Arabic stored in visual order, as Chromium writes it,
+comes out wrong from all three libraries tried, so that repair is Masirah's own code too. PyMuPDF
+stays a development dependency of the corpus tools, which never run in the service.
+
 This resolves by building the accuracy suite against the anonymised corpus early, as the first
 substantial task, rather than by further reading. If the numbers fall short, the extraction
 approach changes while almost nothing is built on top of it. That ordering is a deliberate

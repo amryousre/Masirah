@@ -3,7 +3,10 @@ name = "masirah-pipeline"
 version = "0.1.0"
 description = "Masirah CV extraction and scoring worker"
 requires-python = ">=3.12,<3.13"
-dependencies = []
+dependencies = [
+    "pdfminer-six>=20260107",
+    "python-docx>=1.2",
+]
 
 [build-system]
 requires = ["uv_build>=0.11,<0.12"]
@@ -27,9 +30,9 @@ select = [
   "ERA",          # commented-out code, which Constitution III requires be deleted
   "RUF",
 ]
-# Arabic is a working language here (ADR 0005), so its alef and heh are letters, not look-alikes
-# of Latin l and o slipped into an identifier.
-allowed-confusables = ["ا", "ه"]
+# Arabic is a working language here (ADR 0005), so its alef and heh are letters, and its digits
+# zero and one are digits, not look-alikes of Latin l, o and a full stop slipped into the code.
+allowed-confusables = ["ا", "ه", "٠", "١"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S101"]
@@ -83,6 +86,8 @@ forbidden_modules = [
   "openai",
   "fitz",
   "pymupdf",
+  "pdfminer",
+  "docx",
   "pytesseract",
   "httpx",
   "requests",
