@@ -414,6 +414,9 @@ export type Database = {
           prompt_version: string
           provider: Database["public"]["Enums"]["model_provider"]
           summary: string
+          summary_model_id: string | null
+          summary_prompt_version: string | null
+          summary_provider: Database["public"]["Enums"]["model_provider"] | null
           total: number
           updated_at: string
           weights_hash: string
@@ -431,6 +434,11 @@ export type Database = {
           prompt_version: string
           provider: Database["public"]["Enums"]["model_provider"]
           summary: string
+          summary_model_id?: string | null
+          summary_prompt_version?: string | null
+          summary_provider?:
+            | Database["public"]["Enums"]["model_provider"]
+            | null
           total: number
           updated_at?: string
           weights_hash: string
@@ -448,6 +456,11 @@ export type Database = {
           prompt_version?: string
           provider?: Database["public"]["Enums"]["model_provider"]
           summary?: string
+          summary_model_id?: string | null
+          summary_prompt_version?: string | null
+          summary_provider?:
+            | Database["public"]["Enums"]["model_provider"]
+            | null
           total?: number
           updated_at?: string
           weights_hash?: string
@@ -474,7 +487,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      service_health: {
+        Args: never
+        Returns: {
+          heartbeat_age_seconds: number
+          oldest_message_seconds: number
+          queue_depth: number
+        }[]
+      }
     }
     Enums: {
       application_decision: "undecided" | "shortlisted" | "rejected"

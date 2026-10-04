@@ -6,12 +6,13 @@ waits between polls when the queue is empty. A stop request from the host ends i
 batches, never in the middle of a message.
 """
 
+import socket
 import threading
 
 import pytest
 
 from masirah_pipeline.adapters.provider_registry import ConfigurationError
-from masirah_pipeline.main import IDLE_SECONDS, REQUIRED, poll, settings_from
+from masirah_pipeline.main import IDLE_SECONDS, REQUIRED, poll, settings_from, worker_name
 
 COMPLETE = {
     "MASIRAH_DATABASE_URL": "postgresql://masirah_worker:secret@db.example.test:5432/postgres",
@@ -68,3 +69,8 @@ def test_a_stop_request_ends_the_loop_before_the_next_batch() -> None:
 
     poll(run_once, stop, lambda seconds: True)
     assert calls == []
+
+
+def test_the_heartbeat_name_is_configured_or_the_hosts() -> None:
+    assert worker_name({"MASIRAH_WORKER_NAME": "render-1"}) == "render-1"
+    assert worker_name({}) == socket.gethostname()
