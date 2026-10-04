@@ -31,12 +31,12 @@ export async function readJobPage(
     supabase
       .from("job_candidates")
       .select(
-        "application_id, full_name, total, justification, confidence, decision, decided_by_email",
+        "application_id, candidate_id, full_name, total, justification, confidence, decision, decided_by_email",
       )
       .eq("job_id", jobId),
     supabase
       .from("cv_file")
-      .select("id, original_filename, status, failure_reason")
+      .select("id, original_filename, status, failure_reason, candidate_id")
       .eq("job_id", jobId)
       .order("created_at", { ascending: true }),
   ]);
@@ -53,11 +53,12 @@ export async function readJobPage(
       minimumExperienceYears: job.data.minimum_experience_years,
     },
     candidates: candidates.data.flatMap((row) =>
-      row.application_id === null || row.decision === null
+      row.application_id === null || row.candidate_id === null || row.decision === null
         ? []
         : [
             {
               applicationId: row.application_id,
+              candidateId: row.candidate_id,
               name: row.full_name,
               total: row.total,
               justification: row.justification,
@@ -72,6 +73,7 @@ export async function readJobPage(
       fileName: file.original_filename,
       status: file.status,
       failureReason: file.failure_reason,
+      candidateId: file.candidate_id,
     })),
   };
 }

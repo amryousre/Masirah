@@ -84,6 +84,36 @@ test("dropping CVs adds them without leaving the page", async ({ page }) => {
   );
 });
 
+test("a second batch dropped while the first is sending keeps both in view", async ({ page }) => {
+  await signIn(page, recruiter);
+  await page.goto(`/en/jobs/${emptyJob}`);
+  // Hold the first request until the second batch has been dropped, so the two overlap.
+  let releaseFirst = () => {};
+  const firstHeld = new Promise<void>((resolve) => {
+    releaseFirst = resolve;
+  });
+  let requests = 0;
+  await page.route("**/api/uploads", async (route) => {
+    requests += 1;
+    if (requests === 1) await firstHeld;
+    await route.continue();
+  });
+  const input = page.getByTestId("drop-zone").locator("input[type=file]");
+  const cv = readFileSync(path.join(CORPUS, "en-native-01.pdf"));
+  await input.setInputFiles({ name: "First batch.pdf", mimeType: "application/pdf", buffer: cv });
+  await input.setInputFiles({ name: "Second batch.pdf", mimeType: "application/pdf", buffer: cv });
+  await expect(page.getByRole("listitem").filter({ hasText: "Second batch.pdf" })).toContainText(
+    "Processing",
+  );
+  releaseFirst();
+  await expect(page.getByRole("listitem").filter({ hasText: "First batch.pdf" })).toContainText(
+    "Processing",
+  );
+  await expect(page.getByRole("listitem").filter({ hasText: "Second batch.pdf" })).toContainText(
+    "Processing",
+  );
+});
+
 test("the page reads in Arabic, right to left", async ({ page }) => {
   await signIn(page, recruiter);
   await page.goto(`/ar/jobs/${rankedJob}`);

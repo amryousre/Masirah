@@ -69,12 +69,26 @@ export function JobScreen({
   });
 
   const upload = (files: File[]) => {
-    const batch = files.map((file, index) => ({
-      id: `${String(Date.now())}-${String(index)}`,
+    const batch = files.map((file) => ({
+      id: crypto.randomUUID(),
       fileName: file.name,
       bytes: file.size,
     }));
-    setUploads(batch.map((item) => ({ ...item, status: { kind: "uploading", percent: 0 } })));
+    // Batches can overlap: a second drop while the first is still sending. Each batch is added to
+    // the list and its handlers change only its own items, found by id.
+    const position = new Map(batch.map((item, index) => [item.id, index]));
+    const settle = (status: (index: number) => UploadItem["status"]) => {
+      setUploads((current) =>
+        current.map((item) => {
+          const index = position.get(item.id);
+          return index === undefined ? item : { ...item, status: status(index) };
+        }),
+      );
+    };
+    setUploads((current) => [
+      ...current,
+      ...batch.map((item): UploadItem => ({ ...item, status: { kind: "uploading", percent: 0 } })),
+    ]);
 
     const form = new FormData();
     for (const file of files) form.append("files", file);
@@ -86,12 +100,10 @@ export function JobScreen({
     request.upload.onprogress = (event) => {
       if (!event.lengthComputable) return;
       const percent = Math.round((event.loaded / event.total) * 100);
-      setUploads(batch.map((item) => ({ ...item, status: { kind: "uploading", percent } })));
+      settle(() => ({ kind: "uploading", percent }));
     };
     const failAll = () => {
-      setUploads(
-        batch.map((item) => ({ ...item, status: { kind: "failed", reason: t("uploadFailed") } })),
-      );
+      settle(() => ({ kind: "failed", reason: t("uploadFailed") }));
     };
     request.onerror = failAll;
     request.onload = () => {
@@ -100,19 +112,17 @@ export function JobScreen({
         return;
       }
       const { files: outcomes } = JSON.parse(request.responseText) as { files: UploadOutcome[] };
-      setUploads(
-        batch.map((item, index) => {
-          const outcome = outcomes[index];
-          if (outcome?.status === "queued" || outcome?.status === "pending") {
-            return { ...item, status: { kind: "processing" } };
-          }
-          const reason =
-            outcome?.status === "rejected" && outcome.reason !== undefined
-              ? t(`rejected.${outcome.reason}`)
-              : t("uploadFailed");
-          return { ...item, status: { kind: "failed", reason } };
-        }),
-      );
+      settle((index) => {
+        const outcome = outcomes[index];
+        if (outcome?.status === "queued" || outcome?.status === "pending") {
+          return { kind: "processing" };
+        }
+        const reason =
+          outcome?.status === "rejected" && outcome.reason !== undefined
+            ? t(`rejected.${outcome.reason}`)
+            : t("uploadFailed");
+        return { kind: "failed", reason };
+      });
       router.refresh();
     };
     request.open("POST", "/api/uploads");

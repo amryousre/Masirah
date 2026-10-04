@@ -11,6 +11,7 @@ export type Decision = "undecided" | "shortlisted" | "rejected";
 /** A row of public.job_candidates: one application to the job. */
 export interface CandidateFigures {
   applicationId: string;
+  candidateId: string;
   name: string | null;
   /** Null until the candidate has been scored. */
   total: number | null;
@@ -26,6 +27,8 @@ export interface JobFile {
   fileName: string;
   status: "queued" | "extracting" | "extracted" | "needs_review" | "failed";
   failureReason: string | null;
+  /** Set once the file has been read into a candidate. */
+  candidateId: string | null;
 }
 
 export type RankingEntry =
@@ -89,7 +92,9 @@ export function rankJob(
       id: candidate.applicationId,
       label: candidate.name,
     }));
-  // A file that was read became a candidate above; the rest are listed by name.
+  // A file that was read became a candidate above, unless its application was never made (the
+  // worker gave up after it committed the extraction); that file stays listed, never vanishes.
+  const applied = new Set(candidates.map((candidate) => candidate.candidateId));
   const waiting: RankingEntry[] = files.flatMap((file): RankingEntry[] => {
     switch (file.status) {
       case "queued":
@@ -100,7 +105,9 @@ export function rankJob(
       case "failed":
         return [{ kind: "failed", id: file.id, label: file.fileName, reason: file.failureReason }];
       case "extracted":
-        return [];
+        return file.candidateId !== null && applied.has(file.candidateId)
+          ? []
+          : [{ kind: "processing", id: file.id, label: file.fileName }];
     }
   });
   return [...ranked, ...scoring, ...waiting];

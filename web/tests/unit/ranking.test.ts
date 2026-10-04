@@ -12,6 +12,7 @@ import {
 // with what is happening to it. Nothing submitted is left out (SC-006).
 const candidate = (figures: Partial<CandidateFigures>): CandidateFigures => ({
   applicationId: "a1",
+  candidateId: "c1",
   name: "Mona",
   total: 70,
   justification: "Six years at Nile Pharma. SAP daily.",
@@ -25,6 +26,7 @@ const file = (figures: Partial<JobFile>): JobFile => ({
   fileName: "cv.pdf",
   status: "queued",
   failureReason: null,
+  candidateId: null,
   ...figures,
 });
 
@@ -78,7 +80,6 @@ describe("the ranking", () => {
         file({ id: "x", fileName: "reading.pdf", status: "extracting" }),
         file({ id: "r", fileName: "doubtful.pdf", status: "needs_review" }),
         file({ id: "f", fileName: "locked.pdf", status: "failed", failureReason: "encrypted" }),
-        file({ id: "e", fileName: "done.pdf", status: "extracted" }),
       ],
     );
     expect(entries).toEqual([
@@ -87,6 +88,22 @@ describe("the ranking", () => {
       { kind: "review", id: "r", label: "doubtful.pdf" },
       { kind: "failed", id: "f", label: "locked.pdf", reason: "encrypted" },
     ]);
+  });
+
+  it("lists a file that was read once, as the candidate it became", () => {
+    const entries = rankJob(
+      [candidate({ candidateId: "c-mona" })],
+      [file({ id: "e", fileName: "done.pdf", status: "extracted", candidateId: "c-mona" })],
+    );
+    expect(entries.map((entry) => entry.kind)).toEqual(["ranked"]);
+  });
+
+  it("keeps a read file in view while its application is missing, so it never vanishes", () => {
+    const entries = rankJob(
+      [],
+      [file({ id: "e", fileName: "done.pdf", status: "extracted", candidateId: "c-lost" })],
+    );
+    expect(entries).toEqual([{ kind: "processing", id: "e", label: "done.pdf" }]);
   });
 });
 
