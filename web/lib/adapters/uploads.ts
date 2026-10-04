@@ -15,7 +15,9 @@ export const CV_BUCKET = "cv-originals";
 export type UploadOutcome =
   | { name: string; status: "queued"; cvFileId: string }
   | { name: string; status: "rejected"; reason: FileRejection }
-  | { name: string; status: "failed"; cvFileId?: string };
+  | { name: string; status: "failed"; cvFileId?: string }
+  /** Stored, but neither queued nor marked failed; reconciliation queues it shortly. */
+  | { name: string; status: "pending"; cvFileId: string };
 
 async function sha256(content: ArrayBuffer): Promise<string> {
   const digest = await crypto.subtle.digest("SHA-256", content);
@@ -61,12 +63,17 @@ export async function storeUpload(
   });
   if (rowError) return { name: file.name, status: "failed" };
 
+  // When recording the failure fails too, as in an outage, the row stays queued with no message;
+  // the worker's reconciliation (worker.requeue_stranded, migration 0018) queues it again within
+  // minutes, so the file is processed rather than left waiting.
   const fail = async (reason: string): Promise<UploadOutcome> => {
-    await supabase
+    const { error } = await supabase
       .from("cv_file")
       .update({ status: "failed", failure_reason: reason })
       .eq("id", cvFileId);
-    return { name: file.name, status: "failed", cvFileId };
+    return error
+      ? { name: file.name, status: "pending", cvFileId }
+      : { name: file.name, status: "failed", cvFileId };
   };
 
   const { error: storeError } = await supabase.storage

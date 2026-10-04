@@ -111,3 +111,68 @@ def test_a_member_still_cannot_send_queue_messages_directly(
 def test_the_cv_bucket_holds_files_of_ten_megabytes_at_most(cur: Cursor) -> None:
     cur.execute("select file_size_limit from storage.buckets where id = 'cv-originals'")
     assert cur.fetchone() == (10 * 1024 * 1024,)
+
+
+class TestStrandedFiles:
+    """A file left queued with no message, as when queueing and recording the failure both failed
+    during an outage, is queued again by the worker's reconciliation (SC-006)."""
+
+    def strand(self, cur: Cursor, tenant: Tenant, minutes: int) -> None:
+        cur.execute("alter table public.cv_file disable trigger set_updated_at")
+        cur.execute(
+            "update public.cv_file set status = 'queued', updated_at = now() - make_interval("
+            "mins => %s) where id = %s",
+            (minutes, tenant.row_ids["cv_file"]),
+        )
+        cur.execute("alter table public.cv_file enable trigger set_updated_at")
+
+    def requeue(self, cur: Cursor) -> int:
+        cur.execute("set local role masirah_worker")
+        cur.execute("select worker.requeue_stranded(600)")
+        row = cur.fetchone()
+        cur.execute("reset role")
+        assert row is not None
+        count: int = row[0]
+        return count
+
+    def messages_for(self, cur: Cursor, tenant: Tenant) -> list[object]:
+        cur.execute(
+            "select message from pgmq.q_cv_processing where message->>'cv_file_id' = %s",
+            (str(tenant.row_ids["cv_file"]),),
+        )
+        return [row[0] for row in cur.fetchall()]
+
+    def test_a_stranded_file_is_queued_again_with_its_organisations_language(
+        self, cur: Cursor, tenants: tuple[Tenant, Tenant]
+    ) -> None:
+        alpha, _ = tenants
+        self.strand(cur, alpha, 30)
+        assert self.requeue(cur) == 1
+        [body] = self.messages_for(cur, alpha)
+        message = parse_queue_message(body)
+        assert isinstance(message, CvProcessingMessage)
+        assert (message.cv_file_id, message.locale) == (alpha.row_ids["cv_file"], "ar")
+
+    def test_a_file_queued_moments_ago_is_left_alone(
+        self, cur: Cursor, tenants: tuple[Tenant, Tenant]
+    ) -> None:
+        alpha, _ = tenants
+        self.strand(cur, alpha, 2)
+        assert self.requeue(cur) == 0
+
+    def test_a_file_whose_message_is_waiting_is_not_queued_twice(
+        self, cur: Cursor, tenants: tuple[Tenant, Tenant]
+    ) -> None:
+        alpha, _ = tenants
+        self.strand(cur, alpha, 30)
+        act_as(cur, alpha.user_id)
+        enqueue(cur, alpha.row_ids["cv_file"])
+        cur.execute("reset role")
+        assert self.requeue(cur) == 0
+        assert len(self.messages_for(cur, alpha)) == 1
+
+    @pytest.mark.parametrize("role", ["anon", "authenticated", "service_role"])
+    def test_only_the_worker_reconciles(self, cur: Cursor, role: str) -> None:
+        cur.execute(f"set local role {role}")
+        with pytest.raises(psycopg.errors.InsufficientPrivilege):
+            cur.execute("select worker.requeue_stranded(600)")

@@ -12,7 +12,15 @@ import threading
 import pytest
 
 from masirah_pipeline.adapters.provider_registry import ConfigurationError
-from masirah_pipeline.main import IDLE_SECONDS, REQUIRED, poll, settings_from, worker_name
+from masirah_pipeline.main import (
+    IDLE_SECONDS,
+    RECONCILE_SECONDS,
+    REQUIRED,
+    Reconciling,
+    poll,
+    settings_from,
+    worker_name,
+)
 
 COMPLETE = {
     "MASIRAH_DATABASE_URL": "postgresql://masirah_worker:secret@db.example.test:5432/postgres",
@@ -74,3 +82,28 @@ def test_a_stop_request_ends_the_loop_before_the_next_batch() -> None:
 def test_the_heartbeat_name_is_configured_or_the_hosts() -> None:
     assert worker_name({"MASIRAH_WORKER_NAME": "render-1"}) == "render-1"
     assert worker_name({}) == socket.gethostname()
+
+
+class TestReconciling:
+    """Every few minutes the worker queues again any file stranded without a message (SC-006)."""
+
+    def test_it_reconciles_at_start_and_then_once_per_interval(self) -> None:
+        now = [0.0]
+        calls: list[float] = []
+
+        def reconcile() -> int:
+            calls.append(now[0])
+            return 0
+
+        reconciling = Reconciling(lambda: 1, reconcile, clock=lambda: now[0])
+        for moment in (0.0, 10.0, RECONCILE_SECONDS - 1, RECONCILE_SECONDS, RECONCILE_SECONDS + 5):
+            now[0] = moment
+            assert reconciling() == 1
+        assert calls == [0.0, RECONCILE_SECONDS]
+
+    def test_a_failed_reconciliation_never_stops_the_work(self) -> None:
+        def broken() -> int:
+            raise RuntimeError("database unreachable")
+
+        reconciling = Reconciling(lambda: 3, broken, clock=lambda: 0.0)
+        assert reconciling() == 3
