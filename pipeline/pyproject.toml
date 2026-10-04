@@ -5,6 +5,7 @@ description = "Masirah CV extraction and scoring worker"
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "anthropic>=1.11.0",
+    "httpx2>=2.0",
     "openai>=3.24.0",
     "pdfminer-six>=20260107",
     "psycopg[binary]>=3.3.6",
@@ -64,7 +65,6 @@ markers = [
 
 [dependency-groups]
 dev = [
-    "httpx2>=2.0",
     "import-linter>=2.15",
     "mypy>=2.3.1",
     "pillow>=11",

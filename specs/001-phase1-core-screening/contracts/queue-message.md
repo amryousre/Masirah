@@ -27,8 +27,15 @@ nothing more. It touches no queue table and not `pgmq_public`: it calls `worker.
 visibility timeout to an hour, so it cannot send a message, hide one for good, reset its read
 count or forge an archived one. The `worker` schema is not exposed through the Data API.
 The migration creates the role without login; where the worker is deployed, an operator grants
-login with a password kept out of git. The role's access to tenant tables, under row level
-security per worker obligation 3, arrives with the consume loop (T054).
+login with a password kept out of git.
+
+For tenant data (`supabase/migrations/0014_worker_tenant_access.sql`), the worker declares the
+message's organisation for each transaction with `set_config('masirah.organisation_id', ...)`,
+and row level security admits only that organisation's rows: with nothing declared it reaches
+nothing. It may read jobs, record a CV's status, candidate and new profile version, create an
+application and add a score. It cannot decide an application, edit a profile or a person's
+corrections, change or delete a score, or delete anything. The original files are read from
+Storage with the project's secret key, the one place the worker uses it, for that read alone.
 
 Worked examples of every message, valid and refused, live in
 [queue-message.examples.json](./queue-message.examples.json). The web and pipeline test suites

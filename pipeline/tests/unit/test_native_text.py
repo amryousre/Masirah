@@ -18,12 +18,9 @@ import pytest
 from docx import Document
 from docx.oxml import parse_xml
 
-from masirah_pipeline.adapters.native_text import (
-    UnreadableDocumentError,
-    read_native_text,
-    readable,
-)
+from masirah_pipeline.adapters.native_text import read_native_text, readable
 from masirah_pipeline.adapters.visual_order import brackets_balanced, logical_line
+from masirah_pipeline.ports.document_text import UnreadableDocumentError
 
 CORPUS = Path(__file__).resolve().parents[1] / "fixtures" / "cvs"
 

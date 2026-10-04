@@ -4,8 +4,10 @@ Each case copies the real package into a temporary directory, adds one module, a
 the real contracts from pyproject.toml against the copy. The working tree is never touched.
 """
 
+import logging
 import shutil
 import sys
+from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
@@ -14,6 +16,16 @@ from importlinter.cli import lint_imports
 PIPELINE_ROOT = Path(__file__).resolve().parents[2]
 PACKAGE = "masirah_pipeline"
 CONTRACTS_KEPT = 0
+
+
+@pytest.fixture(autouse=True)
+def loggers_left_working() -> Iterator[None]:
+    """import-linter configures logging when it runs, which disables every logger that already
+    exists, the worker's among them. Re-enable them so later tests still see their logs."""
+    yield
+    for logger in logging.Logger.manager.loggerDict.values():
+        if isinstance(logger, logging.Logger):
+            logger.disabled = False
 
 
 def lint_package_with(

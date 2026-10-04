@@ -34,6 +34,7 @@ from masirah_pipeline.adapters.visual_order import (
     logical_line,
     stored_backwards,
 )
+from masirah_pipeline.ports.document_text import UnreadableDocumentError
 
 # A CV runs to a few pages. Reading no further bounds the time a hostile file can take.
 MAX_PAGES = 20
@@ -63,10 +64,6 @@ W = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
 FALLBACK = "{http://schemas.openxmlformats.org/markup-compatibility/2006}Fallback"
 # Formatting, whose elements share names with content: a tab stop is a w:tab too.
 PROPERTIES = (f"{W}pPr", f"{W}rPr")
-
-
-class UnreadableDocumentError(ValueError):
-    """The file is not a PDF or DOCX that can be read."""
 
 
 def read_native_text(content: bytes) -> str:
