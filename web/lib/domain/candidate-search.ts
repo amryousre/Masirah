@@ -1,6 +1,7 @@
 // Sort, filter and search in a job's ranked list (T069, FR-018). Names are compared in the form
-// the worker stored (candidate.name_normalised), so Mohamed finds Mohammed and محمد; the extracted
-// fields are compared as text folded the same way, so a search works in either language.
+// the worker stored (candidate.name_normalised), so Mohamed finds Mohammed and محمد; the reason in
+// the list and the extracted fields are compared as text folded the same way, so a search works in
+// either language.
 
 import { foldedParts, namePartsNormalised, searchForm } from "./names";
 import type { Decision, RankingEntry } from "./ranking";
@@ -41,7 +42,7 @@ function rankedMatches(entry: Ranked, query: string): boolean {
     entry.nameNormalised === null
       ? namePartsNormalised(entry.name ?? "")
       : entry.nameNormalised.split(" ");
-  const haystack = `${searchForm(entry.name ?? "")} ${searchForm(entry.searchText)}`;
+  const haystack = [entry.name ?? "", entry.reason, entry.searchText].map(searchForm).join(" ");
   return matches(query, nameParts, haystack);
 }
 

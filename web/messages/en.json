@@ -430,7 +430,7 @@
       "size": "Larger than 10 MB.",
       "empty": "The file is empty."
     },
-    "noMatch": "No candidates match. Clear the search and filters to see everyone.",
+    "noMatch": "Search covers names, ranking reasons and CV details in Arabic and English. Try a shorter word, or clear the search and filters.",
     "clearFilters": "Clear search and filters"
   },
   "candidate": {
@@ -480,7 +480,7 @@
   "filters": {
     "label": "Search and filter candidates",
     "search": "Search candidates",
-    "searchHint": "Name, skill, employer or place",
+    "searchHint": "Names, reasons, skills or employers, in Arabic or English",
     "decision": "Decision",
     "decisions": {
       "all": "All decisions",

@@ -183,7 +183,7 @@ test("filters keep only what needs review, and an empty result can be cleared", 
   await expect(table).toContainText("Yasmin Farouk");
 
   await page.getByRole("searchbox", { name: "Search candidates" }).fill("Omar");
-  await expect(page.getByText("No candidates match.", { exact: false })).toBeVisible();
+  await expect(page.getByText("Search covers names", { exact: false })).toBeVisible();
   await page.getByRole("button", { name: "Clear search and filters" }).click();
   await expect(table.locator("tbody tr")).toHaveCount(2);
   await expect(page).toHaveURL(new RegExp(`/en/jobs/${rankedJob}$`));

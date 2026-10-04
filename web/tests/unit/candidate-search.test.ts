@@ -100,6 +100,16 @@ describe("search", () => {
     expect(ids(viewRanking(entries, view({ query: "vodafone" }), "en"))).toEqual(["a-mohammed"]);
   });
 
+  it("searches the reason shown in the list", () => {
+    const reasoned = ranked({
+      id: "a-reasoned",
+      reason: "Led the month-end close at Nile Pharma.",
+    });
+    expect(ids(viewRanking([mohammed, reasoned], view({ query: "month-end" }), "en"))).toEqual([
+      "a-reasoned",
+    ]);
+  });
+
   it("needs every word to match, whichever field it is in", () => {
     expect(ids(viewRanking(entries, view({ query: "Omar Alexandria" }), "en"))).toEqual(["a-omar"]);
     expect(ids(viewRanking(entries, view({ query: "Omar React" }), "en"))).toEqual([]);
