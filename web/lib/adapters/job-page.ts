@@ -14,6 +14,10 @@ export interface JobHeader {
  * the files uploaded for it. Row level security limits every read to the member's organisation,
  * so another organisation's job reads as missing.
  */
+function unreadable(read: string, error: { message: string }): Error {
+  return new Error(`The job's page could not read ${read}: ${error.message}`);
+}
+
 export async function readJobPage(
   supabase: SupabaseClient,
   jobId: string,
@@ -36,8 +40,10 @@ export async function readJobPage(
       .eq("job_id", jobId)
       .order("created_at", { ascending: true }),
   ]);
-  const failed = job.error ?? candidates.error ?? files.error;
-  if (failed) throw new Error(`The job's page could not be read: ${failed.message}`);
+  // Each checked on its own, so the message names the read that failed and each result narrows.
+  if (job.error) throw unreadable("job", job.error);
+  if (candidates.error) throw unreadable("job_candidates", candidates.error);
+  if (files.error) throw unreadable("cv_file", files.error);
   if (job.data === null) return null;
   return {
     job: {
