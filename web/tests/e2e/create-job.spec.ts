@@ -76,12 +76,37 @@ test("a skill can be removed before saving", async ({ page }) => {
   await expect(page.getByRole("list", { name: "Preferred skills" })).toHaveCount(0);
 });
 
-test("a job without a title is refused with a reason", async ({ page }) => {
+test("a job without a title is refused, keeping everything else filled in", async ({ page }) => {
   await signIn(page, recruiter);
   await page.goto("/en/jobs/new?start=manual");
+  await page.getByLabel("Description", { exact: true }).fill(DESCRIPTION);
+  await page.getByLabel("Location").fill("Cairo");
+  const required = page.getByRole("textbox", { name: "Required skills" });
+  await required.fill("React");
+  await required.press("Enter");
+  await page.getByLabel("Minimum experience").selectOption({ label: "3 years" });
+  await page.getByLabel("Language requirement").selectOption({ label: "Arabic and English" });
   await page.getByRole("button", { name: "Save job" }).click();
   await expect(page.getByText("Enter the job title.")).toBeVisible();
+  await expect(
+    page.getByRole("list", { name: "Required skills" }).getByRole("listitem"),
+  ).toHaveText(["React"]);
   await expect(page).toHaveURL(/\/en\/jobs\/new/);
+  await expect(page.getByLabel("Description", { exact: true })).toHaveValue(DESCRIPTION);
+  await expect(page.getByLabel("Location")).toHaveValue("Cairo");
+  await expect(page.getByLabel("Minimum experience")).toHaveValue("3");
+  await expect(page.getByLabel("Language requirement")).toHaveValue("both");
+});
+
+test("a skill that is too long names the limit for one skill", async ({ page }) => {
+  await signIn(page, recruiter);
+  await page.goto("/en/jobs/new?start=manual");
+  await page.getByLabel("Job title").fill("Developer");
+  const required = page.getByRole("textbox", { name: "Required skills" });
+  await required.fill("x".repeat(81));
+  await required.press("Enter");
+  await page.getByRole("button", { name: "Save job" }).click();
+  await expect(page.getByText("Shorten this to 80 characters or fewer.")).toBeVisible();
 });
 
 test("the form reads in Arabic, right to left", async ({ page }) => {

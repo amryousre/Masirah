@@ -34,11 +34,18 @@ export function JobForm({ start }: { start: Mode }) {
     {},
   );
 
-  const problem = (field: keyof NonNullable<CreateJobState["errors"]>, max?: number) => {
+  // Each problem names its own limit: a skill too long is about characters, too many about count.
+  const problem = (
+    field: keyof NonNullable<CreateJobState["errors"]>,
+    limits: Partial<Record<DraftProblem, number>> = {},
+  ) => {
     const found: DraftProblem | undefined = state.errors?.[field];
     if (found === undefined) return undefined;
-    return t(`error.${found}`, { max: max ?? 0 });
+    return t(`error.${found}`, { max: limits[found] ?? 0 });
   };
+  // React resets a form after its action, and a select takes its default only when it mounts. So
+  // each refused submission remounts the fields, defaulting to what was sent.
+  const sent = state.values;
 
   const propose = () => {
     startProposing(async () => {
@@ -50,7 +57,7 @@ export function JobForm({ start }: { start: Mode }) {
   };
 
   const form = (
-    <form action={save} className={styles.form} noValidate>
+    <form key={state.attempt ?? 0} action={save} className={styles.form} noValidate>
       {notice && (
         <p role="status" className={styles.notice}>
           {t("unavailable")}
@@ -63,36 +70,39 @@ export function JobForm({ start }: { start: Mode }) {
         required
         maxLength={LIMITS.title}
         autoComplete="off"
-        error={problem("title", LIMITS.title)}
+        defaultValue={sent?.title ?? ""}
+        error={problem("title", { tooLong: LIMITS.title })}
       />
       <TextAreaField
         label={t("field.description")}
         name="description"
         rows={6}
         wide
-        defaultValue={pasted}
+        defaultValue={sent?.description ?? pasted}
         maxLength={LIMITS.description}
-        error={problem("description", LIMITS.description)}
+        error={problem("description", { tooLong: LIMITS.description })}
       />
       <div className={styles.pair}>
         <SkillsField
           label={t("field.requiredSkills")}
           name="requiredSkills"
+          defaultValue={sent?.requiredSkills ?? []}
           help={t("help.requiredSkills")}
-          error={problem("requiredSkills", LIMITS.skills)}
+          error={problem("requiredSkills", { tooMany: LIMITS.skills, tooLong: LIMITS.skill })}
         />
         <SkillsField
           label={t("field.preferredSkills")}
           name="preferredSkills"
+          defaultValue={sent?.preferredSkills ?? []}
           help={t("help.preferredSkills")}
-          error={problem("preferredSkills", LIMITS.skills)}
+          error={problem("preferredSkills", { tooMany: LIMITS.skills, tooLong: LIMITS.skill })}
         />
       </div>
       <div className={styles.pair}>
         <SelectField
           label={t("field.minimumExperience")}
           name="minimumExperienceYears"
-          defaultValue=""
+          defaultValue={sent?.minimumExperienceYears ?? ""}
           options={EXPERIENCE_YEARS.map((years) => ({
             value: String(years),
             label: t("years", { years }),
@@ -103,13 +113,14 @@ export function JobForm({ start }: { start: Mode }) {
           label={t("field.location")}
           name="location"
           maxLength={LIMITS.location}
-          error={problem("location", LIMITS.location)}
+          defaultValue={sent?.location ?? ""}
+          error={problem("location", { tooLong: LIMITS.location })}
         />
       </div>
       <SelectField
         label={t("field.languageRequirement")}
         name="languageRequirement"
-        defaultValue=""
+        defaultValue={sent?.languageRequirement ?? ""}
         options={LANGUAGE_REQUIREMENTS.map((code) => ({
           value: code,
           label: t(`language.${code}`),

@@ -8,13 +8,45 @@ import { readAccess } from "@/lib/adapters/session";
 import { createSupabaseServerClient } from "@/lib/adapters/supabase";
 import { DEFAULT_WEIGHTS, type DraftErrors, jobDraftFrom } from "@/lib/domain/job-draft";
 
+/** What was submitted, given back with errors so a refused form keeps what was typed. */
+export interface SubmittedJob {
+  readonly title: string;
+  readonly description: string;
+  readonly location: string;
+  readonly minimumExperienceYears: string;
+  readonly languageRequirement: string;
+  readonly requiredSkills: readonly string[];
+  readonly preferredSkills: readonly string[];
+}
+
 export interface CreateJobState {
   readonly errors?: DraftErrors;
+  readonly values?: SubmittedJob;
+  /** Counts refused submissions, so the form can remount its fields with the values sent. */
+  readonly attempt?: number;
   /** The job could not be saved for a reason the form cannot fix. */
   readonly failed?: boolean;
 }
 
 // The locale is bound on the server, but an action is still an endpoint: check it anyway.
+function submitted(form: FormData): SubmittedJob {
+  const text = (name: string) => {
+    const value = form.get(name);
+    return typeof value === "string" ? value : "";
+  };
+  return {
+    title: text("title"),
+    description: text("description"),
+    location: text("location"),
+    minimumExperienceYears: text("minimumExperienceYears"),
+    languageRequirement: text("languageRequirement"),
+    requiredSkills: form.getAll("requiredSkills").filter((v): v is string => typeof v === "string"),
+    preferredSkills: form
+      .getAll("preferredSkills")
+      .filter((v): v is string => typeof v === "string"),
+  };
+}
+
 function checked(locale: string): Locale {
   if (!hasLocale(routing.locales, locale)) throw new Error("Unknown locale");
   return locale;
@@ -27,12 +59,13 @@ function checked(locale: string): Locale {
  */
 export async function createJob(
   locale: Locale,
-  _previous: CreateJobState,
+  previous: CreateJobState,
   form: FormData,
 ): Promise<CreateJobState> {
   const lang = checked(locale);
   const result = jobDraftFrom(form);
-  if (!result.ok) return { errors: result.errors };
+  const attempt = (previous.attempt ?? 0) + 1;
+  if (!result.ok) return { errors: result.errors, values: submitted(form), attempt };
 
   const supabase = await createSupabaseServerClient();
   const access = await readAccess(supabase);
@@ -50,7 +83,7 @@ export async function createJob(
     language_requirement: draft.languageRequirement,
     weights: DEFAULT_WEIGHTS,
   });
-  if (error) return { failed: true };
+  if (error) return { failed: true, values: submitted(form), attempt };
   // The job's own page, where CVs are dropped, arrives with T063; until then the list shows it.
   return redirect({ href: "/jobs", locale: lang });
 }
