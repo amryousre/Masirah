@@ -102,3 +102,9 @@ def test_a_short_cv_in_another_language_is_unsupported(text: str, language: str)
 def test_digits_are_not_letters_of_either_script() -> None:
     """A phone number in Arabic-Indic digits does not make an English CV Arabic."""
     assert detect_language("Ahmed Ali\n٠١٢٣٤٥٦٧٨٩\nSQL").language == "en"
+
+
+def test_a_short_urdu_cv_is_unsupported() -> None:
+    """Urdu's heh goal and its word for and, which neither Arabic nor Persian uses."""
+    verdict = detect_language("تجربہ اور مہارت\nتعلیم اور ملازمت")
+    assert (verdict.language, verdict.supported) == ("ur", False)

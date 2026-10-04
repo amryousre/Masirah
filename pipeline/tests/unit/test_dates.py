@@ -125,3 +125,14 @@ def test_a_day_beside_a_named_month(written: str, normalised: str) -> None:
 
 def test_a_number_beside_a_named_month_that_is_no_day_is_refused() -> None:
     assert normalise_date("45 March 2021") is None
+
+
+@pytest.mark.parametrize(
+    "written", ["31 February 2024", "30 فبراير 2023", "31/04/2021", "29/02/2023"]
+)
+def test_a_day_the_month_does_not_have_makes_the_date_invalid(written: str) -> None:
+    assert normalise_date(written) is None
+
+
+def test_a_leap_day_is_a_real_day() -> None:
+    assert normalise_date("29 February 2024") == "2024-02"

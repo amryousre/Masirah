@@ -78,7 +78,9 @@ PERSIAN_WORDS = frozenset(
 )
 # Letters Persian or Urdu use and Arabic does not, the Persian yeh and kaf included.
 PERSIAN_LETTERS = frozenset("پچژگیک")
-URDU_LETTERS = frozenset("ٹڈڑںے")
+URDU_LETTERS = frozenset("ٹڈڑںےہ")
+# Urdu's word for and, which Arabic and Persian do not use.
+URDU_WORDS = frozenset(["اور"])
 
 LATIN_WORDS = {
     language: frozenset(words.split()) for language, words in LATIN_FUNCTION_WORDS.items()
@@ -109,6 +111,7 @@ class _Arabic:
         self.persian += sum(word in PERSIAN_WORDS for word in words)
         self.persian += sum(char in PERSIAN_LETTERS for char in line)
         self.urdu += sum(char in URDU_LETTERS for char in line)
+        self.urdu += sum(word in URDU_WORDS for word in words)
 
     @property
     def language(self) -> str:

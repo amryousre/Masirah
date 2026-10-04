@@ -82,17 +82,28 @@ def normalise_date(written: str) -> str | None:
     month, hijri_month, text = _month_name(text)
     hijri = hijri or hijri_month
     numbers = [int(number) for number in NUMBER.findall(text)]
-    found = _year_and_month(numbers, month)
+    found = _year_month_and_day(numbers, month)
     if found is None:
         return None
-    year, month = found
+    year, month, day = found
     if not hijri and year in HIJRI_YEARS:
         hijri = True
     if hijri:
         return _from_hijri(year, month) if year in HIJRI_YEARS else None
-    if year not in GREGORIAN_YEARS:
+    if year not in GREGORIAN_YEARS or not _a_real_day(year, month, day):
         return None
     return f"{year}" if month is None else f"{year}-{month:02d}"
+
+
+def _a_real_day(year: int, month: int | None, day: int | None) -> bool:
+    """A day the date names must exist, though it is not kept: 31 February is no date."""
+    if month is None or day is None:
+        return True
+    try:
+        date(year, month, day)
+    except ValueError:
+        return False
+    return True
 
 
 def _fold(text: str) -> str:
@@ -124,29 +135,33 @@ def _month_name(text: str) -> tuple[int | None, bool, str]:
     return None, False, text
 
 
-def _year_and_month(numbers: list[int], named: int | None) -> tuple[int, int | None] | None:
-    """The year and month among a date's numbers, given any month named in words."""
+def _year_month_and_day(
+    numbers: list[int], named: int | None
+) -> tuple[int, int | None, int | None] | None:
+    """The year, month and day among a date's numbers, given any month named in words."""
     years = [n for n in numbers if n >= 1000]
     others = [n for n in numbers if n < 1000]
     if len(years) != 1:
         return None
     year = years[0]
     if named is not None:
-        # A month in words may come with its day, as in 15 March 2021; the day is not kept.
-        day_only = not others or (len(others) == 1 and 1 <= others[0] <= MAX_DAY)
-        return (year, named) if day_only else None
+        # A month in words may come with its day, as in 15 March 2021.
+        if not others:
+            return year, named, None
+        if len(others) == 1 and 1 <= others[0] <= MAX_DAY:
+            return year, named, others[0]
+        return None
     if not others:
-        return year, None
+        return year, None, None
+    day: int | None = None
     if len(others) == 1:
         month = others[0]
     elif len(others) == 2:
         # Day before month, as Egypt writes it, unless the second number cannot be a month.
         day, month = others if others[1] <= 12 else reversed(others)
-        if day > MAX_DAY:
-            return None
     else:
         return None
-    return (year, month) if 1 <= month <= 12 else None
+    return (year, month, day) if 1 <= month <= 12 else None
 
 
 def _from_hijri(year: int, month: int | None) -> str:
