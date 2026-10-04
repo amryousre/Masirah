@@ -98,6 +98,21 @@ test("a job without a title is refused, keeping everything else filled in", asyn
   await expect(page.getByLabel("Language requirement")).toHaveValue("both");
 });
 
+test("a new paste replaces a description kept from a refused save", async ({ page }) => {
+  await signIn(page, recruiter);
+  await page.goto("/en/jobs/new?start=manual");
+  await page.getByLabel("Description", { exact: true }).fill("The first description.");
+  await page.getByRole("button", { name: "Save job" }).click();
+  await expect(page.getByText("Enter the job title.")).toBeVisible();
+
+  await page.getByRole("tab", { name: "Paste a description" }).click();
+  await page.getByLabel("Job description").fill("A second, newer description.");
+  await page.getByRole("button", { name: "Propose specification" }).click();
+  await expect(page.getByLabel("Description", { exact: true })).toHaveValue(
+    "A second, newer description.",
+  );
+});
+
 test("a skill that is too long names the limit for one skill", async ({ page }) => {
   await signIn(page, recruiter);
   await page.goto("/en/jobs/new?start=manual");

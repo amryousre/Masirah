@@ -17,7 +17,10 @@ pytestmark = pytest.mark.database
 
 @pytest.fixture
 def tenants(cur: Cursor) -> tuple[Tenant, Tenant]:
-    return seed_tenant(cur, "alpha"), seed_tenant(cur, "beta")
+    seeded = seed_tenant(cur, "alpha"), seed_tenant(cur, "beta")
+    # The seeded candidate is already scored, so their file has been read.
+    cur.execute("update public.cv_file set status = 'extracted'")
+    return seeded
 
 
 def add_file(cur: Cursor, tenant: Tenant, status: str, *, job: bool = True) -> None:
@@ -57,8 +60,8 @@ def test_a_job_counts_its_files_by_state(cur: Cursor, tenants: tuple[Tenant, Ten
     alpha, _ = tenants
     for status in ("queued", "extracting", "extracted", "needs_review", "failed"):
         add_file(cur, alpha, status)
-    # The seeded application already carries a score, so one candidate is ranked.
-    assert figures(cur, alpha) == (5, 1, 2, 2)
+    # The seeded candidate's file, from before cv_file.job_id, is ranked and counts as a sixth CV.
+    assert figures(cur, alpha) == (6, 1, 2, 2)
 
 
 def test_a_file_uploaded_without_a_job_counts_for_none(
@@ -119,6 +122,20 @@ def test_a_job_never_shows_fewer_cvs_than_it_has_ranked(
     )
     cv_count, ranked, _, _ = figures(cur, alpha)
     assert (cv_count, ranked) == (1, 1)
+
+
+def test_new_files_and_older_ranked_candidates_are_counted_together(
+    cur: Cursor, tenants: tuple[Tenant, Tenant]
+) -> None:
+    """One file still waiting, linked to the job, and one ranked candidate whose older file is
+    not: two CVs, not the larger of one and one."""
+    alpha, _ = tenants
+    cur.execute(
+        "update public.cv_file set job_id = null where id = %s", (alpha.row_ids["cv_file"],)
+    )
+    add_file(cur, alpha, "queued")
+    cv_count, ranked, processing, _ = figures(cur, alpha)
+    assert (cv_count, ranked, processing) == (2, 1, 1)
 
 
 def test_a_decision_on_an_application_counts_as_activity(

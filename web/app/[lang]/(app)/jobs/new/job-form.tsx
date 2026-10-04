@@ -27,6 +27,11 @@ export function JobForm({ start }: { start: Mode }) {
   const locale = useLocale();
   const [mode, setMode] = useState<Mode>(start);
   const [pasted, setPasted] = useState("");
+  // The pasted text handed to the form, with the refused-submission count it came after: the more
+  // recent of a new paste and a refused submission is what the description shows.
+  const [handoff, setHandoff] = useState<{ text: string; attempt: number; count: number } | null>(
+    null,
+  );
   const [notice, setNotice] = useState(false);
   const [proposing, startProposing] = useTransition();
   const [state, save, saving] = useActionState<CreateJobState, FormData>(
@@ -46,18 +51,29 @@ export function JobForm({ start }: { start: Mode }) {
   // React resets a form after its action, and a select takes its default only when it mounts. So
   // each refused submission remounts the fields, defaulting to what was sent.
   const sent = state.values;
+  const attempt = state.attempt ?? 0;
+  const description =
+    handoff !== null && handoff.attempt === attempt
+      ? handoff.text
+      : (sent?.description ?? handoff?.text ?? "");
 
   const propose = () => {
     startProposing(async () => {
       // Until T060 proposes fields, every proposal is unavailable: keep the text, open the form.
       await proposeSpecification(locale);
+      setHandoff({ text: pasted, attempt: state.attempt ?? 0, count: (handoff?.count ?? 0) + 1 });
       setNotice(true);
       setMode("manual");
     });
   };
 
   const form = (
-    <form key={state.attempt ?? 0} action={save} className={styles.form} noValidate>
+    <form
+      key={`${String(attempt)}-${String(handoff?.count ?? 0)}`}
+      action={save}
+      className={styles.form}
+      noValidate
+    >
       {notice && (
         <p role="status" className={styles.notice}>
           {t("unavailable")}
@@ -78,7 +94,7 @@ export function JobForm({ start }: { start: Mode }) {
         name="description"
         rows={6}
         wide
-        defaultValue={sent?.description ?? pasted}
+        defaultValue={description}
         maxLength={LIMITS.description}
         error={problem("description", { tooLong: LIMITS.description })}
       />

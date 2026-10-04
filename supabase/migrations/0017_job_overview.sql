@@ -32,8 +32,7 @@ select
   j.title,
   j.location,
   j.minimum_experience_years,
-  -- A ranked candidate whose file predates cv_file.job_id still counts as one of the job's CVs.
-  greatest(coalesce(f.cv_count, 0), coalesce(s.ranked_count, 0)) as cv_count,
+  coalesce(f.cv_count, 0) as cv_count,
   coalesce(s.ranked_count, 0) as ranked_count,
   coalesce(f.processing_count, 0) as processing_count,
   coalesce(f.attention_count, 0) as attention_count,
@@ -46,7 +45,22 @@ left join lateral (
     (count(*) filter (where cv.status in ('needs_review', 'failed')))::integer as attention_count,
     max(cv.updated_at) as last_change
   from public.cv_file cv
-  where cv.organisation_id = j.organisation_id and cv.job_id = j.id
+  where cv.organisation_id = j.organisation_id
+    and (
+      cv.job_id = j.id
+      -- A file from before cv_file.job_id, whose candidate has been scored for this job, is one
+      -- of the job's CVs too. Each file is one row here, so nothing is counted twice.
+      or (
+        cv.job_id is null
+        and exists (
+          select 1 from public.application a
+          join public.score sc on sc.application_id = a.id
+          where a.organisation_id = j.organisation_id
+            and a.job_id = j.id
+            and a.candidate_id = cv.candidate_id
+        )
+      )
+    )
 ) f on true
 -- Ranked means scored. A decision on an application changes its updated_at, which counts as the
 -- job's activity as much as a new score does.
