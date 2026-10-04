@@ -35,6 +35,7 @@ export type RankingEntry =
   | {
       kind: "ranked";
       id: string;
+      candidateId: string;
       rank: number;
       name: string | null;
       reason: string;
@@ -76,6 +77,7 @@ export function rankJob(
   const ranked: RankingEntry[] = scored.map((candidate, index) => ({
     kind: "ranked",
     id: candidate.applicationId,
+    candidateId: candidate.candidateId,
     rank: index + 1,
     name: candidate.name,
     reason: firstSentence(candidate.justification ?? ""),

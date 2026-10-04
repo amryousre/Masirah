@@ -6,6 +6,7 @@ import { useState } from "react";
 
 import { type CandidateRow, CandidateTable } from "@/components/candidates/candidate-table";
 import { DropZone, type UploadItem, UploadList } from "@/components/upload/upload";
+import type { DropOff } from "@/lib/domain/drop-off";
 import type { RankingEntry } from "@/lib/domain/ranking";
 
 import styles from "./job.module.css";
@@ -26,10 +27,12 @@ export function JobScreen({
   jobId,
   jobTitle,
   entries,
+  dropOff,
 }: {
   jobId: string;
   jobTitle: string;
   entries: readonly RankingEntry[];
+  dropOff: DropOff | null;
 }) {
   const t = useTranslations("job");
   const locale = useLocale();
@@ -49,6 +52,7 @@ export function JobScreen({
           score: entry.score,
           confidence: entry.confidence,
           needsReview: entry.needsReview,
+          href: `/jobs/${jobId}/candidates/${entry.candidateId}`,
           decision: {
             kind: entry.decision,
             ...(entry.decidedBy !== null && { by: entry.decidedBy }),
@@ -138,7 +142,12 @@ export function JobScreen({
       {rows.length === 0 ? (
         <p className={styles.empty}>{t("noCandidates")}</p>
       ) : (
-        <CandidateTable rows={rows} selectedId={selected} onSelect={setSelected} />
+        <CandidateTable
+          rows={rows}
+          selectedId={selected}
+          onSelect={setSelected}
+          dropOff={dropOff}
+        />
       )}
     </div>
   );

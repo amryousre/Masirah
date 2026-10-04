@@ -14,6 +14,9 @@ const paths = {
   check: "M5 12.5l4.5 4.5L19 7.5",
   checkCircle: `${circle}M8 12.5l2.5 2.5L16 9.5`,
   chevronDown: "m6 9 6 6 6-6",
+  // Drawn for left to right; a page mirrors them in Arabic.
+  chevronLeft: "m15 18-6-6 6-6",
+  chevronRight: "m9 18 6-6-6-6",
   chevronsUpDown: "m7 15 5 5 5-5M7 9l5-5 5 5",
   clock: `${circle}M12 7v5l3 2`,
   close: "M6 6l12 12M18 6 6 18",

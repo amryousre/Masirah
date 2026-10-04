@@ -130,8 +130,15 @@ export async function addJob(
 export async function addRankedCandidate(
   account: Account,
   jobId: string,
-  candidate: { name: string; total: number; justification: string; confidence: number },
-): Promise<void> {
+  candidate: {
+    name: string;
+    total: number;
+    justification: string;
+    confidence: number;
+    /** Ratings out of 100 by component; empty unless the test reads the breakdown. */
+    ratings?: Record<keyof typeof WEIGHTS, number>;
+  },
+): Promise<string> {
   const organisationId = account.organisationId;
   if (organisationId === null) throw new Error("The account belongs to no organisation.");
   const client = admin();
@@ -190,9 +197,14 @@ export async function addRankedCandidate(
         organisation_id: organisationId,
         application_id: application.data.id,
         total: candidate.total,
-        components: {},
+        components: Object.fromEntries(
+          Object.entries(candidate.ratings ?? {}).map(([name, rating]) => [
+            name,
+            { rating, evidence: `${name} evidence` },
+          ]),
+        ),
         justification: candidate.justification,
-        summary: "Summary.",
+        summary: ["Six years in finance.", "SAP daily."].join("\n"),
         model_id: "test-model",
         provider: "anthropic",
         prompt_version: "test",
@@ -202,4 +214,61 @@ export async function addRankedCandidate(
       })
     ).error,
   );
+  return person.data.id;
+}
+
+/**
+ * Another CV for a candidate already in the organisation, uploaded for a job and applied with:
+ * the candidate who sends a second CV for a second job.
+ */
+export async function addCvFile(
+  account: Account,
+  candidateId: string,
+  jobId: string,
+  fileName: string,
+): Promise<void> {
+  const organisationId = account.organisationId;
+  if (organisationId === null) throw new Error("The account belongs to no organisation.");
+  const client = admin();
+  const fileId = randomUUID();
+  const file = await client.from("cv_file").insert({
+    id: fileId,
+    organisation_id: organisationId,
+    candidate_id: candidateId,
+    job_id: jobId,
+    storage_path: `organisations/${organisationId}/cv/${fileId}/cv.pdf`,
+    original_filename: fileName,
+    mime_type: "application/pdf",
+    byte_size: 1024,
+    content_hash: randomUUID().replaceAll("-", "").repeat(2),
+    status: "extracted",
+  });
+  if (file.error) throw new Error(file.error.message);
+  const profile = await client.from("parsed_profile").insert({
+    organisation_id: organisationId,
+    cv_file_id: fileId,
+    version: 1,
+    is_current: true,
+    extraction_source: "native_text",
+    confidence: 0.95,
+    profile: { name: fileName },
+  });
+  if (profile.error) throw new Error(profile.error.message);
+  const application = await client
+    .from("application")
+    .insert({ organisation_id: organisationId, candidate_id: candidateId, job_id: jobId });
+  if (application.error) throw new Error(application.error.message);
+}
+
+/** An application to a job with no CV sent for it, as a candidate added to a second job is. */
+export async function addApplication(
+  account: Account,
+  candidateId: string,
+  jobId: string,
+): Promise<void> {
+  if (account.organisationId === null) throw new Error("The account belongs to no organisation.");
+  const { error } = await admin()
+    .from("application")
+    .insert({ organisation_id: account.organisationId, candidate_id: candidateId, job_id: jobId });
+  if (error) throw new Error(error.message);
 }

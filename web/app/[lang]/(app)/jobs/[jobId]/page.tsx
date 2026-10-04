@@ -7,6 +7,7 @@ import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 import { readJobPage } from "@/lib/adapters/job-page";
 import { createSupabaseServerClient } from "@/lib/adapters/supabase";
+import { dropOff } from "@/lib/domain/drop-off";
 import { rankJob } from "@/lib/domain/ranking";
 
 import { JobScreen } from "./job-screen";
@@ -36,6 +37,8 @@ export default async function JobPage({ params }: PageProps<"/[lang]/jobs/[jobId
   const { locale, page } = await load(lang, jobId);
   const t = await getTranslations({ locale, namespace: "job" });
   const { job } = page;
+  const entries = rankJob(page.candidates, page.files);
+  const scores = entries.flatMap((entry) => (entry.kind === "ranked" ? [entry.score] : []));
   const meta = [
     job.location,
     job.minimumExperienceYears === null
@@ -63,11 +66,7 @@ export default async function JobPage({ params }: PageProps<"/[lang]/jobs/[jobId
           </p>
         )}
       </header>
-      <JobScreen
-        jobId={job.id}
-        jobTitle={job.title}
-        entries={rankJob(page.candidates, page.files)}
-      />
+      <JobScreen jobId={job.id} jobTitle={job.title} entries={entries} dropOff={dropOff(scores)} />
     </div>
   );
 }

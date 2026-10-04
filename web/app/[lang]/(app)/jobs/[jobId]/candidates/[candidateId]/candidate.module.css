@@ -1,0 +1,258 @@
+.page {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-block-size: 100dvb;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding-block: var(--space-5);
+  padding-inline: var(--space-8);
+  border-block-end: var(--border);
+}
+
+.heading {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.back {
+  color: var(--color-text-secondary);
+  font-size: var(--size-caption);
+  text-decoration: none;
+}
+
+.back:hover {
+  color: var(--color-text);
+  text-decoration: underline;
+}
+
+.title {
+  font-size: var(--size-headline);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-headline);
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  color: var(--color-text-secondary);
+  font-size: var(--size-body-sm);
+  line-height: var(--leading-body-sm);
+}
+
+.steps {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.step {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 2.25rem;
+  block-size: 2.25rem;
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+}
+
+a.step:hover {
+  background: var(--color-fill-hover);
+}
+
+.step[aria-disabled] {
+  color: var(--color-text-tertiary);
+}
+
+/* Previous points back along the reading direction, so in Arabic the chevrons mirror. */
+.chevron:dir(rtl) {
+  transform: scaleX(-1);
+}
+
+/* Reasoning at the inline start, the document at the inline end (design-brief.md section 6). */
+.panes {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+}
+
+.reasoning {
+  padding-block: var(--space-4) var(--space-8);
+  padding-inline: var(--space-8) var(--space-6);
+  border-inline-end: var(--border);
+}
+
+.reasons {
+  display: grid;
+  gap: var(--space-6);
+  padding-block-start: var(--space-5);
+}
+
+.block {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.blockTitle {
+  font-size: var(--size-title);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-title);
+}
+
+.justification {
+  max-inline-size: 68ch;
+  font-size: var(--size-body);
+  line-height: var(--leading-body);
+  text-wrap: pretty;
+}
+
+.summary {
+  display: grid;
+  gap: var(--space-1);
+  max-inline-size: 68ch;
+  padding-inline-start: var(--space-5);
+  font-size: var(--size-body-sm);
+  line-height: var(--leading-body-sm);
+}
+
+.quiet {
+  color: var(--color-text-secondary);
+  font-size: var(--size-body-sm);
+  line-height: var(--leading-body-sm);
+}
+
+.profile {
+  padding-block-start: var(--space-3);
+}
+
+.profileRow {
+  display: grid;
+  grid-template-columns: 9rem 1fr;
+  gap: var(--space-4);
+  padding-block: var(--space-3);
+  border-block-end: var(--border-divider);
+  font-size: var(--size-body-sm);
+  line-height: var(--leading-body-sm);
+}
+
+.profileLabel {
+  color: var(--color-text-secondary);
+}
+
+.profileValue {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.profileLine {
+  display: block;
+}
+
+.document {
+  position: sticky;
+  inset-block-start: 0;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  block-size: 100dvb;
+  background: var(--color-fill-subtle);
+}
+
+.documentBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-block: var(--space-3);
+  padding-inline: var(--space-5);
+  border-block-end: var(--border);
+  background: var(--color-canvas);
+  font-size: var(--size-caption);
+}
+
+.fileName {
+  overflow: hidden;
+  font-family: var(--font-mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.link {
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
+.viewer {
+  inline-size: 100%;
+  block-size: 100%;
+  border: none;
+}
+
+.image {
+  max-inline-size: 100%;
+  margin-inline: auto;
+  padding: var(--space-5);
+  object-fit: contain;
+}
+
+.document > .quiet {
+  padding: var(--space-5);
+}
+
+/* The view tabs exist for phones only (T071). */
+.viewTabs {
+  display: none;
+}
+
+@media (width < 48rem) {
+  .header {
+    padding-inline: var(--space-4);
+  }
+
+  .panes {
+    grid-template-columns: 1fr;
+  }
+
+  .reasoning {
+    padding-inline: var(--space-4);
+    border-inline-end: none;
+  }
+
+  .document {
+    position: static;
+    block-size: 80dvb;
+  }
+
+  .profileRow {
+    grid-template-columns: 1fr;
+    gap: var(--space-1);
+  }
+}
+
+/* Below 700 pixels the panes become tabs, reasoning first (T071). */
+@media (width < 43.75rem) {
+  .panes {
+    grid-template-rows: auto 1fr;
+  }
+
+  .viewTabs {
+    display: flex;
+    padding-inline: var(--space-4);
+  }
+
+  /* The row above replaces the pane's own tabs. */
+  .reasoning [role="tablist"] {
+    display: none;
+  }
+
+  .reasoning[data-phone-hidden],
+  .document[data-phone-hidden] {
+    display: none;
+  }
+
+  .document {
+    block-size: calc(100dvb - 8rem);
+  }
+}

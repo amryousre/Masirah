@@ -1,11 +1,24 @@
 // @vitest-environment jsdom
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { AnchorHTMLAttributes, ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import { type CandidateRow, CandidateTable } from "@/components/candidates/candidate-table";
 
 import { renderIn } from "./render";
+
+vi.mock("@/i18n/navigation", () => ({
+  Link: ({
+    href,
+    children,
+    ...rest
+  }: AnchorHTMLAttributes<HTMLAnchorElement> & { children: ReactNode }) => (
+    <a href={String(href)} {...rest}>
+      {children}
+    </a>
+  ),
+}));
 
 const rows: CandidateRow[] = [
   {
@@ -83,5 +96,40 @@ describe("CandidateTable", () => {
     expect(screen.getByText("Ahmed_Samir_CV.docx")).toBeInTheDocument();
     expect(screen.getByText("قيد المعالجة")).toBeInTheDocument();
     expect(screen.getByText("تعذّرت القراءة: the image is blurred")).toBeInTheDocument();
+  });
+
+  it("marks where scores fall off, between the last strong candidate and the next", () => {
+    renderIn(
+      "en",
+      <CandidateTable rows={rows} dropOff={{ above: 2, gap: 30 }} onSelect={vi.fn()} />,
+    );
+    const texts = screen.getAllByRole("row").map((row) => row.textContent);
+    const marker = texts.findIndex((text) => text.includes("Scores drop 30 points below here"));
+    expect(texts[marker - 1]).toContain("Mahmoud Ali");
+    expect(texts[marker + 1]).toContain("Hana Adel");
+  });
+
+  it("links a name to the candidate's own page when it has one", () => {
+    const linked = rows.map((row) =>
+      row.kind === "ranked" ? { ...row, href: `/jobs/j1/candidates/${row.id}` } : row,
+    );
+    renderIn("en", <CandidateTable rows={linked} onSelect={vi.fn()} />);
+    expect(screen.getByRole("link", { name: "Yasmin Farouk" })).toHaveAttribute(
+      "href",
+      "/jobs/j1/candidates/c1",
+    );
+  });
+
+  it("marks nothing when the scores have no break", () => {
+    renderIn("en", <CandidateTable rows={rows} onSelect={vi.fn()} />);
+    expect(screen.queryByText(/Scores drop/)).not.toBeInTheDocument();
+  });
+
+  it("says the fall in Arabic, the noun agreeing with the number", () => {
+    renderIn(
+      "ar",
+      <CandidateTable rows={rows} dropOff={{ above: 2, gap: 12 }} onSelect={vi.fn()} />,
+    );
+    expect(screen.getByText("تنخفض الدرجات 12 نقطة بعد هذا الحد")).toBeInTheDocument();
   });
 });

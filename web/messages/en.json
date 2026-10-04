@@ -104,7 +104,8 @@
     "status": "Status",
     "notRanked": "Not ranked yet",
     "lowConfidence": "Low confidence · review",
-    "readFailed": "Couldn't read: {reason}"
+    "readFailed": "Couldn't read: {reason}",
+    "dropOff": "{gap, plural, one {Scores drop {gap} point below here} other {Scores drop {gap} points below here}}"
   },
   "upload": {
     "drop": "Drag up to {max} files here, or choose files",
@@ -429,5 +430,49 @@
       "size": "Larger than 10 MB.",
       "empty": "The file is empty."
     }
+  },
+  "candidate": {
+    "back": "Ranked list",
+    "breadcrumb": "Breadcrumb",
+    "rank": "Rank {rank} of {of}",
+    "score": "Score {total}",
+    "notScored": "Not scored yet",
+    "confidence": {
+      "high": "High confidence",
+      "medium": "Medium confidence",
+      "low": "Low confidence"
+    },
+    "previous": "Previous candidate",
+    "next": "Next candidate",
+    "navigation": "Candidates in this job",
+    "sections": "Candidate sections",
+    "reasons": "Reasons",
+    "profile": "Extracted profile",
+    "why": "Why rank {rank}",
+    "whyUnranked": "Why this score",
+    "summary": "Summary",
+    "pending": "The reasons appear here once the CV has been read and scored.",
+    "profilePending": "The CV has not been read yet.",
+    "notGiven": "Not in the CV",
+    "experienceYears": "{years, plural, one {{years} year} other {{years} years}}",
+    "fields": {
+      "name": "Name",
+      "emails": "Email",
+      "phones": "Phone",
+      "location": "Location",
+      "experience": "Total experience",
+      "employment": "Employment",
+      "education": "Education",
+      "skills": "Skills",
+      "languages": "Languages",
+      "certifications": "Certifications"
+    },
+    "document": "Original document",
+    "openOriginal": "Open the original",
+    "noDocument": "No document is stored for this candidate.",
+    "noPreview": "This file type can’t be shown here. Open the original to read it.",
+    "breakdownUnavailable": "The breakdown could not be read for this score.",
+    "views": "Candidate views",
+    "documentTab": "Document"
   }
 }
