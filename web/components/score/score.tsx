@@ -30,6 +30,8 @@ export interface ScorePart {
   key: ScoreComponentKey;
   earned: number;
   weight: number;
+  /** What the rating rests on, shown under its track. */
+  evidence?: string;
 }
 
 type ScoreBreakdownProps =
@@ -94,6 +96,9 @@ export function ScoreBreakdown(props: ScoreBreakdownProps) {
             >
               <span className={styles.fill} />
             </span>
+            {part.evidence !== undefined && part.evidence !== "" && (
+              <span className={styles.partEvidence}>{part.evidence}</span>
+            )}
           </li>
         ))}
       </ul>

@@ -93,6 +93,11 @@
   grid-column: 1 / -1;
 }
 
+.partEvidence {
+  grid-column: 1 / -1;
+  color: var(--color-text-secondary);
+}
+
 .excluded,
 .reason,
 .pending {

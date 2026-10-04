@@ -16,10 +16,12 @@ place direction is decided.
 | `/{lang}/jobs/new` | Create a job, including pasting a free-text description | FR-001, FR-002 |
 | `/{lang}/jobs/{jobId}` | Job detail with its ranked candidate list | FR-018, FR-013, FR-014 |
 | `/{lang}/jobs/{jobId}/upload` | Batch upload against this job | FR-003 |
-| `/{lang}/candidates/{candidateId}` | Profile, original file viewer, score breakdown, justification | FR-012, FR-015, FR-016 |
+| `/{lang}/jobs/{jobId}/candidates/{candidateId}` | Profile, original file viewer, score breakdown, justification, for the candidate's application to this job | FR-012, FR-015, FR-016 |
 | `/{lang}/candidates/{candidateId}/edit` | Correct extracted fields | FR-010 |
 | `/{lang}/review` | Queue of low-confidence and failed documents | FR-011 |
 | `/{lang}/settings` | Retention period, interface language, deletion request | FR-028, FR-029 |
+
+The candidate page sits under its job (amended 2026-10-04, T066) because what it shows belongs to an application, not to the person: the score, the reasons, the rank and the previous and next candidates are all for one job. A candidate who never applied to the job is not found there. Correcting extracted fields stays at `/{lang}/candidates/{candidateId}/edit`, since the profile is the CV's and the same for every job.
 
 ## Server routes
 

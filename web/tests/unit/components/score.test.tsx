@@ -51,6 +51,18 @@ describe("ScoreBreakdown", () => {
     ).toBeInTheDocument();
   });
 
+  it("shows under each part what its rating rests on", () => {
+    renderIn(
+      "en",
+      <ScoreBreakdown
+        total={78}
+        parts={parts.map((part) => ({ ...part, evidence: `${part.key} evidence` }))}
+      />,
+    );
+    expect(screen.getByText("skills evidence")).toBeInTheDocument();
+    expect(screen.getByText("location evidence")).toBeInTheDocument();
+  });
+
   it("says so while the score is being calculated", () => {
     renderIn("en", <ScoreBreakdown state="calculating" />);
     expect(screen.getByText("Calculating the score…")).toBeInTheDocument();

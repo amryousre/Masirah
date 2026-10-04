@@ -52,6 +52,7 @@ export function JobScreen({
           score: entry.score,
           confidence: entry.confidence,
           needsReview: entry.needsReview,
+          href: `/jobs/${jobId}/candidates/${entry.candidateId}`,
           decision: {
             kind: entry.decision,
             ...(entry.decidedBy !== null && { by: entry.decidedBy }),

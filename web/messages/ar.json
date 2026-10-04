@@ -430,5 +430,47 @@
       "size": "أكبر من 10 ميجابايت.",
       "empty": "الملف فارغ."
     }
+  },
+  "candidate": {
+    "back": "القائمة المرتبة",
+    "breadcrumb": "مسار التنقل",
+    "rank": "المرتبة {rank} من {of}",
+    "score": "الدرجة {total}",
+    "notScored": "لم يُقيَّم بعد",
+    "confidence": {
+      "high": "الثقة عالية",
+      "medium": "الثقة متوسطة",
+      "low": "الثقة منخفضة"
+    },
+    "previous": "المرشح السابق",
+    "next": "المرشح التالي",
+    "navigation": "المرشحون لهذه الوظيفة",
+    "sections": "أقسام المرشح",
+    "reasons": "الأسباب",
+    "profile": "الملف المستخرج",
+    "why": "لماذا المرتبة {rank}",
+    "whyUnranked": "لماذا هذه الدرجة",
+    "summary": "ملخص",
+    "pending": "تظهر الأسباب هنا بعد قراءة السيرة وتقييمها.",
+    "profilePending": "لم تُقرأ السيرة بعد.",
+    "notGiven": "غير موجود في السيرة",
+    "experienceYears": "{years, plural, one {سنة واحدة} two {سنتان} few {{years} سنوات} other {{years} سنة}}",
+    "fields": {
+      "name": "الاسم",
+      "emails": "البريد",
+      "phones": "الهاتف",
+      "location": "الموقع",
+      "experience": "إجمالي الخبرة",
+      "employment": "سجل العمل",
+      "education": "التعليم",
+      "skills": "المهارات",
+      "languages": "اللغات",
+      "certifications": "الشهادات"
+    },
+    "document": "المستند الأصلي",
+    "openOriginal": "فتح الأصل",
+    "noDocument": "لا يوجد مستند محفوظ لهذا المرشح.",
+    "noPreview": "لا يمكن عرض هذا النوع من الملفات هنا. افتح الأصل لقراءته.",
+    "breakdownUnavailable": "تعذّرت قراءة تفصيل هذه الدرجة."
   }
 }

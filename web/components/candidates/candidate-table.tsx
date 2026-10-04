@@ -3,6 +3,8 @@
 import { useTranslations } from "next-intl";
 import { Fragment, useId } from "react";
 
+import { Link } from "@/i18n/navigation";
+
 import { cx } from "../cx";
 import { Icon } from "../icon/icon";
 import { ScoreBar } from "../score/score";
@@ -28,6 +30,8 @@ export type CandidateRow =
       confidence: ConfidenceLevel;
       decision: { kind: DecisionKind; by?: string };
       needsReview?: boolean;
+      /** The candidate's own page; the name links there when given. */
+      href?: string;
     }
   | { kind: "processing"; id: string; fileName: string }
   /** Read, but too doubtful to rank until someone checks it (FR-011). */
@@ -97,17 +101,30 @@ export function CandidateTable({ rows, selectedId, onSelect, dropOff }: Candidat
               >
                 <td className={styles.rank}>{row.rank}</td>
                 <th scope="row" className={styles.name}>
-                  <button
-                    type="button"
-                    className={styles.select}
-                    aria-current={selected || undefined}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      onSelect(row.id);
-                    }}
-                  >
-                    {row.name}
-                  </button>
+                  {row.href === undefined ? (
+                    <button
+                      type="button"
+                      className={styles.select}
+                      aria-current={selected || undefined}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onSelect(row.id);
+                      }}
+                    >
+                      {row.name}
+                    </button>
+                  ) : (
+                    <Link
+                      href={row.href}
+                      className={styles.select}
+                      aria-current={selected || undefined}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                      }}
+                    >
+                      {row.name}
+                    </Link>
+                  )}
                 </th>
                 <td className={styles.reason}>{row.reason}</td>
                 <td>

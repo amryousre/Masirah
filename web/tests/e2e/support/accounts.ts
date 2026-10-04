@@ -130,8 +130,15 @@ export async function addJob(
 export async function addRankedCandidate(
   account: Account,
   jobId: string,
-  candidate: { name: string; total: number; justification: string; confidence: number },
-): Promise<void> {
+  candidate: {
+    name: string;
+    total: number;
+    justification: string;
+    confidence: number;
+    /** Ratings out of 100 by component; empty unless the test reads the breakdown. */
+    ratings?: Record<keyof typeof WEIGHTS, number>;
+  },
+): Promise<string> {
   const organisationId = account.organisationId;
   if (organisationId === null) throw new Error("The account belongs to no organisation.");
   const client = admin();
@@ -190,9 +197,14 @@ export async function addRankedCandidate(
         organisation_id: organisationId,
         application_id: application.data.id,
         total: candidate.total,
-        components: {},
+        components: Object.fromEntries(
+          Object.entries(candidate.ratings ?? {}).map(([name, rating]) => [
+            name,
+            { rating, evidence: `${name} evidence` },
+          ]),
+        ),
         justification: candidate.justification,
-        summary: "Summary.",
+        summary: ["Six years in finance.", "SAP daily."].join("\n"),
         model_id: "test-model",
         provider: "anthropic",
         prompt_version: "test",
@@ -202,4 +214,5 @@ export async function addRankedCandidate(
       })
     ).error,
   );
+  return person.data.id;
 }
