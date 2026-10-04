@@ -20,8 +20,15 @@ The server reaches `pgmq_public` through the Data API, so the schema is exposed 
 `[api] schemas` in `supabase/config.toml`, and on the hosted project by its Data API settings. The
 grants above still keep every role except the service role out.
 
-Worker obligation 3 below means the worker will not keep using the service role: T053 and T054 give
-it a database role of its own with queue access granted explicitly.
+The worker does not use the service role. It connects directly to Postgres as `masirah_worker`
+(`supabase/migrations/0013_worker_role.sql`), which may read, delete and archive messages and
+nothing more. It touches no queue table and not `pgmq_public`: it calls `worker.read`,
+`worker.delete` and `worker.archive`, which accept only the two queues above and bound the
+visibility timeout to an hour, so it cannot send a message, hide one for good, reset its read
+count or forge an archived one. The `worker` schema is not exposed through the Data API.
+The migration creates the role without login; where the worker is deployed, an operator grants
+login with a password kept out of git. The role's access to tenant tables, under row level
+security per worker obligation 3, arrives with the consume loop (T054).
 
 Worked examples of every message, valid and refused, live in
 [queue-message.examples.json](./queue-message.examples.json). The web and pipeline test suites
