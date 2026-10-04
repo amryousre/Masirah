@@ -109,7 +109,7 @@ Every table below carries `organisation_id` and has row level security enabled w
 > Write these first. Observe them failing for the intended reason before writing any implementation.
 
 - [X] T033 [P] [US1] Contract test for the `cv_processing` message shape in `pipeline/tests/unit/test_queue_contract.py`, including rejection of an unrecognised `schema_version`
-- [ ] T034 [P] [US1] Contract test for the model provider port in `pipeline/tests/unit/test_model_provider_port.py`, run against both adapters: structured output only, identity returned not assumed, cost returned, payload hashable, failures typed as rate limit, timeout, refusal and malformed output
+- [X] T034 [P] [US1] Contract test for the model provider port in `pipeline/tests/unit/test_model_provider_port.py`, run against both adapters: structured output only, identity returned not assumed, cost returned, payload hashable, failures typed as rate limit, timeout, refusal and malformed output
 - [ ] T035 [P] [US1] Accuracy gate test for native PDF extraction at 95 percent field accuracy in `pipeline/tests/accuracy/test_native_pdf_accuracy.py` (SC-002)
 - [X] T036 [P] [US1] Unit tests for reading order on two-column layouts in `pipeline/tests/unit/test_reading_order.py`
 - [X] T037 [P] [US1] Unit tests for Arabic name variant folding in `pipeline/tests/unit/test_arabic_names.py`, asserting Mohamed, Mohammed, Muhammad and محمد resolve to one searchable form
@@ -123,16 +123,16 @@ Every table below carries `organisation_id` and has row level security enabled w
 
 - [X] T043 [P] [US1] Arabic name variant normalisation in `pipeline/src/masirah_pipeline/domain/arabic.py`, producing the derived `name_normalised` form. Derived, never entered
 - [X] T044 [P] [US1] Hijri and Gregorian date normalisation and Arabic-Indic numeral interpretation in `pipeline/src/masirah_pipeline/domain/dates.py`
-- [ ] T045 [P] [US1] Structured profile model in `pipeline/src/masirah_pipeline/domain/profile.py` covering name, contact details, location, years of experience, dated employment history, education, skills, languages and certifications
+- [X] T045 [P] [US1] Structured profile model in `pipeline/src/masirah_pipeline/domain/profile.py` covering name, contact details, location, years of experience, dated employment history, education, skills, languages and certifications
 - [X] T046 [P] [US1] Language detection in `pipeline/src/masirah_pipeline/domain/language.py`, tolerating a minority of third-language text without flagging the whole document (ADR 0005)
-- [ ] T047 [P] [US1] Score composition and component weighting in `pipeline/src/masirah_pipeline/domain/scoring.py` across skills match, experience relevance, education, tenure stability, language and location
+- [X] T047 [P] [US1] Score composition and component weighting in `pipeline/src/masirah_pipeline/domain/scoring.py` across skills match, experience relevance, education, tenure stability, language and location
 
 ### Implementation: pipeline ports and adapters
 
-- [ ] T048 [US1] Define the `ModelProvider` port in `pipeline/src/masirah_pipeline/ports/model_provider.py` with `extract_profile`, `summarise_candidate` and `score_application`, per contracts/model-provider-port.md (depends on T034)
-- [ ] T049 [P] [US1] Anthropic adapter in `pipeline/src/masirah_pipeline/adapters/anthropic_provider.py`
-- [ ] T050 [P] [US1] OpenAI adapter in `pipeline/src/masirah_pipeline/adapters/openai_provider.py`. Both providers ship from day one per decision Q5, so Arabic quality and cost can be compared on real CVs before there are users to disrupt
-- [ ] T051 [US1] Provider selection by environment configuration in `pipeline/src/masirah_pipeline/adapters/provider_registry.py`, cheap tier for extraction and summarising, strong tier for scoring and justification per AI-05. A comparison run means changing a variable, not editing logic
+- [X] T048 [US1] Define the `ModelProvider` port in `pipeline/src/masirah_pipeline/ports/model_provider.py` with `extract_profile`, `summarise_candidate` and `score_application`, per contracts/model-provider-port.md (depends on T034). Built as one narrow `complete` operation per adapter with the named operations on top (contract amended 4 October 2026). `extract_profile` is in `pipeline/src/masirah_pipeline/extraction.py`; the other two arrive with T047 and T056
+- [X] T049 [P] [US1] Anthropic adapter in `pipeline/src/masirah_pipeline/adapters/anthropic_provider.py`
+- [X] T050 [P] [US1] OpenAI adapter in `pipeline/src/masirah_pipeline/adapters/openai_provider.py`. Both providers ship from day one per decision Q5, so Arabic quality and cost can be compared on real CVs before there are users to disrupt
+- [X] T051 [US1] Provider selection by environment configuration in `pipeline/src/masirah_pipeline/adapters/provider_registry.py`, cheap tier for extraction and summarising, strong tier for scoring and justification per AI-05. A comparison run means changing a variable, not editing logic
 - [X] T052 [US1] Layout-aware text extraction for native PDF and DOCX in `pipeline/src/masirah_pipeline/adapters/native_text.py`, preserving human reading order in multi-column layouts and repairing Arabic stored in visual order (depends on T036). pdfminer.six rather than the PyMuPDF first named here, which is AGPL licensed (research.md)
 - [ ] T053 [US1] Supabase queue adapter in `pipeline/src/masirah_pipeline/adapters/supabase_queue.py` calling `read` and `delete` through the `pgmq_public` schema
 - [ ] T054 [US1] Worker consume loop in `pipeline/src/masirah_pipeline/worker.py` satisfying the six worker obligations in contracts/queue-message.md: idempotence, deletion only on success, tenant scoping by the message's `organisation_id`, terminal failure recorded rather than swallowed, cost recorded per CV, and protected attributes never reaching the scoring model
