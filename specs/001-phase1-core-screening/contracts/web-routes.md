@@ -33,6 +33,15 @@ place direction is decided.
 
 ## Rules
 
+**Uploads, field by field.** `/api/uploads` takes `multipart/form-data`: `files` (repeated, 1 to 25),
+`jobId` (optional, a job of the session's organisation, else 404) and `locale` (`ar` or `en`). It
+answers 202 with one outcome per file: `queued` with its `cvFileId`, `rejected` with a `reason`
+(`type`, `size` or `empty`), `failed` with the row marked failed so the file stays visible, or
+`pending` when even marking it failed did not work: the row is still queued, and the worker's
+reconciliation (`worker.requeue_stranded`) queues it again within minutes. A
+file is judged by its first bytes as well as its name, the stored object name is ASCII
+(`cv.pdf`) because Storage refuses other keys, and each file is at most 10 MiB.
+
 **Uploads never process inline.** `/api/uploads` stores the file, writes the row, enqueues, and
 returns. It must not wait for extraction. This is what keeps the batch target achievable and is the
 reason the worker exists at all.
