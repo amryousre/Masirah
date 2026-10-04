@@ -62,12 +62,13 @@ class OpenAIModel:
         except openai.APIError as error:
             raise ProviderUnavailableError(str(error)) from error
         tokens = response.usage
-        # OpenAI counts input read from its prompt cache within input_tokens.
+        # OpenAI counts input read from or written to its prompt cache within input_tokens.
         usage = (
             Usage(
                 tokens.input_tokens,
                 tokens.output_tokens,
                 tokens.input_tokens_details.cached_tokens,
+                tokens.input_tokens_details.cache_write_tokens or 0,
             )
             if tokens
             else Usage(0, 0)

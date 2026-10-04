@@ -42,38 +42,40 @@ class ModelIdentity:
 
 @dataclass(frozen=True)
 class Usage:
-    """Tokens in and out. input_tokens counts every input token, cached_input_tokens those of
-    them the provider read from its prompt cache."""
+    """Tokens in and out. input_tokens counts every input token; of them, cached_input_tokens
+    were read from the provider's prompt cache and cache_write_tokens were written to it."""
 
     input_tokens: int
     output_tokens: int
     cached_input_tokens: int = 0
+    cache_write_tokens: int = 0
 
 
 @dataclass(frozen=True)
 class Price:
     """A model's list price in US dollars per million tokens.
 
-    Input read from the provider's prompt cache is billed at its own, lower rate. A price with no
-    cached rate charges cached input at the full input rate, which overstates rather than hides
-    cost.
+    Input read from the provider's prompt cache is billed at a lower rate, and input written to
+    it at a higher one. A price without either rate charges those tokens at the input rate.
     """
 
     input_usd_per_million: Decimal
     output_usd_per_million: Decimal
     cached_input_usd_per_million: Decimal | None = None
+    cache_write_usd_per_million: Decimal | None = None
 
     def cost_egp(self, usage: Usage, egp_per_usd: Decimal) -> Decimal:
-        cached_rate = self.cached_input_usd_per_million
-        if cached_rate is None:
-            cached_rate = self.input_usd_per_million
-        uncached = usage.input_tokens - usage.cached_input_tokens
+        plain = usage.input_tokens - usage.cached_input_tokens - usage.cache_write_tokens
         usd = (
-            uncached * self.input_usd_per_million
-            + usage.cached_input_tokens * cached_rate
+            plain * self.input_usd_per_million
+            + usage.cached_input_tokens * self._or_input(self.cached_input_usd_per_million)
+            + usage.cache_write_tokens * self._or_input(self.cache_write_usd_per_million)
             + usage.output_tokens * self.output_usd_per_million
         ) / ONE_MILLION
         return usd * egp_per_usd
+
+    def _or_input(self, rate: Decimal | None) -> Decimal:
+        return self.input_usd_per_million if rate is None else rate
 
 
 @dataclass(frozen=True)

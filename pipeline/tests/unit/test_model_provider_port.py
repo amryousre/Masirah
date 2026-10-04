@@ -49,12 +49,16 @@ PRICE = Price(
     input_usd_per_million=Decimal(2),
     output_usd_per_million=Decimal(10),
     cached_input_usd_per_million=Decimal("0.2"),
+    cache_write_usd_per_million=Decimal("2.5"),
 )
 EGP_PER_USD = Decimal(50)
 COST = Decimal("0.2")
 # With 600 of the 1,000 input tokens read from the provider's cache at $0.20 a million:
 # 400 x $2 + 600 x $0.20 + 200 x $10 = $0.00292, which is 0.146 EGP.
 CACHED_COST = Decimal("0.146")
+# With 600 of them written to the cache instead, at $2.50 a million:
+# 400 x $2 + 600 x $2.50 + 200 x $10 = $0.0043, which is 0.215 EGP.
+WRITTEN_COST = Decimal("0.215")
 
 
 @dataclass
@@ -75,7 +79,7 @@ class Fake:
 
 
 def anthropic_message(
-    text: str, stop_reason: str = "end_turn", *, cached: int = 0
+    text: str, stop_reason: str = "end_turn", *, cached: int = 0, written: int = 0
 ) -> dict[str, Any]:
     return {
         "id": "msg_test",
@@ -87,15 +91,21 @@ def anthropic_message(
         "stop_sequence": None,
         # Anthropic counts tokens read from its cache apart from input_tokens.
         "usage": {
-            "input_tokens": 1000 - cached,
+            "input_tokens": 1000 - cached - written,
             "cache_read_input_tokens": cached,
+            "cache_creation_input_tokens": written,
             "output_tokens": 200,
         },
     }
 
 
 def openai_response(
-    text: str, *, refusal: bool = False, status: str = "completed", cached: int = 0
+    text: str,
+    *,
+    refusal: bool = False,
+    status: str = "completed",
+    cached: int = 0,
+    written: int = 0,
 ) -> dict[str, Any]:
     content = (
         {"type": "refusal", "refusal": "I can't help with that."}
@@ -122,7 +132,7 @@ def openai_response(
             "output_tokens": 200,
             "total_tokens": 1200,
             # OpenAI counts tokens read from its cache within input_tokens.
-            "input_tokens_details": {"cached_tokens": cached},
+            "input_tokens_details": {"cached_tokens": cached, "cache_write_tokens": written},
             "output_tokens_details": {"reasoning_tokens": 0},
         },
     }
@@ -321,3 +331,14 @@ class TestCachedInput:
 
         plain = Price(input_usd_per_million=Decimal(2), output_usd_per_million=Decimal(10))
         assert plain.cost_egp(Usage(1000, 200, cached_input_tokens=600), EGP_PER_USD) == COST
+
+    def test_input_written_to_the_cache_costs_the_write_rate(self, provider: Provider) -> None:
+        good = (
+            anthropic_message('{"name": "Mona"}', written=600)
+            if provider.name == "anthropic"
+            else openai_response('{"name": "Mona"}', written=600)
+        )
+        response, _ = complete(provider, answering(good))
+        assert response.usage.input_tokens == 1000
+        assert response.usage.cache_write_tokens == 600
+        assert response.cost_egp == WRITTEN_COST
