@@ -1,0 +1,120 @@
+/* The skills box looks like the other fields: the same border, radius and message line. */
+.field {
+  display: grid;
+  gap: var(--space-1);
+  max-inline-size: 28rem;
+}
+
+.labelRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.label {
+  color: var(--color-text);
+  font-size: var(--size-label);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-label);
+}
+
+.tag {
+  padding-inline: var(--space-1);
+  border: 1px dashed var(--color-control-border);
+  border-radius: var(--radius-xs);
+  color: var(--color-text-secondary);
+  font-size: var(--size-caption);
+}
+
+.box {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  min-block-size: var(--control-height);
+  padding-block: var(--space-1);
+  padding-inline: var(--space-2);
+  border: var(--border-control);
+  border-radius: var(--radius-md);
+  background: var(--color-canvas);
+  transition: border-color var(--duration-fast) var(--ease);
+}
+
+.box:hover {
+  border-color: var(--color-control-border-hover);
+}
+
+.box:focus-within {
+  border-color: var(--color-focus);
+}
+
+.box[data-suggested] {
+  border-style: dashed;
+}
+
+.box[data-invalid] {
+  border-color: var(--color-error);
+}
+
+.chips {
+  display: contents;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding-block: 2px;
+  padding-inline: var(--space-2) var(--space-1);
+  border-radius: var(--radius-sm);
+  background: var(--color-fill-subtle);
+  font-size: var(--size-caption);
+  line-height: var(--leading-caption);
+}
+
+.remove {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-xs);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.remove:hover {
+  background: var(--color-fill-hover);
+  color: var(--color-text);
+}
+
+.input {
+  flex: 1;
+  min-inline-size: 8rem;
+  block-size: 1.75rem;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: var(--size-body-sm);
+}
+
+.input::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.message {
+  color: var(--color-text-secondary);
+  font-size: var(--size-caption);
+  line-height: var(--leading-caption);
+}
+
+.message[data-error] {
+  color: var(--color-error);
+}

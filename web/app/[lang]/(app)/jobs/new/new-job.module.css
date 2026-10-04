@@ -1,0 +1,60 @@
+.page {
+  display: grid;
+  gap: var(--space-4);
+  max-inline-size: 52rem;
+  padding-block: var(--space-8);
+  padding-inline: var(--space-8);
+}
+
+.back {
+  color: var(--color-text-secondary);
+  font-size: var(--size-caption);
+  text-decoration: none;
+}
+
+.back:hover {
+  color: var(--color-text);
+  text-decoration: underline;
+}
+
+.title {
+  font-size: var(--size-headline);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-headline);
+}
+
+.form {
+  display: grid;
+  gap: var(--space-5);
+  padding-block-start: var(--space-4);
+}
+
+/* Two short fields side by side, as in the approved design, stacking on a narrow screen. */
+.pair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: var(--space-5);
+}
+
+.notice {
+  padding-block: var(--space-2);
+  padding-inline: var(--space-3);
+  border: var(--border);
+  border-radius: var(--radius-md);
+  background: var(--color-fill-subtle);
+  font-size: var(--size-body-sm);
+  line-height: var(--leading-body-sm);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+@media (width < 48rem) {
+  .page {
+    padding-block: var(--space-5);
+    padding-inline: var(--space-4);
+  }
+}

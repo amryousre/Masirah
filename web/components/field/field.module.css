@@ -6,6 +6,10 @@
   max-inline-size: 28rem;
 }
 
+.field[data-wide] {
+  max-inline-size: 48rem;
+}
+
 .labelRow {
   display: flex;
   align-items: center;
@@ -77,6 +81,10 @@
   background: var(--color-fill-subtle);
   color: var(--color-text-tertiary);
   cursor: not-allowed;
+}
+
+.area {
+  padding-block: var(--space-2);
 }
 
 .select {

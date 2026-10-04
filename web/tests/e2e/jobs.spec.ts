@@ -1,27 +1,10 @@
-import AxeBuilder from "@axe-core/playwright";
-import { expect, type Page, test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 import { type Account, addJob, createAccount } from "./support/accounts";
+import { expectAccessible, signIn } from "./support/pages";
 
 // The job list (T058) for a signed-in member: an empty state that teaches how a ranking comes
 // about, then one row per job of their own organisation and none of anyone else's.
-
-async function signIn(page: Page, account: Account) {
-  await page.goto("/en/sign-in");
-  await page.getByLabel("Work email").fill(account.email);
-  await page.getByLabel("Password", { exact: true }).fill(account.password);
-  await page.getByRole("button", { name: "Sign in" }).click();
-  // Signing in is a round trip to Auth and a redirect; under a full parallel run it takes longer
-  // than the default five seconds.
-  await expect(page).toHaveURL(/\/en\/jobs$/, { timeout: 20_000 });
-}
-
-async function expectAccessible(page: Page) {
-  const { violations } = await new AxeBuilder({ page })
-    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
-    .analyze();
-  expect(violations.map((violation) => violation.id)).toEqual([]);
-}
 
 let newcomer: Account;
 let recruiter: Account;

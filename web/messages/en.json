@@ -36,7 +36,9 @@
   "field": {
     "suggested": "Suggested",
     "choose": "Choose…",
-    "showPassword": "Show password"
+    "showPassword": "Show password",
+    "addSkill": "Type a skill and press Enter",
+    "removeSkill": "Remove {skill}"
   },
   "dialog": {
     "close": "Close"
@@ -368,6 +370,49 @@
       "user": "Nourhan Saeed",
       "email": "nourhan@deltasoft.example",
       "heading": "Senior Front-end Developer"
+    }
+  },
+  "newJob": {
+    "title": "Create job",
+    "back": "Jobs",
+    "breadcrumb": "Breadcrumb",
+    "modes": "How to start the job",
+    "mode": {
+      "paste": "Paste a description",
+      "manual": "Fill in manually"
+    },
+    "field": {
+      "pasted": "Job description",
+      "title": "Job title",
+      "description": "Description",
+      "requiredSkills": "Required skills",
+      "preferredSkills": "Preferred skills",
+      "minimumExperience": "Minimum experience",
+      "location": "Location",
+      "languageRequirement": "Language requirement"
+    },
+    "help": {
+      "pasted": "Paste the text as it is, in Arabic or English. You review the proposed specification before saving.",
+      "requiredSkills": "Counted in Skills match at full weight.",
+      "preferredSkills": "Raise the score; their absence doesn't lower it."
+    },
+    "years": "{years, plural, one {{years} year} other {{years} years}}",
+    "language": {
+      "ar": "Arabic",
+      "en": "English",
+      "both": "Arabic and English"
+    },
+    "propose": "Propose specification",
+    "proposing": "Proposing a specification…",
+    "unavailable": "A proposed specification isn't available yet. Your description is kept below; fill in the rest and save.",
+    "save": "Save job",
+    "saving": "Saving job…",
+    "failed": "The job couldn't be saved. Try again; nothing on this page was lost.",
+    "error": {
+      "missing": "Enter the job title.",
+      "tooLong": "Shorten this to {max} characters or fewer.",
+      "tooMany": "Keep this to {max} skills or fewer.",
+      "invalid": "Choose one of the options."
     }
   }
 }
