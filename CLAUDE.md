@@ -104,7 +104,11 @@ The accuracy suite is not part of `pytest`'s default paths. It runs an extractor
 ```sh
 MASIRAH_EXTRACTOR=package.module:function uv run pytest tests/accuracy
 MASIRAH_EXTRACTOR=tests.accuracy.field_accuracy:oracle uv run pytest tests/accuracy   # harness self-check
+MASIRAH_EXTRACTOR=tests.accuracy.extractors:cheap_model uv run --env-file .env pytest tests/accuracy
+MASIRAH_CHEAP_MODEL=openai:gpt-5.6-luna MASIRAH_EXTRACTOR=tests.accuracy.extractors:cheap_model uv run --env-file .env pytest tests/accuracy
 ```
+
+The last two make real model calls through the provider configured for the cheap tier, and print the spend with the report. The model settings and keys live in the gitignored `pipeline/.env`; `pipeline/.env.example` lists them.
 
 The scoring rules and the label format are in `pipeline/tests/fixtures/cvs/README.md`.
 

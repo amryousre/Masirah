@@ -72,3 +72,37 @@ environment configuration, so a comparison run means changing a variable rather 
 
 Both providers must produce output conforming to the same schemas. A schema that only one provider
 can satisfy is a defect in the schema, not a licence to branch on provider inside the domain.
+
+## Implementation shape
+
+*Amended 4 October 2026, with T048 to T051.*
+
+Each provider adapter implements one narrow operation, `complete`. It sends a structured request,
+meaning instructions, content, output schema and prompt version, and returns:
+
+- the parsed output;
+- the provider and concrete model identifier the provider reports;
+- token counts and cost in EGP;
+- the serialised request body.
+
+`extract_profile`, `summarise_candidate` and `score_application` are built on that operation in
+`pipeline/src/masirah_pipeline/`. Each of them owns its instructions and its schema. This shape
+has three consequences:
+
+- Both providers answer exactly the same request.
+- One prompt is maintained, not two.
+- A schema only one provider can satisfy fails in one place.
+
+Only `extract_profile` exists so far. `summarise_candidate` and `score_application` arrive with the
+domain they need, in T047 and T056.
+
+The failure types are `RateLimitedError`, `TimedOutError`, `RefusedError`, `MalformedOutputError`
+and `ProviderUnavailableError`, all under `ModelProviderError`. A failure after the model answered
+carries the cost already incurred. An empty credit balance is `ProviderUnavailableError`, even
+where the provider reports it as a rate limit, because waiting will not refill it.
+
+Which model serves each tier is set by `MASIRAH_CHEAP_MODEL` and `MASIRAH_STRONG_MODEL`, written
+`provider:model`. The rate is set by `MASIRAH_EGP_PER_USD`. A model with no price in
+`adapters/provider_registry.py` is refused when the worker starts.
+
+OpenAI requests set `store: false`.
