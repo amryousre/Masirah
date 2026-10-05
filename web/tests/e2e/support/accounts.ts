@@ -275,3 +275,71 @@ export async function addApplication(
     .insert({ organisation_id: account.organisationId, candidate_id: candidateId, job_id: jobId });
   if (error) throw new Error(error.message);
 }
+
+/** The application joining a candidate to a job, as the decision route names it. */
+export async function applicationOf(candidateId: string, jobId: string): Promise<string> {
+  const { data, error } = await admin()
+    .from("application")
+    .select("id")
+    .eq("candidate_id", candidateId)
+    .eq("job_id", jobId)
+    .single();
+  if (error) throw new Error(error.message);
+  return data.id;
+}
+
+/** What is stored for an application's decision, and the audit rows written for it. */
+export async function storedDecision(applicationId: string) {
+  const client = admin();
+  const application = await client
+    .from("application")
+    .select("decision, decided_by, decided_at")
+    .eq("id", applicationId)
+    .single();
+  if (application.error) throw new Error(application.error.message);
+  const activity = await client
+    .from("activity")
+    .select("action, actor_id, metadata")
+    .eq("subject_id", applicationId)
+    .order("occurred_at", { ascending: true });
+  if (activity.error) throw new Error(activity.error.message);
+  return { ...application.data, activity: activity.data };
+}
+
+/** The account's user id, for checking who a record names. */
+export async function userIdOf(account: Account): Promise<string> {
+  const { data, error } = await admin()
+    .from("app_user")
+    .select("id")
+    .eq("email", account.email)
+    .single();
+  if (error) throw new Error(error.message);
+  return data.id;
+}
+
+/** The audit rows about one subject, oldest first. */
+export async function activityAbout(subjectId: string) {
+  const { data, error } = await admin()
+    .from("activity")
+    .select("action, actor_id, subject_type, metadata")
+    .eq("subject_id", subjectId)
+    .order("occurred_at", { ascending: true });
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+/** Stores a candidate's original CV where the worker would have found it, for reading it back. */
+export async function storeOriginal(candidateId: string, pdf: Buffer): Promise<void> {
+  const client = admin();
+  const { data, error } = await client
+    .from("cv_file")
+    .select("storage_path")
+    .eq("candidate_id", candidateId)
+    .limit(1)
+    .single();
+  if (error) throw new Error(error.message);
+  const upload = await client.storage
+    .from("cv-originals")
+    .upload(data.storage_path, pdf, { contentType: "application/pdf", upsert: true });
+  if (upload.error) throw new Error(upload.error.message);
+}

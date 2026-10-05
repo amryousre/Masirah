@@ -46,6 +46,12 @@
   line-height: var(--leading-body-sm);
 }
 
+.headerActions {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
 .steps {
   display: flex;
   gap: var(--space-1);
@@ -255,4 +261,32 @@ a.step:hover {
   .document {
     block-size: calc(100dvb - 8rem);
   }
+}
+
+.shortlist {
+  display: grid;
+  justify-items: end;
+  gap: var(--space-1);
+}
+
+.decisionActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.failed {
+  color: var(--color-error);
+  font-size: var(--size-body-sm);
+  line-height: var(--leading-body-sm);
+}
+
+/* The decision closes the reasons, set apart from the breakdown above it. */
+.decision {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-2);
+  margin-block-start: var(--space-6);
+  padding-block-start: var(--space-5);
+  border-block-start: var(--border-divider);
 }

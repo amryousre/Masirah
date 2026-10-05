@@ -42,7 +42,12 @@ describe("RejectDialog", () => {
   it("names the candidate and who will be recorded as deciding", () => {
     renderDialog();
     expect(screen.getByRole("dialog", { name: "Reject Mohamed Abdallah?" })).toBeVisible();
-    expect(screen.getByText("Will be recorded: Nourhan Saeed · today 14:32")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        // Each value is isolated in its own direction, so an email or a date keeps its order.
+        "Will be recorded: \u2068Nourhan Saeed\u2069 · \u2068today 14:32\u2069",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("will not reject until a reason is chosen", async () => {

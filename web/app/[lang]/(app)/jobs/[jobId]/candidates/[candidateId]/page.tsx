@@ -7,17 +7,22 @@ import { Icon } from "@/components/icon/icon";
 import { Decision } from "@/components/status/status";
 import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
+import { recordActivity } from "@/lib/adapters/activity";
 import { readCandidatePage } from "@/lib/adapters/candidate-page";
+import { getAccess } from "@/lib/adapters/session";
 import { createSupabaseServerClient } from "@/lib/adapters/supabase";
 import { placeInRanking, profileRows, scoreParts, summaryLines } from "@/lib/domain/candidate";
 import { confidenceLevel, rankJob } from "@/lib/domain/ranking";
 
 import { CandidateScreen } from "./candidate-screen";
+import { type DecisionState, ShortlistButton } from "./decision-controls";
 import styles from "./candidate.module.css";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** Long enough to read the document, short enough that a copied link soon stops working. */
 const DOCUMENT_LINK_SECONDS = 600;
+/** Decisions are read in Egypt's time, whoever renders the page. */
+const TIME_ZONE = "Africa/Cairo";
 
 async function load(lang: string, jobId: string, candidateId: string) {
   if (!hasLocale(routing.locales, lang) || !UUID.test(jobId) || !UUID.test(candidateId)) {
@@ -60,6 +65,32 @@ export default async function CandidatePage({
     confidence === null ? null : t(`confidence.${confidence}`),
   ].filter((part): part is string => part !== null);
 
+  const access = await getAccess();
+  // Every view of a candidate is on the audit trail (T099, FR-074), before anything is shown.
+  if (access.kind === "member") {
+    await recordActivity(
+      supabase,
+      access.session,
+      "candidate.viewed",
+      { type: "candidate", id: candidateId },
+      { job_id: jobId },
+    );
+  }
+  const actor = access.kind === "member" ? (access.session.name ?? access.session.email) : "";
+  const decision: DecisionState = {
+    applicationId: page.decision.applicationId,
+    kind: page.decision.kind,
+    by: page.decision.by,
+    at:
+      page.decision.at === null
+        ? null
+        : new Intl.DateTimeFormat(locale, {
+            dateStyle: "medium",
+            timeStyle: "short",
+            timeZone: TIME_ZONE,
+          }).format(new Date(page.decision.at)),
+  };
+
   let documentUrl: string | null = null;
   if (page.document !== null) {
     const { data } = await supabase.storage
@@ -98,14 +129,20 @@ export default async function CandidatePage({
             />
           </p>
         </div>
-        {place !== null && (
-          <nav aria-label={t("navigation")} className={styles.steps}>
-            {neighbour(place.previous, t("previous"), "chevronLeft")}
-            {neighbour(place.next, t("next"), "chevronRight")}
-          </nav>
-        )}
+        <div className={styles.headerActions}>
+          <ShortlistButton decision={decision} />
+          {place !== null && (
+            <nav aria-label={t("navigation")} className={styles.steps}>
+              {neighbour(place.previous, t("previous"), "chevronLeft")}
+              {neighbour(place.next, t("next"), "chevronRight")}
+            </nav>
+          )}
+        </div>
       </header>
       <CandidateScreen
+        candidate={page.candidate.name ?? tJob("unnamed")}
+        actor={actor}
+        decision={decision}
         rank={place?.rank ?? null}
         score={
           page.score === null
@@ -125,6 +162,7 @@ export default async function CandidatePage({
                 fileName: page.document.fileName,
                 mimeType: page.document.mimeType,
                 url: documentUrl,
+                downloadHref: `/api/candidates/${candidateId}/original?job=${jobId}`,
               }
         }
       />

@@ -30,6 +30,7 @@ The candidate page sits under its job (amended 2026-10-04, T066) because what it
 | `/api/uploads` | POST | Accept a batch of up to 25 files, store originals, create `cv_file` rows, enqueue one `cv_processing` message each |
 | `/api/jobs/{jobId}/specification` | POST | Turn a pasted description into a structured specification for review (FR-002) |
 | `/api/applications/{id}/decision` | POST | Record a shortlist or rejection with the acting user (FR-023) |
+| `/api/candidates/{id}/original?job={jobId}` | GET | Download the CV sent for the job: writes `candidate.exported` to the audit trail, then redirects to a one-minute signed link (FR-030) |
 | `/api/candidates/{id}` | DELETE | Deletion request for one candidate's personal data (FR-029) |
 | `/api/health` | GET | Liveness, including queue depth and worker last-seen |
 
@@ -59,7 +60,7 @@ is not already enforcing.
 
 **Rejection carries an actor.** `/api/applications/{id}/decision` requires the authenticated user
 and records them. There is no path, in the interface or the API, that sets a decision without one,
-per AI-07.
+per AI-07. The body is `{ decision, reason? }`: `decision` is `shortlisted`, `rejected` or `undecided` (undoing either), and `reason` is required for a rejection and refused otherwise (`experience`, `skills`, `location` or `other`). A decider named in the body is ignored. Answers: 200 with `{ decision, decidedBy, decidedAt }`, 400 for an invalid body, 401 without a member session, 404 for an application the member cannot see (migration 0021).
 
 **Every route validates tenancy.** The organisation is derived from the session, never from the
 request body. A client-supplied organisation identifier is ignored.

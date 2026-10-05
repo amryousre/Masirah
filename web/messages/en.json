@@ -142,7 +142,14 @@
     "recorded": "Will be recorded: {actor} · {when}",
     "keep": "Keep candidate",
     "confirm": "Reject candidate",
-    "recording": "Recording…"
+    "recording": "Recording…",
+    "open": "Reject candidate…",
+    "reasons": {
+      "experience": "Less experience than required",
+      "skills": "Required skills missing",
+      "location": "Location doesn’t fit",
+      "other": "Another reason"
+    }
   },
   "signIn": {
     "title": "Sign in",
@@ -475,7 +482,12 @@
     "noPreview": "This file type can’t be shown here. Open the original to read it.",
     "breakdownUnavailable": "The breakdown could not be read for this score.",
     "views": "Candidate views",
-    "documentTab": "Document"
+    "documentTab": "Document",
+    "decision": "Decision",
+    "shortlist": "Shortlist candidate",
+    "removeShortlist": "Remove from shortlist",
+    "undoRejection": "Undo rejection",
+    "decisionFailed": "The decision could not be recorded. Try again."
   },
   "filters": {
     "label": "Search and filter candidates",
@@ -496,5 +508,9 @@
     },
     "reviewOnly": "Needs review only",
     "shown": "Showing {shown} of {total}"
+  },
+  "advisory": {
+    "undecided": "No decision yet. The score is advice; the decision is yours and is recorded under your name.",
+    "standing": "The score is advice; the decision is yours and is recorded under your name."
   }
 }

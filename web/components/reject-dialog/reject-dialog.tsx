@@ -18,9 +18,21 @@ interface RejectDialogProps {
   reasons: readonly SelectOption[];
   /** Days before the candidate is told, when the notice is left on. */
   notifyAfterDays?: number;
+  /** Offers to send the candidate a notice. Left off where no notice can be sent yet. */
+  offerNotice?: boolean;
   recording?: boolean;
+  /** Why the last attempt was not recorded, shown on the confirm button inside the dialog. */
+  error?: string | undefined;
   onCancel: () => void;
   onConfirm: (decision: { reason: string; notify: boolean }) => void;
+}
+
+/**
+ * A value set inside a sentence in its own direction (Unicode first-strong isolate), so an email
+ * or a date in an Arabic line keeps its order.
+ */
+function isolated(value: string): string {
+  return `\u2068${value}\u2069`;
 }
 
 /**
@@ -35,7 +47,9 @@ export function RejectDialog({
   when,
   reasons,
   notifyAfterDays = 3,
+  offerNotice = true,
   recording = false,
+  error,
   onCancel,
   onConfirm,
 }: RejectDialogProps) {
@@ -70,8 +84,9 @@ export function RejectDialog({
             disabled={reason === ""}
             loading={recording}
             loadingLabel={t("recording")}
+            error={error}
             onClick={() => {
-              onConfirm({ reason, notify });
+              onConfirm({ reason, notify: offerNotice && notify });
             }}
           >
             {t("confirm")}
@@ -90,18 +105,22 @@ export function RejectDialog({
           setReason(event.target.value);
         }}
       />
-      <div className={styles.check}>
-        <input
-          id={notifyId}
-          type="checkbox"
-          checked={notify}
-          onChange={(event) => {
-            setNotify(event.target.checked);
-          }}
-        />
-        <label htmlFor={notifyId}>{t("notify", { days: notifyAfterDays })}</label>
-      </div>
-      <p className={styles.recorded}>{t("recorded", { actor, when })}</p>
+      {offerNotice && (
+        <div className={styles.check}>
+          <input
+            id={notifyId}
+            type="checkbox"
+            checked={notify}
+            onChange={(event) => {
+              setNotify(event.target.checked);
+            }}
+          />
+          <label htmlFor={notifyId}>{t("notify", { days: notifyAfterDays })}</label>
+        </div>
+      )}
+      <p className={styles.recorded}>
+        {t("recorded", { actor: isolated(actor), when: isolated(when) })}
+      </p>
     </Dialog>
   );
 }

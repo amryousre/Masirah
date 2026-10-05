@@ -11,8 +11,13 @@ import { direction } from "@/i18n/routing";
 import type { ProfileRow, ScorePart } from "@/lib/domain/candidate";
 
 import styles from "./candidate.module.css";
+import { DecisionSection, type DecisionState } from "./decision-controls";
 
 interface CandidateScreenProps {
+  candidate: string;
+  /** The signed-in member, recorded as deciding. */
+  actor: string;
+  decision: DecisionState;
   rank: number | null;
   score: {
     total: number;
@@ -23,7 +28,14 @@ interface CandidateScreenProps {
   } | null;
   /** Null until the CV has been read. */
   profile: ProfileRow[] | null;
-  document: { fileName: string; mimeType: string; url: string | null } | null;
+  document: {
+    fileName: string;
+    mimeType: string;
+    /** A signed link for showing the file in the page. */
+    url: string | null;
+    /** Where the original is downloaded, through the audit trail. */
+    downloadHref: string;
+  } | null;
 }
 
 /**
@@ -32,7 +44,15 @@ interface CandidateScreenProps {
  * the breakdown supports it below; the extracted profile is the second tab. Below 700 pixels the
  * panes become tabs, reasoning first (T071): stacked, the document would fall below the fold.
  */
-export function CandidateScreen({ rank, score, profile, document }: CandidateScreenProps) {
+export function CandidateScreen({
+  candidate,
+  actor,
+  decision,
+  rank,
+  score,
+  profile,
+  document,
+}: CandidateScreenProps) {
   const t = useTranslations("candidate");
   const [section, setSection] = useState<Section>("reasons");
   const [documentShown, setDocumentShown] = useState(false);
@@ -67,7 +87,10 @@ export function CandidateScreen({ rank, score, profile, document }: CandidateScr
           }}
         >
           {section === "reasons" ? (
-            <Reasons rank={rank} score={score} />
+            <>
+              <Reasons rank={rank} score={score} />
+              <DecisionSection decision={decision} candidate={candidate} actor={actor} />
+            </>
           ) : (
             <Profile rows={profile} />
           )}
@@ -233,11 +256,9 @@ function DocumentPane({
         <>
           <div className={styles.documentBar}>
             <bdi className={styles.fileName}>{document.fileName}</bdi>
-            {document.url !== null && (
-              <a href={document.url} target="_blank" rel="noreferrer" className={styles.link}>
-                {t("openOriginal")}
-              </a>
-            )}
+            <a href={document.downloadHref} className={styles.link}>
+              {t("openOriginal")}
+            </a>
           </div>
           {document.url === null || !SHOWN_INLINE.has(document.mimeType) ? (
             <p className={styles.quiet}>{t("noPreview")}</p>

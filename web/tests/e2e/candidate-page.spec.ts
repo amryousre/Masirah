@@ -1,17 +1,25 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
+
 import { expect, test } from "@playwright/test";
 
 import {
   type Account,
+  activityAbout,
   addApplication,
   addCvFile,
   addJob,
   addRankedCandidate,
   createAccount,
+  storeOriginal,
+  userIdOf,
 } from "./support/accounts";
 import { expectAccessible, signIn } from "./support/pages";
 
 // A candidate's own page (T065, T066): reached from the ranked list, the written reasons lead,
 // the summary and the score's breakdown follow, and the extracted profile is a tab away.
+
+const CORPUS = path.resolve(import.meta.dirname, "../../../pipeline/tests/fixtures/cvs");
 
 let recruiter: Account;
 let stranger: Account;
@@ -173,6 +181,48 @@ test("a job with no CV sent for it shows no other job's CV", async ({ page }) =>
   await expect(page.getByRole("region", { name: "Original document" })).toHaveText(
     "No document is stored for this candidate.",
   );
+});
+
+test("viewing a candidate is written to the audit trail with who looked", async ({ page }) => {
+  await signIn(page, recruiter);
+  await page.goto(`/en/jobs/${job}/candidates/${omar}`);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Omar Hassan");
+  const viewed = (await activityAbout(omar)).filter((row) => row.action === "candidate.viewed");
+  expect(viewed.length).toBeGreaterThan(0);
+  expect(viewed.at(-1)).toMatchObject({
+    actor_id: await userIdOf(recruiter),
+    subject_type: "candidate",
+    metadata: { job_id: job },
+  });
+});
+
+test("opening the original is written to the audit trail as an export", async ({ page }) => {
+  await storeOriginal(yasmin, readFileSync(path.join(CORPUS, "en-native-01.pdf")));
+  await signIn(page, recruiter);
+  await page.goto(`/en/jobs/${job}/candidates/${yasmin}`);
+  const open = page.getByRole("link", { name: "Open the original" });
+  const href = await open.getAttribute("href");
+  expect(href).toBe(`/api/candidates/${yasmin}/original?job=${job}`);
+
+  const response = await page.request.get(href ?? "", { maxRedirects: 0 });
+  expect(response.status()).toBe(302);
+  expect(response.headers()["location"]).toContain("/storage/v1/object/sign/cv-originals/");
+  const exported = (await activityAbout(yasmin)).filter(
+    (row) => row.action === "candidate.exported",
+  );
+  expect(exported.at(-1)).toMatchObject({
+    actor_id: await userIdOf(recruiter),
+    metadata: { job_id: job },
+  });
+});
+
+test("the original of another organisation's candidate is not found", async ({ page }) => {
+  await signIn(page, recruiter);
+  const response = await page.request.get(
+    `/api/candidates/${strangersCandidate}/original?job=${job}`,
+    { maxRedirects: 0 },
+  );
+  expect(response.status()).toBe(404);
 });
 
 test("another organisation's candidate is not found", async ({ page }) => {

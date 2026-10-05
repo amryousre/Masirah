@@ -11,6 +11,7 @@ export interface CandidateScore {
 }
 
 export interface CandidateDocument {
+  id: string;
   fileName: string;
   mimeType: string;
   storagePath: string;
@@ -21,7 +22,7 @@ export interface CandidatePage {
   /** The job's whole page, for the candidate's place in its ranking. */
   ranking: NonNullable<Awaited<ReturnType<typeof readJobPage>>>;
   candidate: { id: string; name: string | null };
-  decision: { kind: Decision; by: string | null };
+  decision: { applicationId: string; kind: Decision; by: string | null; at: string | null };
   /** Null until the candidate has been scored for the job. */
   score: CandidateScore | null;
   /** The current extraction of the candidate's latest CV, if one was read. */
@@ -50,7 +51,7 @@ export async function readCandidatePage(
     supabase.from("job").select("id, title, weights").eq("id", jobId).maybeSingle(),
     supabase
       .from("job_candidates")
-      .select("application_id, full_name, decision, decided_by_email")
+      .select("application_id, full_name, decision, decided_by_email, decided_at")
       .eq("job_id", jobId)
       .eq("candidate_id", candidateId)
       .maybeSingle(),
@@ -98,7 +99,12 @@ export async function readCandidatePage(
     job: { id: job.data.id, title: job.data.title, weights: job.data.weights },
     ranking,
     candidate: { id: candidateId, name: applied.full_name },
-    decision: { kind: applied.decision, by: applied.decided_by_email },
+    decision: {
+      applicationId: applied.application_id,
+      kind: applied.decision,
+      by: applied.decided_by_email,
+      at: applied.decided_at,
+    },
     score: score.data,
     profile:
       profile.data === null
@@ -108,6 +114,7 @@ export async function readCandidatePage(
       file === null
         ? null
         : {
+            id: file.id,
             fileName: file.original_filename,
             mimeType: file.mime_type,
             storagePath: file.storage_path,
