@@ -12,12 +12,14 @@ import type { ProfileRow, ScorePart } from "@/lib/domain/candidate";
 
 import styles from "./candidate.module.css";
 import { DecisionSection, type DecisionState } from "./decision-controls";
+import { PersonalData, type PrivacyState } from "./personal-data";
 
 interface CandidateScreenProps {
   candidate: string;
   /** The signed-in member, recorded as deciding. */
   actor: string;
   decision: DecisionState;
+  privacy: PrivacyState;
   rank: number | null;
   score: {
     total: number;
@@ -48,6 +50,7 @@ export function CandidateScreen({
   candidate,
   actor,
   decision,
+  privacy,
   rank,
   score,
   profile,
@@ -90,6 +93,7 @@ export function CandidateScreen({
             <>
               <Reasons rank={rank} score={score} />
               <DecisionSection decision={decision} candidate={candidate} actor={actor} />
+              <PersonalData privacy={privacy} candidate={candidate} />
             </>
           ) : (
             <Profile rows={profile} />

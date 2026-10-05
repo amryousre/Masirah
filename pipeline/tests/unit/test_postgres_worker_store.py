@@ -250,6 +250,16 @@ class TestSameContent:
         mine = new_file(cur, alpha, "f" * 64)
         assert store.profile_for_content(alpha.organisation_id, "f" * 64, mine) is None
 
+    def test_a_purged_file_is_never_reused(
+        self, store: PostgresWorkerStore, tenants: tuple[Tenant, Tenant], cur: Cursor
+    ) -> None:
+        """Its profile was emptied when the candidate's data was removed (migration 0022); a
+        re-upload of the same CV is read afresh rather than given nothing."""
+        alpha, _ = tenants
+        cur.execute("select worker.purge_candidate(%s, 'request')", (alpha.row_ids["candidate"],))
+        again = new_file(cur, alpha, self.SEEDED_HASH)
+        assert store.profile_for_content(alpha.organisation_id, self.SEEDED_HASH, again) is None
+
     def test_the_reused_candidate_is_linked_to_the_new_file(
         self, store: PostgresWorkerStore, tenants: tuple[Tenant, Tenant], cur: Cursor
     ) -> None:

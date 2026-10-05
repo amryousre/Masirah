@@ -1,11 +1,12 @@
 """Original CV files in Supabase Storage's private bucket (T054, migration 0009).
 
 Storage authenticates through the API gateway, not Postgres roles, so the worker reads files with
-the project's secret key. The key is used for this one read-only request and nothing else: every
-database operation goes through the masirah_worker role, under row level security. Originals are
-never written or deleted here (FR-012).
+the project's secret key. The key does two things only: read an original for extraction, and
+remove a candidate's originals when the purge sweep clears their personal data (FR-076, NFR-10).
+Every database operation goes through the masirah_worker role, under row level security.
 """
 
+from collections.abc import Sequence
 from urllib.parse import quote
 
 import httpx2
@@ -37,6 +38,19 @@ class SupabaseStorage:
             raise MissingCvError(storage_path)
         # The body is not quoted: a misconfigured gateway could echo the request back.
         raise CvStoreUnavailableError(f"storage answered {response.status_code}")
+
+    def remove(self, storage_paths: Sequence[str]) -> None:
+        url = f"{self._base}/storage/v1/object/{BUCKET}"
+        try:
+            response = self._client.request(
+                "DELETE", url, headers={"apikey": self._key}, json={"prefixes": list(storage_paths)}
+            )
+        except httpx2.HTTPError as error:
+            reason = f"storage could not be reached: {type(error).__name__}"
+            raise CvStoreUnavailableError(reason) from error
+        # Storage answers 200 with the objects it removed; one already gone is simply not listed.
+        if response.status_code != 200:
+            raise CvStoreUnavailableError(f"storage answered {response.status_code}")
 
 
 def _not_found(response: httpx2.Response) -> bool:

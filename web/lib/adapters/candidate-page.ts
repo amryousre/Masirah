@@ -28,6 +28,8 @@ export interface CandidatePage {
   /** The current extraction of the candidate's latest CV, if one was read. */
   profile: { values: unknown; confidence: number } | null;
   document: CandidateDocument | null;
+  /** When the candidate's personal data was removed, and when an open removal was requested. */
+  privacy: { purgedAt: string | null; requestedAt: string | null };
 }
 
 function unreadable(read: string, error: { message: string }): Error {
@@ -75,7 +77,7 @@ export async function readCandidatePage(
   const applied = application.data;
   if (applied?.application_id == null || applied.decision === null) return null;
 
-  const [score, profile] = await Promise.all([
+  const [score, profile, person, removal] = await Promise.all([
     supabase
       .from("score")
       .select("total, components, justification, summary")
@@ -91,9 +93,18 @@ export async function readCandidatePage(
           .eq("cv_file_id", file.id)
           .eq("is_current", true)
           .maybeSingle(),
+    supabase.from("candidate").select("purged_at").eq("id", candidateId).maybeSingle(),
+    supabase
+      .from("deletion_request")
+      .select("requested_at")
+      .eq("candidate_id", candidateId)
+      .is("completed_at", null)
+      .maybeSingle(),
   ]);
   if (score.error) throw unreadable("score", score.error);
   if (profile.error) throw unreadable("parsed_profile", profile.error);
+  if (person.error) throw unreadable("candidate", person.error);
+  if (removal.error) throw unreadable("deletion_request", removal.error);
 
   return {
     job: { id: job.data.id, title: job.data.title, weights: job.data.weights },
@@ -110,6 +121,10 @@ export async function readCandidatePage(
       profile.data === null
         ? null
         : { values: profile.data.profile, confidence: profile.data.confidence },
+    privacy: {
+      purgedAt: person.data?.purged_at ?? null,
+      requestedAt: removal.data?.requested_at ?? null,
+    },
     document:
       file === null
         ? null

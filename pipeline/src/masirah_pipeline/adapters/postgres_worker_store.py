@@ -45,7 +45,7 @@ class PostgresWorkerStore:
                 "select f.id, f.candidate_id, p.extraction_source::text, p.confidence, p.profile"
                 " from public.cv_file f join public.parsed_profile p"
                 "   on p.cv_file_id = f.id and p.is_current"
-                " where f.content_hash = %s and f.id <> %s"
+                " where f.content_hash = %s and f.id <> %s and f.purged_at is null"
                 " order by p.extracted_at desc limit 1",
                 (content_hash, other_than),
             ).fetchone()

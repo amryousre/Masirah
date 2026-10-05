@@ -22,6 +22,7 @@ TENANT_TABLES = [
     "application",
     "score",
     "activity",
+    "deletion_request",
 ]
 WEIGHTS = {
     "skills_match": 30,
@@ -95,6 +96,12 @@ def seed_tenant(cur: Cursor, name: str) -> Tenant:
             "insert into public.activity (id, organisation_id, actor_id, action, subject_type,"
             " subject_id) values (%s, %s, %s, 'candidate.viewed', 'candidate', %s)",
             (ids["activity"], org, user, ids["candidate"]),
+        ),
+        (
+            # Completed, so the seeded candidate is not waiting to be purged.
+            "insert into public.deletion_request (id, organisation_id, candidate_id, requested_by,"
+            " completed_at) values (%s, %s, %s, %s, now())",
+            (ids["deletion_request"], org, ids["candidate"], user),
         ),
         (
             "insert into storage.objects (bucket_id, name) values (%s, %s)",

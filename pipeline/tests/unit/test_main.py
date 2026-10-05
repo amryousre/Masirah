@@ -8,14 +8,17 @@ batches, never in the middle of a message.
 
 import socket
 import threading
+from collections.abc import Callable
 
 import pytest
 
 from masirah_pipeline.adapters.provider_registry import ConfigurationError
 from masirah_pipeline.main import (
     IDLE_SECONDS,
+    PURGE_SECONDS,
     RECONCILE_SECONDS,
     REQUIRED,
+    Purging,
     Reconciling,
     poll,
     settings_from,
@@ -107,3 +110,41 @@ class TestReconciling:
 
         reconciling = Reconciling(lambda: 3, broken, clock=lambda: 0.0)
         assert reconciling() == 3
+
+
+class TestPurging:
+    """Every hour the worker sweeps for personal data due to go (T100, T101)."""
+
+    def test_it_sweeps_at_start_and_then_once_an_hour(self) -> None:
+        now = [0.0]
+        sweeps: list[float] = []
+
+        def sweep() -> int:
+            sweeps.append(now[0])
+            return 0
+
+        purging = Purging(lambda: 1, sweep, clock=lambda: now[0])
+        for moment in (0.0, 60.0, PURGE_SECONDS - 1, PURGE_SECONDS):
+            now[0] = moment
+            assert purging() == 1
+        assert sweeps == [0.0, PURGE_SECONDS]
+
+    def test_a_failed_sweep_never_stops_the_work(self) -> None:
+        def broken() -> int:
+            raise RuntimeError("database unreachable")
+
+        assert Purging(lambda: 2, broken, clock=lambda: 0.0)() == 2
+
+    def test_it_runs_beside_reconciliation(self) -> None:
+        calls: list[str] = []
+
+        def step(name: str, result: int) -> Callable[[], int]:
+            def run() -> int:
+                calls.append(name)
+                return result
+
+            return run
+
+        both = Purging(Reconciling(step("batch", 1), step("requeue", 0)), step("purge", 0))
+        assert both() == 1
+        assert calls == ["purge", "requeue", "batch"]

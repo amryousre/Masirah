@@ -237,5 +237,7 @@ form so that the audit trail is not destroyed by retention.
 **Deletion on request (FR-076)**: removes the same set within 30 days of a request, on demand rather
 than on schedule. Both paths write an activity row recording what was removed and when.
 
+Both paths are migration 0022. A member's request is a `deletion_request` row (`candidate_id`, `requested_by`, `requested_at`, `completed_at`; at most one open per candidate), written by `request_candidate_deletion` with a `candidate.deletion_requested` activity row. The worker's hourly sweep takes open requests first, then candidates whose `created_at` is older than their organisation's `retention_months`. It removes the stored originals, then clears `candidate`'s identity fields and `name_normalised`, empties `parsed_profile.profile` and `field_overrides`, renames `cv_file.original_filename` to `removed`, stamps `purged_at` on the candidate and their files, closes the request and writes a `candidate.purged` activity row with the reason and how many files went. A purged file is never reused by the content-hash cache.
+
 Members cannot delete candidate rows, CV file rows or stored originals directly. Both paths run
 server-side and remove the stored original first, so no route can leave a CV behind in storage.

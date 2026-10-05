@@ -5,6 +5,7 @@ be processed, while an outage, a rate limit or a rejected key is not the file's 
 not fail it: the message waits for the next attempt.
 """
 
+import json
 from collections.abc import Callable
 
 import httpx2
@@ -74,3 +75,38 @@ def test_the_key_never_appears_in_an_error() -> None:
     with pytest.raises(CvStoreUnavailableError) as raised:
         storage(lambda request: httpx2.Response(500, text=KEY)).fetch(PATH)
     assert KEY not in str(raised.value)
+
+
+class TestRemove:
+    """Removing a purged candidate's originals (T100, T101): the one deletion this key makes."""
+
+    def test_it_removes_every_path_in_one_request(self) -> None:
+        seen: list[httpx2.Request] = []
+
+        def answer(request: httpx2.Request) -> httpx2.Response:
+            seen.append(request)
+            return httpx2.Response(200, json=[{"name": PATH}])
+
+        storage(answer).remove([PATH, "organisations/0f0e/cv/2c2d/cv.pdf"])
+        [request] = seen
+        assert request.method == "DELETE"
+        assert request.headers["apikey"] == KEY
+        assert request.url.path == "/storage/v1/object/cv-originals"
+        assert json.loads(request.content) == {
+            "prefixes": [PATH, "organisations/0f0e/cv/2c2d/cv.pdf"]
+        }
+
+    def test_an_object_already_gone_is_not_an_error(self) -> None:
+        storage(lambda _: httpx2.Response(200, json=[])).remove([PATH])
+
+    @pytest.mark.parametrize("status", [401, 429, 500, 503])
+    def test_a_refusal_or_outage_leaves_the_rows_for_the_next_sweep(self, status: int) -> None:
+        with pytest.raises(CvStoreUnavailableError):
+            storage(lambda _: httpx2.Response(status)).remove([PATH])
+
+    def test_an_unreachable_store_is_an_outage(self) -> None:
+        def answer(request: httpx2.Request) -> httpx2.Response:
+            raise httpx2.ConnectError("refused", request=request)
+
+        with pytest.raises(CvStoreUnavailableError):
+            storage(answer).remove([PATH])

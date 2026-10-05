@@ -512,5 +512,18 @@
   "advisory": {
     "undecided": "No decision yet. The score is advice; the decision is yours and is recorded under your name.",
     "standing": "The score is advice; the decision is yours and is recorded under your name."
+  },
+  "privacy": {
+    "title": "Personal data",
+    "explain": "If the candidate asks, their personal data can be removed. Scores and decisions stay.",
+    "open": "Remove personal data…",
+    "confirmTitle": "Remove {name}’s personal data?",
+    "consequence": "Their name, contact details, CV and extracted profile are removed within the hour, and can’t be brought back. Scores and decisions stay, without the name, so the record of what was decided remains. The request is recorded under your name.",
+    "keep": "Keep the data",
+    "confirm": "Remove personal data",
+    "recording": "Recording…",
+    "failed": "The request could not be recorded. Try again.",
+    "requested": "Removal requested {when}. It completes within the hour.",
+    "removed": "Personal data removed {when}. Scores and decisions remain."
   }
 }

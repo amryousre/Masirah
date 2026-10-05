@@ -173,6 +173,7 @@ export type Database = {
           name_normalised: string | null
           organisation_id: string
           phone: string | null
+          purged_at: string | null
           updated_at: string
         }
         Insert: {
@@ -184,6 +185,7 @@ export type Database = {
           name_normalised?: string | null
           organisation_id: string
           phone?: string | null
+          purged_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -195,6 +197,7 @@ export type Database = {
           name_normalised?: string | null
           organisation_id?: string
           phone?: string | null
+          purged_at?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -219,6 +222,7 @@ export type Database = {
           mime_type: string
           organisation_id: string
           original_filename: string
+          purged_at: string | null
           status: Database["public"]["Enums"]["cv_file_status"]
           storage_path: string
           updated_at: string
@@ -234,6 +238,7 @@ export type Database = {
           mime_type: string
           organisation_id: string
           original_filename: string
+          purged_at?: string | null
           status?: Database["public"]["Enums"]["cv_file_status"]
           storage_path: string
           updated_at?: string
@@ -249,6 +254,7 @@ export type Database = {
           mime_type?: string
           organisation_id?: string
           original_filename?: string
+          purged_at?: string | null
           status?: Database["public"]["Enums"]["cv_file_status"]
           storage_path?: string
           updated_at?: string
@@ -277,6 +283,54 @@ export type Database = {
           },
           {
             foreignKeyName: "cv_file_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisation"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deletion_request: {
+        Row: {
+          candidate_id: string
+          completed_at: string | null
+          created_at: string
+          id: string
+          organisation_id: string
+          requested_at: string
+          requested_by: string
+          updated_at: string
+        }
+        Insert: {
+          candidate_id: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          organisation_id: string
+          requested_at?: string
+          requested_by: string
+          updated_at?: string
+        }
+        Update: {
+          candidate_id?: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          organisation_id?: string
+          requested_at?: string
+          requested_by?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deletion_request_organisation_id_candidate_id_fkey"
+            columns: ["organisation_id", "candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidate"
+            referencedColumns: ["organisation_id", "id"]
+          },
+          {
+            foreignKeyName: "deletion_request_organisation_id_fkey"
             columns: ["organisation_id"]
             isOneToOne: false
             referencedRelation: "organisation"
@@ -603,6 +657,10 @@ export type Database = {
           decided_by_email: string
           decision: Database["public"]["Enums"]["application_decision"]
         }[]
+      }
+      request_candidate_deletion: {
+        Args: { target_candidate: string }
+        Returns: string
       }
       service_health: {
         Args: never
