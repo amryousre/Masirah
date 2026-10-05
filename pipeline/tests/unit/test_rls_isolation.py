@@ -199,6 +199,7 @@ DEFINER_FUNCTIONS_MEMBERS_CAN_CALL = {
     "enqueue_cv_processing": "test_enqueue_cv.py",
     "record_decision": "test_decisions.py",
     "request_candidate_deletion": "test_deletion.py",
+    "set_retention": "test_retention.py",
     "service_health": "test_service_health.py (no tenant data: counts and ages only)",
 }
 

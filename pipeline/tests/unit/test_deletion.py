@@ -3,8 +3,10 @@
 A member asks through public.request_candidate_deletion, which records the request and who made
 it. The worker finds open requests through worker.due_for_purge, removes the stored originals,
 then runs worker.purge_candidate, which clears the candidate's identity, empties the profile
-content and names no file, closes the request and writes an activity row. Scores and the audit
-trail stay. Members cannot delete candidate rows, files or originals themselves.
+content, deletes the scores and their reasons, names no file, closes the request and writes an
+activity row. What stays is the record the design keeps: that the data was deleted, when and at
+whose request, and the screening decisions with who made them, without personal data. Members
+cannot delete candidate rows, files or originals themselves.
 """
 
 import psycopg
@@ -152,16 +154,35 @@ def test_purging_closes_the_request_and_writes_what_was_removed(
         (alpha.row_ids["candidate"],),
     )
     assert cur.fetchall() == [
-        (None, {"reason": "request", "files": 1, "removed": ["identity", "profile", "original"]})
+        (
+            None,
+            {
+                "reason": "request",
+                "files": 1,
+                "removed": ["identity", "profile", "original", "scores"],
+            },
+        )
     ]
 
 
-def test_scores_and_the_audit_trail_survive(cur: Cursor, tenants: tuple[Tenant, Tenant]) -> None:
+def test_scores_and_reasons_go_and_the_decision_and_audit_trail_stay(
+    cur: Cursor, tenants: tuple[Tenant, Tenant]
+) -> None:
     alpha, _ = tenants
+    cur.execute(
+        "update public.application set decision = 'rejected', decided_by = %s, decided_at = now()"
+        " where id = %s",
+        (alpha.user_id, alpha.row_ids["application"]),
+    )
     request(cur, alpha)
     purge(cur, alpha)
-    cur.execute("select total from public.score where id = %s", (alpha.row_ids["score"],))
-    assert cur.fetchone() == (72,)
+    cur.execute("select count(*) from public.score where id = %s", (alpha.row_ids["score"],))
+    assert cur.fetchone() == (0,)
+    cur.execute(
+        "select decision::text, decided_by from public.application where id = %s",
+        (alpha.row_ids["application"],),
+    )
+    assert cur.fetchone() == ("rejected", alpha.user_id)
     cur.execute("select count(*) from public.activity where id = %s", (alpha.row_ids["activity"],))
     assert cur.fetchone() == (1,)
 

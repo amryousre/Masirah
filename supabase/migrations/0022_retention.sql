@@ -2,12 +2,23 @@
 -- period passes (NFR-10). Both paths share one purge, run by the worker, which holds the Storage
 -- key the web application does not: it removes the stored originals first, then calls
 -- worker.purge_candidate, which clears the candidate's identity, empties the profile content and
--- the corrections, renames the file to nothing personal and writes an activity row saying what
--- went. Scores and the audit trail stay, so the record of what was decided survives the person's
--- data. A purged file never feeds the content-hash cache again (the worker store checks purged_at).
+-- the corrections, deletes the scores and their reasons, renames the file to nothing personal and
+-- writes an activity row saying what went. As the approved settings design lists it, what stays is
+-- that the data was deleted, when and at whose request, and the screening decisions with who made
+-- them, without personal data. A purged file never feeds the content-hash cache again.
+--
+-- Retention follows the same design: data goes the chosen number of months after the candidate's
+-- last activity, unless they are shortlisted somewhere; an organisation may choose never to delete
+-- automatically (a null period); and shortening the period deletes nobody for seven days.
 
 alter table public.candidate add column purged_at timestamptz;
 alter table public.cv_file add column purged_at timestamptz;
+
+alter table public.organisation alter column retention_months drop not null;
+alter table public.organisation add column retention_changed_at timestamptz;
+
+-- The period changes only through set_retention, which records who changed it.
+revoke update (retention_months) on public.organisation from authenticated;
 
 -- A member's request, kept until the worker completes it.
 create table public.deletion_request (
@@ -100,13 +111,26 @@ as $$
     select c.organisation_id, c.id, 'retention'
     from public.candidate c
     join public.organisation o on o.id = c.organisation_id
+    cross join lateral (
+      select greatest(
+        c.updated_at,
+        (select max(f.created_at) from public.cv_file f where f.candidate_id = c.id),
+        (select max(a.updated_at) from public.application a where a.candidate_id = c.id)
+      ) as last_active
+    ) seen
     where c.purged_at is null
-      and c.created_at < now() - make_interval(months => o.retention_months)
+      and o.retention_months is not null
+      and seen.last_active < now() - make_interval(months => o.retention_months)
+      and (o.retention_changed_at is null or o.retention_changed_at < now() - interval '7 days')
+      and not exists (
+        select 1 from public.application a
+        where a.candidate_id = c.id and a.decision = 'shortlisted'
+      )
       and not exists (
         select 1 from public.deletion_request r
         where r.candidate_id = c.id and r.completed_at is null
       )
-    order by c.created_at
+    order by seen.last_active
   )
   limit greatest(at_most, 0)
 $$;
@@ -154,6 +178,10 @@ begin
   from public.cv_file f
   where p.cv_file_id = f.id and f.candidate_id = target_candidate;
 
+  delete from public.score s
+  using public.application a
+  where s.application_id = a.id and a.candidate_id = target_candidate;
+
   update public.cv_file
   set original_filename = 'removed', purged_at = coalesce(purged_at, now())
   where candidate_id = target_candidate;
@@ -173,7 +201,7 @@ begin
     jsonb_build_object(
       'reason', reason,
       'files', files,
-      'removed', jsonb_build_array('identity', 'profile', 'original')
+      'removed', jsonb_build_array('identity', 'profile', 'original', 'scores')
     )
   );
 end;
@@ -188,3 +216,60 @@ revoke execute on function worker.purge_candidate(uuid, text)
 grant execute on function worker.due_for_purge(integer) to masirah_worker;
 grant execute on function worker.purge_paths(uuid) to masirah_worker;
 grant execute on function worker.purge_candidate(uuid, text) to masirah_worker;
+
+-- The organisation's retention period, set by a member (T102): 6, 12 or 24 months, or null for
+-- never deleting automatically. The change is recorded under the member, and starts the seven days
+-- in which a shorter period deletes nobody. Returns how many candidates the new period will remove
+-- once those seven days pass, for the page to say so.
+create function public.set_retention(months integer)
+returns integer
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  actor uuid := (select auth.uid());
+  own uuid := (select private.current_organisation_id());
+  previous integer;
+  affected integer;
+begin
+  if actor is null or own is null then
+    raise exception 'only a member of an organisation can change this' using errcode = '42501';
+  end if;
+  if months is not null and months not in (6, 12, 24) then
+    raise exception 'retention is 6, 12 or 24 months, or none' using errcode = '22023';
+  end if;
+
+  select o.retention_months into previous from public.organisation o where o.id = own;
+  update public.organisation
+  set retention_months = months, retention_changed_at = now()
+  where id = own;
+
+  insert into public.activity (organisation_id, actor_id, action, subject_type, subject_id, metadata)
+  values (
+    own, actor, 'organisation.retention_changed', 'organisation', own,
+    jsonb_build_object('from', previous, 'to', months)
+  );
+
+  if months is null then
+    return 0;
+  end if;
+  select count(*) into affected
+  from public.candidate c
+  where c.organisation_id = own
+    and c.purged_at is null
+    and greatest(
+      c.updated_at,
+      (select max(f.created_at) from public.cv_file f where f.candidate_id = c.id),
+      (select max(a.updated_at) from public.application a where a.candidate_id = c.id)
+    ) < now() + interval '7 days' - make_interval(months => months)
+    and not exists (
+      select 1 from public.application a
+      where a.candidate_id = c.id and a.decision = 'shortlisted'
+    );
+  return affected;
+end;
+$$;
+
+revoke all on function public.set_retention(integer) from public, anon;
+grant execute on function public.set_retention(integer) to authenticated;
