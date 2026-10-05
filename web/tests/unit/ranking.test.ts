@@ -22,6 +22,7 @@ const candidate = (figures: Partial<CandidateFigures>): CandidateFigures => ({
   nameNormalised: null,
   searchText: "",
   scoredAt: null,
+  purgedAt: null,
   ...figures,
 });
 const file = (figures: Partial<JobFile>): JobFile => ({
@@ -99,6 +100,22 @@ describe("the ranking", () => {
       [file({ id: "e", fileName: "done.pdf", status: "extracted", candidateId: "c-mona" })],
     );
     expect(entries.map((entry) => entry.kind)).toEqual(["ranked"]);
+  });
+
+  it("lists a candidate whose personal data was deleted as such, never as being scored", () => {
+    const entries = rankJob(
+      [
+        candidate({
+          applicationId: "gone",
+          candidateId: "c-gone",
+          name: null,
+          total: null,
+          purgedAt: "2026-10-05T10:00:00Z",
+        }),
+      ],
+      [file({ id: "f-gone", fileName: "removed", status: "extracted", candidateId: "c-gone" })],
+    );
+    expect(entries).toEqual([{ kind: "removed", id: "gone" }]);
   });
 
   it("keeps a read file in view while its application is missing, so it never vanishes", () => {

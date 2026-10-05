@@ -397,7 +397,8 @@ export type Database = {
           id: string
           locale: string
           name: string
-          retention_months: number
+          retention_changed_at: string | null
+          retention_months: number | null
           updated_at: string
         }
         Insert: {
@@ -405,7 +406,8 @@ export type Database = {
           id?: string
           locale: string
           name: string
-          retention_months?: number
+          retention_changed_at?: string | null
+          retention_months?: number | null
           updated_at?: string
         }
         Update: {
@@ -413,7 +415,8 @@ export type Database = {
           id?: string
           locale?: string
           name?: string
-          retention_months?: number
+          retention_changed_at?: string | null
+          retention_months?: number | null
           updated_at?: string
         }
         Relationships: []
@@ -582,6 +585,7 @@ export type Database = {
           justification: string | null
           name_normalised: string | null
           organisation_id: string | null
+          purged_at: string | null
           scored_at: string | null
           search_text: string | null
           total: number | null
@@ -670,6 +674,7 @@ export type Database = {
           queue_depth: number
         }[]
       }
+      set_retention: { Args: { months: number }; Returns: number }
     }
     Enums: {
       application_decision: "undecided" | "shortlisted" | "rejected"
