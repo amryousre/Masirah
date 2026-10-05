@@ -6,6 +6,8 @@ may choose not to delete automatically. Shortening the period deletes nobody at 
 it makes due wait seven days. The purge is the one deletion on request uses.
 """
 
+import uuid
+
 import psycopg
 import pytest
 
@@ -202,3 +204,62 @@ class TestSetRetention:
                 "update public.organisation set retention_months = 6 where id = %s",
                 (tenant.organisation_id,),
             )
+
+
+class TestFilesWithoutACandidate:
+    """A CV that never became a candidate (unreadable, or waiting for review) holds personal data
+    too: its file, its name and any profile read from it. Retention reaches it on its own."""
+
+    def orphan(self, cur: Cursor, tenant: Tenant, months: int) -> uuid.UUID:
+        file_id = uuid.uuid4()
+        path = tenant.storage_path.replace(str(tenant.row_ids["cv_file"]), str(file_id))
+        cur.execute(
+            "insert into public.cv_file (id, organisation_id, storage_path, original_filename,"
+            " mime_type, byte_size, content_hash, status, failure_reason, created_at, updated_at)"
+            " values (%s, %s, %s, 'Mona Abdallah CV.pdf', 'application/pdf', 10, %s, 'failed',"
+            " 'encrypted', now() - make_interval(months => %s),"
+            " now() - make_interval(months => %s))",
+            (file_id, tenant.organisation_id, path, "e" * 64, months, months),
+        )
+        return file_id
+
+    def due_files(self, cur: Cursor) -> set[tuple[object, ...]]:
+        cur.execute("set local role masirah_worker")
+        cur.execute("select organisation_id, cv_file_id from worker.files_due_for_purge(1000)")
+        rows = set(cur.fetchall())
+        cur.execute("reset role")
+        return rows
+
+    def test_an_old_unread_file_is_due_and_a_recent_one_is_not(
+        self, cur: Cursor, tenant: Tenant
+    ) -> None:
+        old, recent = self.orphan(cur, tenant, 25), self.orphan(cur, tenant, 1)
+        due = self.due_files(cur)
+        assert (tenant.organisation_id, old) in due
+        assert (tenant.organisation_id, recent) not in due
+
+    def test_a_file_that_became_a_candidate_is_left_to_the_candidates_purge(
+        self, cur: Cursor, tenant: Tenant
+    ) -> None:
+        age(cur, tenant, 25)
+        assert (tenant.organisation_id, tenant.row_ids["cv_file"]) not in self.due_files(cur)
+
+    def test_purging_a_file_names_nothing_and_writes_what_went(
+        self, cur: Cursor, tenant: Tenant
+    ) -> None:
+        old = self.orphan(cur, tenant, 25)
+        cur.execute("set local role masirah_worker")
+        cur.execute("select worker.purge_file(%s)", (old,))
+        cur.execute("reset role")
+        cur.execute(
+            "select original_filename, purged_at is not null from public.cv_file where id = %s",
+            (old,),
+        )
+        assert cur.fetchone() == ("removed", True)
+        assert (tenant.organisation_id, old) not in self.due_files(cur)
+        cur.execute(
+            "select metadata from public.activity"
+            " where subject_id = %s and action = 'cv_file.purged'",
+            (old,),
+        )
+        assert cur.fetchall() == [({"reason": "retention", "removed": ["original", "profile"]},)]

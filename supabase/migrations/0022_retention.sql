@@ -314,3 +314,64 @@ left join lateral (
 ) p on true
 left join public.app_user decider
   on decider.organisation_id = a.organisation_id and decider.id = a.decided_by;
+
+-- A CV that never became a candidate (unreadable, or waiting for review) holds personal data too:
+-- its stored file, its name and any profile read from it. Retention reaches it on its own, by the
+-- same period and the same seven days' grace; the candidate purge covers every other file.
+create function worker.files_due_for_purge(at_most integer)
+returns table (organisation_id uuid, cv_file_id uuid, storage_path text)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select f.organisation_id, f.id, f.storage_path
+  from public.cv_file f
+  join public.organisation o on o.id = f.organisation_id
+  where f.candidate_id is null
+    and f.purged_at is null
+    and o.retention_months is not null
+    and greatest(f.created_at, f.updated_at) < now() - make_interval(months => o.retention_months)
+    and (o.retention_changed_at is null or o.retention_changed_at < now() - interval '7 days')
+  order by f.created_at
+  limit greatest(at_most, 0)
+$$;
+
+-- Empties what was read from the file and names it nothing personal, once its original is gone.
+create function worker.purge_file(target_file uuid)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  organisation uuid;
+begin
+  select f.organisation_id into organisation
+  from public.cv_file f where f.id = target_file and f.candidate_id is null
+  for update;
+  if not found then
+    raise exception 'no such file without a candidate' using errcode = 'P0002';
+  end if;
+
+  update public.parsed_profile
+  set profile = '{}'::jsonb, field_overrides = '{}'::jsonb
+  where cv_file_id = target_file;
+  update public.cv_file
+  set original_filename = 'removed', purged_at = coalesce(purged_at, now())
+  where id = target_file;
+
+  insert into public.activity (organisation_id, actor_id, action, subject_type, subject_id, metadata)
+  values (
+    organisation, null, 'cv_file.purged', 'cv_file', target_file,
+    jsonb_build_object('reason', 'retention', 'removed', jsonb_build_array('original', 'profile'))
+  );
+end;
+$$;
+
+revoke execute on function worker.files_due_for_purge(integer)
+  from public, anon, authenticated, service_role;
+revoke execute on function worker.purge_file(uuid)
+  from public, anon, authenticated, service_role;
+grant execute on function worker.files_due_for_purge(integer) to masirah_worker;
+grant execute on function worker.purge_file(uuid) to masirah_worker;

@@ -3,6 +3,8 @@
 Each candidate the database lists as due, on request or past retention, first loses their stored
 originals and only then their personal data in the rows, so no path can leave a CV behind in
 storage. If storage fails, that candidate is left as it was for the next sweep; the rest go ahead.
+CVs that never became a candidate are swept the same way, with what the candidates leave of the
+batch.
 """
 
 import logging
@@ -17,7 +19,7 @@ BATCH = 50
 
 
 def purge_due(store: PurgeStore, files: OriginalRemover, at_most: int = BATCH) -> int:
-    """Purges up to at_most due candidates and returns how many were purged."""
+    """Purges up to at_most due candidates, then files, and returns how many were purged."""
     purged = 0
     for due in store.due(at_most):
         paths = store.original_paths(due.candidate_id)
@@ -31,5 +33,16 @@ def purge_due(store: PurgeStore, files: OriginalRemover, at_most: int = BATCH) -
             )
             continue
         store.purge(due.candidate_id, due.reason)
+        purged += 1
+    for file in store.due_files(at_most - purged):
+        try:
+            files.remove([file.storage_path])
+        except CvStoreUnavailableError:
+            log.warning(
+                "original of file %s could not be removed; it waits for the next sweep",
+                file.cv_file_id,
+            )
+            continue
+        store.purge_file(file.cv_file_id)
         purged += 1
     return purged

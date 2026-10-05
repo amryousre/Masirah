@@ -9,7 +9,7 @@ from uuid import UUID
 
 import psycopg
 
-from masirah_pipeline.ports.purge_store import DuePurge, PurgeReason
+from masirah_pipeline.ports.purge_store import DueFile, DuePurge, PurgeReason
 
 
 class PostgresPurgeStore:
@@ -34,3 +34,13 @@ class PostgresPurgeStore:
 
     def purge(self, candidate_id: UUID, reason: str) -> None:
         self._connection.execute("select worker.purge_candidate(%s, %s)", (candidate_id, reason))
+
+    def due_files(self, at_most: int) -> list[DueFile]:
+        rows = self._connection.execute(
+            "select organisation_id, cv_file_id, storage_path from worker.files_due_for_purge(%s)",
+            (max(at_most, 0),),
+        ).fetchall()
+        return [DueFile(cast(UUID, org), cast(UUID, file), str(path)) for org, file, path in rows]
+
+    def purge_file(self, cv_file_id: UUID) -> None:
+        self._connection.execute("select worker.purge_file(%s)", (cv_file_id,))
