@@ -3,7 +3,7 @@
 // the list and the extracted fields are compared as text folded the same way, so a search works in
 // either language.
 
-import { foldedParts, namePartsNormalised, searchForm } from "./names";
+import { foldedParts, latinSpellingsOf, namePartsNormalised, searchForm } from "./names";
 import type { Decision, RankingEntry } from "./ranking";
 
 export type SortKey = "score" | "name" | "recent";
@@ -29,11 +29,25 @@ export function isNarrowed(view: ListView): boolean {
   return view.query.trim() !== "" || view.decision !== "all" || view.reviewOnly;
 }
 
-/** Every part of the query must match: the start of a name part, or a word in the fields. */
+/**
+ * Every word of the query must match: the start of a name part, in its Arabic form or any listed
+ * Latin spelling of it, or folded text the fields contain. Containing rather than starting: Arabic
+ * joins و, ب and ال to the word that follows, so "محاسبة" must be found inside "والمحاسبة".
+ */
 function matches(query: string, nameParts: readonly string[], haystack: string): boolean {
-  return foldedParts(query).every((part) => {
-    const [form = part] = namePartsNormalised(part);
-    return nameParts.some((namePart) => namePart.startsWith(form)) || haystack.includes(part);
+  // Folding drops a lone article such as "el"; the words as typed stand in, so a query that
+  // folds to nothing never matches everyone. A query without a letter matches no one.
+  const folded = foldedParts(query);
+  const words = folded.length > 0 ? folded : searchForm(query).split(" ").filter(Boolean);
+  if (words.length === 0) return false;
+  return words.every((word) => {
+    const [form = word] = namePartsNormalised(word);
+    const inName = nameParts.some(
+      (part) =>
+        part.startsWith(form) ||
+        latinSpellingsOf(part).some((spelling) => spelling.startsWith(word)),
+    );
+    return inName || haystack.includes(word);
   });
 }
 

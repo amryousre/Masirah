@@ -67,6 +67,7 @@ EXAMPLE_NAMES = (
     "Yasmin Farouk",
     "ياسمين فاروق",
     "Renée",
+    "Straße",
     "123",
     "",
 )

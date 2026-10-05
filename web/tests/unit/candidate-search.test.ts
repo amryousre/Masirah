@@ -88,6 +88,22 @@ describe("search", () => {
     expect(ids(viewRanking(entries, view({ query: "Has" }), "en"))).toEqual(["a-omar"]);
   });
 
+  it("finds an Arabic name from the first letters of its Latin spelling", () => {
+    const arabicOnly = ranked({ id: "a-arabic", name: "محمد", nameNormalised: "محمد" });
+    expect(ids(viewRanking([arabicOnly, yasmin], view({ query: "Moh" }), "en"))).toEqual([
+      "a-arabic",
+    ]);
+    expect(ids(viewRanking([arabicOnly, yasmin], view({ query: "yas" }), "en"))).toEqual([
+      "a-yasmin",
+    ]);
+  });
+
+  it("matches a word the folding drops, rather than everyone", () => {
+    const elSayed = ranked({ id: "a-el", name: "El Sayed", nameNormalised: "السيد" });
+    expect(ids(viewRanking([elSayed, omar], view({ query: "el" }), "en"))).toEqual(["a-el"]);
+    expect(ids(viewRanking([elSayed, omar], view({ query: "1234" }), "en"))).toEqual([]);
+  });
+
   it("keeps different names apart", () => {
     expect(ids(viewRanking(entries, view({ query: "Mahmoud" }), "en"))).toEqual([]);
     expect(ids(viewRanking(entries, view({ query: "Hussein" }), "en"))).toEqual([]);

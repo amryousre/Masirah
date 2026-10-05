@@ -1,7 +1,7 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
 
 import { type Account, addJob, addRankedCandidate, createAccount } from "./support/accounts";
-import { signIn } from "./support/pages";
+import { signIn, untilHydrated } from "./support/pages";
 
 // The whole layout mirrors (T042): in Arabic the frame, the forms, the tables and the score
 // breakdown run right to left, measured where they land on the page, and no English string is
@@ -102,7 +102,12 @@ for (const [lang, rtl] of [
     test("a form's label lines up with its field at the inline start", async ({ page }) => {
       await signIn(page, recruiter);
       await page.goto(`/${lang}/jobs/new`);
-      await page.getByRole("tab", { name: /Fill in manually|إدخال يدوي/ }).click();
+      // A click before hydration is lost, and the field below would never appear.
+      const manual = page.getByRole("tab", { name: /Fill in manually|إدخال يدوي/ });
+      await untilHydrated(page, async () => {
+        await manual.click();
+        await expect(manual).toHaveAttribute("aria-selected", "true", { timeout: 1_000 });
+      });
       const field = page.getByRole("textbox", { name: /^(Job title|المسمى الوظيفي)/ });
       const label = page.locator(`label[for="${(await field.getAttribute("id")) ?? ""}"]`);
       const [fieldBox, labelBox] = [await box(field), await box(label)];
@@ -142,6 +147,11 @@ test("no English string survives on an Arabic page", async ({ page }) => {
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     expect(await strayLatin(page), path).toEqual([]);
   }
-  await page.getByRole("tab", { name: "الملف المستخرج" }).click();
+  // Unselected, the check below would read the reasons again rather than the profile.
+  const profile = page.getByRole("tab", { name: "الملف المستخرج" });
+  await untilHydrated(page, async () => {
+    await profile.click();
+    await expect(profile).toHaveAttribute("aria-selected", "true", { timeout: 1_000 });
+  });
   expect(await strayLatin(page), "the extracted profile").toEqual([]);
 });

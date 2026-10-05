@@ -25,6 +25,8 @@ const ARABIC = /[\u0600-\u06FF]/u;
 const NOT_ASCII = /[^\u0000-\u007F]/gu;
 const TOKEN = /\p{L}+/gu;
 
+const SHARP_S = /ß/gu;
+
 /** Arabic without marks and with its letter variants as one; Latin lower-case and plain. */
 function fold(text: string): string {
   if (ARABIC.test(text)) {
@@ -32,8 +34,9 @@ function fold(text: string): string {
       .replace(ARABIC_MARKS, "")
       .replace(ARABIC_VARIANTS, (letter) => ARABIC_LETTERS[letter] ?? letter);
   }
+  // Python's casefold, which the worker uses, turns ß into ss; lower-casing alone keeps it.
   // Decomposed, an accented letter is its plain letter and a mark; only the plain letter stays.
-  return text.toLowerCase().normalize("NFKD").replace(NOT_ASCII, "");
+  return text.toLowerCase().replace(SHARP_S, "ss").normalize("NFKD").replace(NOT_ASCII, "");
 }
 
 const isAbd = (part: string) => part === ABD || ABD_PREFIXES.has(part);
@@ -62,6 +65,20 @@ export function nameNormalised(name: string): string {
 /** A name's folded parts with each listed spelling as its name's Arabic form. */
 export function namePartsNormalised(name: string): string[] {
   return parts(name).map((part) => SPELLINGS[part] ?? part);
+}
+
+/**
+ * The Latin spellings listed for a name's Arabic form, so a recruiter typing "Moh" finds محمد
+ * before the whole spelling is typed. Empty for a name the table does not list.
+ */
+export function latinSpellingsOf(form: string): readonly string[] {
+  return LATIN_SPELLINGS.get(form) ?? [];
+}
+
+const LATIN_SPELLINGS = new Map<string, string[]>();
+for (const [spelling, form] of Object.entries(SPELLINGS)) {
+  if (ARABIC.test(spelling)) continue;
+  LATIN_SPELLINGS.set(form, [...(LATIN_SPELLINGS.get(form) ?? []), spelling]);
 }
 
 /** Folded parts as typed, for matching a search against free text. */
