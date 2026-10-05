@@ -226,7 +226,7 @@ Every table below carries `organisation_id` and has row level security enabled w
 
 ### Tests for User Story 4 ⚠️
 
-- [ ] T095 [P] [US4] Extend the tenant isolation test in `pipeline/tests/unit/test_rls_isolation.py` to cover every route added since T020, including storage paths and the review queue
+- [X] T095 [P] [US4] Extend the tenant isolation test in `pipeline/tests/unit/test_rls_isolation.py` to cover every route added since T020, including storage paths and the review queue. Every public view must run with the caller's row security and returns only the caller's rows unfiltered; the security-definer functions a member can call are pinned to a list, each with its own isolation tests, so a new one fails until it has them. The review queue does not exist yet; it is held to the same tests when T081 adds it
 - [ ] T096 [P] [US4] Retention purge test in `pipeline/tests/unit/test_retention.py` asserting personal data older than `retention_months` is purged while scores and activity rows survive in aggregate form
 - [ ] T097 [P] [US4] Deletion-on-request test in `pipeline/tests/unit/test_deletion.py` asserting removal within 30 days and that both paths write an activity row
 - [X] T098 [P] [US4] Audit log immutability test in `pipeline/tests/unit/test_activity_immutable.py` asserting no update or delete succeeds against `activity`. Kept with the other schema rules in `test_schema_rules.py::test_the_audit_trail_is_insert_only`, which now also covers the worker role
