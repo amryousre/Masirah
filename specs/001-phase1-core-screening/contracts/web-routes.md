@@ -59,7 +59,7 @@ is not already enforcing.
 
 **Rejection carries an actor.** `/api/applications/{id}/decision` requires the authenticated user
 and records them. There is no path, in the interface or the API, that sets a decision without one,
-per AI-07.
+per AI-07. The body is `{ decision, reason? }`: `decision` is `shortlisted`, `rejected` or `undecided` (undoing either), and `reason` is required for a rejection and refused otherwise (`experience`, `skills`, `location` or `other`). A decider named in the body is ignored. Answers: 200 with `{ decision, decidedBy, decidedAt }`, 400 for an invalid body, 401 without a member session, 404 for an application the member cannot see (migration 0021).
 
 **Every route validates tenancy.** The organisation is derived from the session, never from the
 request body. A client-supplied organisation identifier is ignored.

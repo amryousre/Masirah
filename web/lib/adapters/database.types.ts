@@ -520,6 +520,7 @@ export type Database = {
           application_id: string | null
           candidate_id: string | null
           confidence: number | null
+          decided_at: string | null
           decided_by_email: string | null
           decision: Database["public"]["Enums"]["application_decision"] | null
           full_name: string | null
@@ -590,6 +591,18 @@ export type Database = {
       enqueue_cv_processing: {
         Args: { cv_file_id: string; locale: string }
         Returns: number
+      }
+      record_decision: {
+        Args: {
+          chosen: Database["public"]["Enums"]["application_decision"]
+          reason?: string
+          target_application: string
+        }
+        Returns: {
+          decided_at: string
+          decided_by_email: string
+          decision: Database["public"]["Enums"]["application_decision"]
+        }[]
       }
       service_health: {
         Args: never

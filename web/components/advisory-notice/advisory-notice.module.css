@@ -1,0 +1,6 @@
+.notice {
+  max-inline-size: 68ch;
+  color: var(--color-text-secondary);
+  font-size: var(--size-body-sm);
+  line-height: var(--leading-body-sm);
+}
