@@ -85,3 +85,56 @@ def test_a_visitor_who_has_not_signed_in_reads_nothing(
     act_as(cur, None)
     with pytest.raises(psycopg.errors.InsufficientPrivilege):
         cur.execute("select * from public.job_candidates")
+
+
+def test_search_reads_the_folded_name_and_the_extracted_fields(
+    cur: Cursor, tenants: tuple[Tenant, Tenant]
+) -> None:
+    """T069: what candidate search compares, so the web needs no profile to search."""
+    alpha, _ = tenants
+    cur.execute(
+        "update public.candidate set name_normalised = 'محمد حسن' where id = %s",
+        (alpha.row_ids["candidate"],),
+    )
+    cur.execute(
+        "update public.parsed_profile set profile = %s where id = %s",
+        (
+            Jsonb(
+                {
+                    "location": "Nasr City, Cairo",
+                    "skills": ["React", "SAP"],
+                    "employment": [{"employer": "Vodafone Egypt", "title": "Engineer"}],
+                    "education": [{"institution": "جامعة القاهرة", "qualification": "B.Sc."}],
+                    "languages": [{"language": "English", "level": "fluent"}],
+                    "certifications": [{"name": "CPA", "issuer": "AICPA"}],
+                }
+            ),
+            alpha.row_ids["parsed_profile"],
+        ),
+    )
+    act_as(cur, alpha.user_id)
+    cur.execute(
+        "select name_normalised, search_text from public.job_candidates where job_id = %s",
+        (alpha.row_ids["job"],),
+    )
+    [(name, text)] = cur.fetchall()
+    cur.execute("reset role")
+    assert name == "محمد حسن"
+    for value in ("Nasr City, Cairo", "React", "SAP", "Vodafone Egypt", "Engineer"):
+        assert value in text
+    for value in ("جامعة القاهرة", "B.Sc.", "English", "CPA", "AICPA"):
+        assert value in text
+
+
+def test_a_profile_without_its_lists_still_reads(
+    cur: Cursor, tenants: tuple[Tenant, Tenant]
+) -> None:
+    """The seed's profile has none of the lists; search text is then empty, not an error."""
+    alpha, _ = tenants
+    act_as(cur, alpha.user_id)
+    cur.execute(
+        "select search_text from public.job_candidates where job_id = %s",
+        (alpha.row_ids["job"],),
+    )
+    assert cur.fetchone() == ("",)
+    cur.execute("reset role")

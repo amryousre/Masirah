@@ -46,6 +46,8 @@ interface CandidateTableProps {
   onSelect: (id: string) => void;
   /** Where the scores break, if they do: how many rank above it and the fall in points. */
   dropOff?: { above: number; gap: number } | null | undefined;
+  /** The column the rows are in order by; none when they are in an order no column shows. */
+  sortedBy?: "score" | "name" | "none";
 }
 
 const COLUMNS = 6;
@@ -55,7 +57,13 @@ const COLUMNS = 6;
  * after it. Selection is the only amber. Documents still processing or unreadable sit in a
  * labelled group below the ranking, never hidden (Principle 5).
  */
-export function CandidateTable({ rows, selectedId, onSelect, dropOff }: CandidateTableProps) {
+export function CandidateTable({
+  rows,
+  selectedId,
+  onSelect,
+  dropOff,
+  sortedBy = "score",
+}: CandidateTableProps) {
   const t = useTranslations("candidates");
   const unrankedId = useId();
   const ranked = rows.filter((row): row is RankedRow => row.kind === "ranked");
@@ -69,15 +77,21 @@ export function CandidateTable({ rows, selectedId, onSelect, dropOff }: Candidat
           <th scope="col" className={styles.rank}>
             {t("rank")}
           </th>
-          <th scope="col">{t("name")}</th>
+          <th scope="col" aria-sort={sortedBy === "name" ? "ascending" : undefined}>
+            {t("name")}
+          </th>
           <th scope="col" className={styles.reasonHead}>
             {t("reason")}
           </th>
-          <th scope="col" aria-sort="descending">
-            <span className={styles.sorted}>
-              {t("score")}
-              <Icon name="sortDown" size={12} />
-            </span>
+          <th scope="col" aria-sort={sortedBy === "score" ? "descending" : undefined}>
+            {sortedBy === "score" ? (
+              <span className={styles.sorted}>
+                {t("score")}
+                <Icon name="sortDown" size={12} />
+              </span>
+            ) : (
+              t("score")
+            )}
           </th>
           <th scope="col">{t("confidence")}</th>
           <th scope="col">{t("status")}</th>

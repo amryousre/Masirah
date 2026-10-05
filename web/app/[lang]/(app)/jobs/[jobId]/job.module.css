@@ -56,3 +56,9 @@
     padding-inline: var(--space-4);
   }
 }
+
+.noMatch {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-3);
+}

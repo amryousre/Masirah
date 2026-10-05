@@ -429,7 +429,9 @@
       "type": "Not a PDF, Word document or image, whatever its name says.",
       "size": "Larger than 10 MB.",
       "empty": "The file is empty."
-    }
+    },
+    "noMatch": "Search covers names, ranking reasons and CV details in Arabic and English. Try a shorter word, or clear the search and filters.",
+    "clearFilters": "Clear search and filters"
   },
   "candidate": {
     "back": "Ranked list",
@@ -474,5 +476,25 @@
     "breakdownUnavailable": "The breakdown could not be read for this score.",
     "views": "Candidate views",
     "documentTab": "Document"
+  },
+  "filters": {
+    "label": "Search and filter candidates",
+    "search": "Search candidates",
+    "searchHint": "Names, reasons, skills or employers, in Arabic or English",
+    "decision": "Decision",
+    "decisions": {
+      "all": "All decisions",
+      "undecided": "Not decided",
+      "shortlisted": "Shortlisted",
+      "rejected": "Rejected"
+    },
+    "sort": "Sort by",
+    "sorts": {
+      "score": "Score",
+      "name": "Name",
+      "recent": "Most recently scored"
+    },
+    "reviewOnly": "Needs review only",
+    "shown": "Showing {shown} of {total}"
   }
 }

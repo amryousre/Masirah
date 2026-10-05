@@ -19,6 +19,9 @@ const candidate = (figures: Partial<CandidateFigures>): CandidateFigures => ({
   confidence: 0.95,
   decision: "undecided",
   decidedBy: null,
+  nameNormalised: null,
+  searchText: "",
+  scoredAt: null,
   ...figures,
 });
 const file = (figures: Partial<JobFile>): JobFile => ({

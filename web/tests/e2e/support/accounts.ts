@@ -137,6 +137,9 @@ export async function addRankedCandidate(
     confidence: number;
     /** Ratings out of 100 by component; empty unless the test reads the breakdown. */
     ratings?: Record<keyof typeof WEIGHTS, number>;
+    /** Evidence for every rating; by default each names its component. */
+    evidence?: string;
+    summary?: readonly string[];
   },
 ): Promise<string> {
   const organisationId = account.organisationId;
@@ -200,11 +203,11 @@ export async function addRankedCandidate(
         components: Object.fromEntries(
           Object.entries(candidate.ratings ?? {}).map(([name, rating]) => [
             name,
-            { rating, evidence: `${name} evidence` },
+            { rating, evidence: candidate.evidence ?? `${name} evidence` },
           ]),
         ),
         justification: candidate.justification,
-        summary: ["Six years in finance.", "SAP daily."].join("\n"),
+        summary: (candidate.summary ?? ["Six years in finance.", "SAP daily."]).join("\n"),
         model_id: "test-model",
         provider: "anthropic",
         prompt_version: "test",
