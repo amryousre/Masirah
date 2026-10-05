@@ -674,7 +674,7 @@ export type Database = {
           queue_depth: number
         }[]
       }
-      set_retention: { Args: { months: number }; Returns: number }
+      set_retention: { Args: { months?: number }; Returns: number }
     }
     Enums: {
       application_decision: "undecided" | "shortlisted" | "rejected"

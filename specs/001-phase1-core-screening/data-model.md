@@ -229,15 +229,19 @@ organisation 1──N activity
 
 Two obligations that only exist in Phase 1 because of the pilot data decision.
 
-**Automatic purge (NFR-10)**: a scheduled job removes candidate personal data older than the
-organisation's `retention_months`. What is purged is the personal data: candidate identity fields,
-the stored original file, and the profile content. Scores and activity rows survive in aggregate
-form so that the audit trail is not destroyed by retention.
+**Automatic purge (NFR-10)**: a scheduled job removes a candidate's personal data the organisation's
+`retention_months` after their last activity, unless they are shortlisted for a job. An
+organisation may choose not to delete automatically (`retention_months` null). Shortening the
+period deletes nobody for seven days (`retention_changed_at`), and the page says how many it will
+remove. What is purged, as the approved settings design lists it: the candidate's identity fields,
+the stored original file and the text extracted from it, and the scores with their reasons. What
+survives is the audit trail: that the data was deleted, when and at whose request, and the screening
+decisions with who made them, without personal data.
 
 **Deletion on request (FR-076)**: removes the same set within 30 days of a request, on demand rather
 than on schedule. Both paths write an activity row recording what was removed and when.
 
-Both paths are migration 0022. A member's request is a `deletion_request` row (`candidate_id`, `requested_by`, `requested_at`, `completed_at`; at most one open per candidate), written by `request_candidate_deletion` with a `candidate.deletion_requested` activity row. The worker's hourly sweep takes open requests first, then candidates whose `created_at` is older than their organisation's `retention_months`. It removes the stored originals, then clears `candidate`'s identity fields and `name_normalised`, empties `parsed_profile.profile` and `field_overrides`, renames `cv_file.original_filename` to `removed`, stamps `purged_at` on the candidate and their files, closes the request and writes a `candidate.purged` activity row with the reason and how many files went. A purged file is never reused by the content-hash cache.
+Both paths are migration 0022. A member's request is a `deletion_request` row (`candidate_id`, `requested_by`, `requested_at`, `completed_at`; at most one open per candidate), written by `request_candidate_deletion` with a `candidate.deletion_requested` activity row. The period changes only through `set_retention`, which writes an `organisation.retention_changed` row. The worker's hourly sweep takes open requests first, then candidates past retention. It removes the stored originals, then clears `candidate`'s identity fields and `name_normalised`, empties `parsed_profile.profile` and `field_overrides`, deletes the candidate's `score` rows, renames `cv_file.original_filename` to `removed`, stamps `purged_at` on the candidate and their files, closes the request and writes a `candidate.purged` activity row with the reason and what went. Applications and their decisions stay. A CV that never became a candidate (unreadable, or waiting for review) is swept on its own by the same period (`worker.files_due_for_purge`, `worker.purge_file`, a `cv_file.purged` row). A purged file is never reused by the content-hash cache.
 
 Members cannot delete candidate rows, CV file rows or stored originals directly. Both paths run
 server-side and remove the stored original first, so no route can leave a CV behind in storage.

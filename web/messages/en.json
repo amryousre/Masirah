@@ -516,15 +516,65 @@
   },
   "privacy": {
     "title": "Personal data",
-    "explain": "If the candidate asks, their personal data can be removed. Scores and decisions stay.",
-    "open": "Remove personal data…",
-    "confirmTitle": "Remove {name}’s personal data?",
-    "consequence": "Their name, contact details, CV and extracted profile are removed within the hour, and can’t be brought back. Scores and decisions stay, without the name, so the record of what was decided remains. The request is recorded under your name.",
-    "keep": "Keep the data",
-    "confirm": "Remove personal data",
-    "recording": "Recording…",
+    "explain": "When a candidate asks for their personal data to be deleted.",
     "failed": "The request could not be recorded. Try again.",
-    "requested": "Removal requested {when}. It completes within the hour.",
-    "removed": "Personal data removed {when}. Scores and decisions remain."
+    "requested": "Deletion requested {when}. It completes within the hour.",
+    "removed": "Personal data deleted {when}. Decisions remain, without personal data."
+  },
+  "deletion": {
+    "deletedHeading": "Deleted permanently",
+    "deleted": {
+      "identity": "Name and contact details",
+      "cv": "The original CV and the text extracted from it",
+      "scores": "Scores and their reasons"
+    },
+    "keptHeading": "Kept in the audit trail",
+    "kept": {
+      "record": "That a candidate’s data was deleted, when, and at whose request",
+      "decisions": "Past screening decisions and who made them, without personal data"
+    },
+    "open": "Delete candidate data…",
+    "confirmTitle": "Delete {name}’s data?",
+    "consequence": "It is deleted within the hour and can’t be brought back. The request is recorded under your name.",
+    "keep": "Keep the data",
+    "confirm": "Delete data permanently",
+    "recording": "Recording…"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": {
+      "title": "Interface language",
+      "help": "For your account only. It doesn’t change the language of the CVs.",
+      "names": {
+        "ar": "العربية",
+        "en": "English"
+      }
+    },
+    "retention": {
+      "title": "Data retention",
+      "help": "For the whole organisation.",
+      "label": "Delete candidate data automatically after",
+      "months": "{months} months",
+      "never": "Don’t delete automatically",
+      "rule": "A candidate’s data is deleted {months} months after their last activity, unless they’re shortlisted.",
+      "keptUntilDeleted": "Candidate data stays until you delete it by hand.",
+      "save": "Save retention period",
+      "saving": "Saving…",
+      "saved": "Retention period saved. The change is recorded under your name.",
+      "dueSoon": "{count, plural, one {{count} candidate inactive for over {months} months will be deleted in 7 days.} other {{count} candidates inactive for over {months} months will be deleted in 7 days.}}",
+      "nobodyNow": "Nobody is deleted immediately by this change.",
+      "failed": "The retention period could not be saved. Try again."
+    },
+    "deletion": {
+      "title": "Delete a candidate’s data",
+      "help": "When a candidate asks for their personal data to be deleted.",
+      "search": "Email, phone or name",
+      "matches": "Candidates found",
+      "meta": "{jobs, plural, one {Candidate for {jobs} job} other {Candidate for {jobs} jobs}} · last active {when}",
+      "noMatch": "No candidate with that email, phone or name.",
+      "unnamed": "Unnamed candidate",
+      "failed": "The request could not be recorded. Try again.",
+      "requested": "{name}’s data will be deleted within the hour. The request is recorded under your name."
+    }
   }
 }

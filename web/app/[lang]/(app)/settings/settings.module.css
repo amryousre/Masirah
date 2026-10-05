@@ -1,0 +1,164 @@
+.page {
+  display: grid;
+  gap: var(--space-6);
+  max-inline-size: 64rem;
+  padding-block: var(--space-8);
+  padding-inline: var(--space-8);
+}
+
+.title {
+  padding-block-end: var(--space-5);
+  border-block-end: var(--border);
+  font-size: var(--size-headline);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-headline);
+}
+
+.rows {
+  display: grid;
+}
+
+/* What a setting is at the inline start, the control beside it (the settings design). */
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: var(--space-4) var(--space-8);
+  padding-block: var(--space-6);
+  border-block-end: var(--border-divider);
+}
+
+.about {
+  display: grid;
+  align-content: start;
+  gap: var(--space-1);
+}
+
+.rowTitle {
+  font-size: var(--size-body);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-body);
+}
+
+.help {
+  color: var(--color-text-secondary);
+  font-size: var(--size-body-sm);
+  line-height: var(--leading-body-sm);
+}
+
+.control,
+.stack {
+  display: grid;
+  align-content: start;
+  gap: var(--space-3);
+}
+
+.choices {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.hidden {
+  position: absolute;
+  overflow: hidden;
+  inline-size: 1px;
+  block-size: 1px;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.choice {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-block-size: var(--control-height);
+  padding-inline: var(--space-3);
+  border: var(--border-control);
+  border-radius: var(--radius-md);
+  font-size: var(--size-body-sm);
+  cursor: pointer;
+}
+
+/* The chosen language is the selection, so it takes the selection's amber (DESIGN.md section 3). */
+.choice[data-selected] {
+  border-color: var(--color-selected-edge);
+  background: var(--color-selected);
+}
+
+.choice input {
+  inline-size: 16px;
+  block-size: 16px;
+  margin: 0;
+  accent-color: var(--color-ink);
+}
+
+.status {
+  display: grid;
+  gap: var(--space-1);
+  color: var(--color-text-secondary);
+  font-size: var(--size-body-sm);
+  line-height: var(--leading-body-sm);
+}
+
+.status:empty {
+  display: none;
+}
+
+.failed {
+  color: var(--color-error);
+  font-size: var(--size-body-sm);
+  line-height: var(--leading-body-sm);
+}
+
+.matches {
+  display: grid;
+  gap: var(--space-2);
+  padding: 0;
+  list-style: none;
+}
+
+.match,
+.chosen {
+  display: grid;
+  gap: var(--space-1);
+  inline-size: 100%;
+  padding-block: var(--space-3);
+  padding-inline: var(--space-3);
+  border: var(--border);
+  border-radius: var(--radius-md);
+  background: var(--color-canvas);
+  color: inherit;
+  font: inherit;
+  text-align: start;
+}
+
+.match {
+  cursor: pointer;
+}
+
+.match:hover {
+  background: var(--color-fill-hover);
+}
+
+.matchName {
+  font-weight: var(--weight-medium);
+}
+
+.matchMeta {
+  color: var(--color-text-secondary);
+  font-size: var(--size-caption);
+  line-height: var(--leading-caption);
+}
+
+@media (width < 48rem) {
+  .page {
+    padding-block: var(--space-5);
+    padding-inline: var(--space-4);
+  }
+
+  .row {
+    grid-template-columns: 1fr;
+  }
+}

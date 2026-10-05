@@ -56,19 +56,19 @@ test("a member asks for a candidate's data to be removed, after being told what 
 }) => {
   await signIn(page, recruiter);
   await page.goto(`/en/jobs/${job}/candidates/${yasmin}`);
-  const open = page.getByRole("button", { name: "Remove personal data…" });
-  const dialog = page.getByRole("dialog", { name: "Remove Yasmin Farouk’s personal data?" });
+  const open = page.getByRole("button", { name: "Delete candidate data…" });
+  const dialog = page.getByRole("dialog", { name: "Delete Yasmin Farouk’s data?" });
   await untilHydrated(page, async () => {
     await open.click();
     await expect(dialog).toBeVisible({ timeout: 1_000 });
   });
-  await expect(dialog).toContainText("name, contact details, CV and extracted profile");
-  await expect(dialog).toContainText("Scores and decisions stay");
+  await expect(dialog).toContainText("deleted within the hour");
+  await expect(dialog).toContainText("recorded under your name");
   await expectAccessible(page);
-  await dialog.getByRole("button", { name: "Remove personal data" }).click();
+  await dialog.getByRole("button", { name: "Delete data permanently" }).click();
 
-  await expect(page.getByText(/^Removal requested/)).toBeVisible();
-  await expect(page.getByRole("button", { name: "Remove personal data…" })).toHaveCount(0);
+  await expect(page.getByText(/^Deletion requested/)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Delete candidate data…" })).toHaveCount(0);
   const requested = (await activityAbout(yasmin)).filter(
     (row) => row.action === "candidate.deletion_requested",
   );
@@ -80,8 +80,8 @@ test("a member asks for a candidate's data to be removed, after being told what 
 test("keeping the candidate records nothing", async ({ page }) => {
   await signIn(page, recruiter);
   await page.goto(`/en/jobs/${job}/candidates/${omar}`);
-  const open = page.getByRole("button", { name: "Remove personal data…" });
-  const dialog = page.getByRole("dialog", { name: "Remove Omar Hassan’s personal data?" });
+  const open = page.getByRole("button", { name: "Delete candidate data…" });
+  const dialog = page.getByRole("dialog", { name: "Delete Omar Hassan’s data?" });
   await untilHydrated(page, async () => {
     await open.click();
     await expect(dialog).toBeVisible({ timeout: 1_000 });

@@ -221,7 +221,7 @@ grant execute on function worker.purge_candidate(uuid, text) to masirah_worker;
 -- never deleting automatically. The change is recorded under the member, and starts the seven days
 -- in which a shorter period deletes nobody. Returns how many candidates the new period will remove
 -- once those seven days pass, for the page to say so.
-create function public.set_retention(months integer)
+create function public.set_retention(months integer default null)
 returns integer
 language plpgsql
 security definer

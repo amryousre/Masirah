@@ -143,6 +143,7 @@ export function SelectField({
   error,
   loading,
   suggested,
+  wide,
   options,
   placeholder,
   className,
@@ -152,7 +153,7 @@ export function SelectField({
   const id = useId();
   const field = { label, help, error, loading, suggested: suggested ?? false };
   return (
-    <FieldFrame id={id} {...field}>
+    <FieldFrame id={id} wide={wide} {...field}>
       <select
         className={cx(styles.input, styles.select, className)}
         {...controlProps(field, id)}
