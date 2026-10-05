@@ -97,10 +97,11 @@ def test_undoing_a_decision_clears_the_decider_and_is_recorded(
     decide(cur, alpha, "rejected", "skills")
     assert decide(cur, alpha, "undecided") == ("undecided", None, False)
     assert stored(cur, alpha) == ("undecided", None, False)
-    actions = [(row[0], row[3]) for row in activity(cur, alpha)]
+    # One test transaction gives both rows the same time, so they are compared without order.
+    actions = sorted((str(row[0]), str(row[3])) for row in activity(cur, alpha))
     assert actions == [
-        ("application.rejected", {"reason": "skills", "previous": "undecided"}),
-        ("application.undecided", {"previous": "rejected"}),
+        ("application.rejected", str({"reason": "skills", "previous": "undecided"})),
+        ("application.undecided", str({"previous": "rejected"})),
     ]
 
 
