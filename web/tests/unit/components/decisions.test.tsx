@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { screen } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
@@ -61,6 +61,23 @@ describe("RejectCandidate", () => {
     );
     await userEvent.click(screen.getByRole("button", { name: "Reject candidate" }));
     expect(onReject).toHaveBeenCalledWith("skills");
+  });
+
+  it("says inside the confirmation when the rejection could not be recorded", async () => {
+    renderIn(
+      "en",
+      <RejectCandidate
+        candidate="Omar Hassan"
+        actor="nourhan@example.test"
+        error="The decision could not be recorded. Try again."
+        onReject={vi.fn(() => Promise.resolve(false))}
+      />,
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Reject candidate…" }));
+    const dialog = screen.getByRole("dialog", { name: "Reject Omar Hassan?" });
+    expect(
+      within(dialog).getByText("The decision could not be recorded. Try again."),
+    ).toBeInTheDocument();
   });
 
   it("names who will be recorded", async () => {

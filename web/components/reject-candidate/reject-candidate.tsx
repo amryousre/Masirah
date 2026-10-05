@@ -14,6 +14,8 @@ interface RejectCandidateProps {
   actor: string;
   /** Records the rejection; true once it is recorded. */
   onReject: (reason: RejectionReason) => Promise<boolean>;
+  /** Why the last rejection was not recorded; shown inside the confirmation, where the eye is. */
+  error?: string | undefined;
 }
 
 /**
@@ -21,7 +23,7 @@ interface RejectCandidateProps {
  * section, never in a list row where a hover could put it under the pointer. It opens a
  * confirmation that states the consequence and needs a reason; nothing is recorded before then.
  */
-export function RejectCandidate({ candidate, actor, onReject }: RejectCandidateProps) {
+export function RejectCandidate({ candidate, actor, onReject, error }: RejectCandidateProps) {
   const t = useTranslations("reject");
   const locale = useLocale();
   const [open, setOpen] = useState(false);
@@ -54,6 +56,7 @@ export function RejectCandidate({ candidate, actor, onReject }: RejectCandidateP
         }))}
         offerNotice={false}
         recording={recording}
+        error={error}
         onCancel={() => {
           setOpen(false);
         }}

@@ -120,6 +120,7 @@ export function DecisionSection({
             candidate={candidate}
             actor={actor}
             onReject={(reason) => decide("rejected", reason)}
+            error={failed ? t("decisionFailed") : undefined}
           />
         )}
       </div>

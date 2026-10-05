@@ -21,6 +21,8 @@ interface RejectDialogProps {
   /** Offers to send the candidate a notice. Left off where no notice can be sent yet. */
   offerNotice?: boolean;
   recording?: boolean;
+  /** Why the last attempt was not recorded, shown on the confirm button inside the dialog. */
+  error?: string | undefined;
   onCancel: () => void;
   onConfirm: (decision: { reason: string; notify: boolean }) => void;
 }
@@ -47,6 +49,7 @@ export function RejectDialog({
   notifyAfterDays = 3,
   offerNotice = true,
   recording = false,
+  error,
   onCancel,
   onConfirm,
 }: RejectDialogProps) {
@@ -81,6 +84,7 @@ export function RejectDialog({
             disabled={reason === ""}
             loading={recording}
             loadingLabel={t("recording")}
+            error={error}
             onClick={() => {
               onConfirm({ reason, notify: offerNotice && notify });
             }}
