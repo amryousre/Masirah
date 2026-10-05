@@ -316,3 +316,30 @@ export async function userIdOf(account: Account): Promise<string> {
   if (error) throw new Error(error.message);
   return data.id;
 }
+
+/** The audit rows about one subject, oldest first. */
+export async function activityAbout(subjectId: string) {
+  const { data, error } = await admin()
+    .from("activity")
+    .select("action, actor_id, subject_type, metadata")
+    .eq("subject_id", subjectId)
+    .order("occurred_at", { ascending: true });
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+/** Stores a candidate's original CV where the worker would have found it, for reading it back. */
+export async function storeOriginal(candidateId: string, pdf: Buffer): Promise<void> {
+  const client = admin();
+  const { data, error } = await client
+    .from("cv_file")
+    .select("storage_path")
+    .eq("candidate_id", candidateId)
+    .limit(1)
+    .single();
+  if (error) throw new Error(error.message);
+  const upload = await client.storage
+    .from("cv-originals")
+    .upload(data.storage_path, pdf, { contentType: "application/pdf", upsert: true });
+  if (upload.error) throw new Error(upload.error.message);
+}

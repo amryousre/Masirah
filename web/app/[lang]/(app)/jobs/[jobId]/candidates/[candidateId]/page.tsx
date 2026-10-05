@@ -7,6 +7,7 @@ import { Icon } from "@/components/icon/icon";
 import { Decision } from "@/components/status/status";
 import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
+import { recordActivity } from "@/lib/adapters/activity";
 import { readCandidatePage } from "@/lib/adapters/candidate-page";
 import { getAccess } from "@/lib/adapters/session";
 import { createSupabaseServerClient } from "@/lib/adapters/supabase";
@@ -65,6 +66,16 @@ export default async function CandidatePage({
   ].filter((part): part is string => part !== null);
 
   const access = await getAccess();
+  // Every view of a candidate is on the audit trail (T099, FR-074), before anything is shown.
+  if (access.kind === "member") {
+    await recordActivity(
+      supabase,
+      access.session,
+      "candidate.viewed",
+      { type: "candidate", id: candidateId },
+      { job_id: jobId },
+    );
+  }
   const actor = access.kind === "member" ? (access.session.name ?? access.session.email) : "";
   const decision: DecisionState = {
     applicationId: page.decision.applicationId,
@@ -151,6 +162,7 @@ export default async function CandidatePage({
                 fileName: page.document.fileName,
                 mimeType: page.document.mimeType,
                 url: documentUrl,
+                downloadHref: `/api/candidates/${candidateId}/original?job=${jobId}`,
               }
         }
       />

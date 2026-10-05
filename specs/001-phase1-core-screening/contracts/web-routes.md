@@ -30,6 +30,7 @@ The candidate page sits under its job (amended 2026-10-04, T066) because what it
 | `/api/uploads` | POST | Accept a batch of up to 25 files, store originals, create `cv_file` rows, enqueue one `cv_processing` message each |
 | `/api/jobs/{jobId}/specification` | POST | Turn a pasted description into a structured specification for review (FR-002) |
 | `/api/applications/{id}/decision` | POST | Record a shortlist or rejection with the acting user (FR-023) |
+| `/api/candidates/{id}/original?job={jobId}` | GET | Download the CV sent for the job: writes `candidate.exported` to the audit trail, then redirects to a one-minute signed link (FR-030) |
 | `/api/candidates/{id}` | DELETE | Deletion request for one candidate's personal data (FR-029) |
 | `/api/health` | GET | Liveness, including queue depth and worker last-seen |
 

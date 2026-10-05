@@ -229,11 +229,11 @@ Every table below carries `organisation_id` and has row level security enabled w
 - [ ] T095 [P] [US4] Extend the tenant isolation test in `pipeline/tests/unit/test_rls_isolation.py` to cover every route added since T020, including storage paths and the review queue
 - [ ] T096 [P] [US4] Retention purge test in `pipeline/tests/unit/test_retention.py` asserting personal data older than `retention_months` is purged while scores and activity rows survive in aggregate form
 - [ ] T097 [P] [US4] Deletion-on-request test in `pipeline/tests/unit/test_deletion.py` asserting removal within 30 days and that both paths write an activity row
-- [ ] T098 [P] [US4] Audit log immutability test in `pipeline/tests/unit/test_activity_immutable.py` asserting no update or delete succeeds against `activity`
+- [X] T098 [P] [US4] Audit log immutability test in `pipeline/tests/unit/test_activity_immutable.py` asserting no update or delete succeeds against `activity`. Kept with the other schema rules in `test_schema_rules.py::test_the_audit_trail_is_insert_only`, which now also covers the worker role
 
 ### Implementation for User Story 4
 
-- [ ] T099 [US4] Write activity rows on every access to and export of candidate data in `web/lib/adapters/activity.ts`, covering `candidate.viewed`, `candidate.exported` and `application.rejected` (FR-074)
+- [X] T099 [US4] Write activity rows on every access to and export of candidate data in `web/lib/adapters/activity.ts`, covering `candidate.viewed`, `candidate.exported` and `application.rejected` (FR-074). The candidate page writes `candidate.viewed` (with the job) before it shows anything, and fails rather than show a candidate unrecorded. Downloading the original goes through `GET /api/candidates/{id}/original`, which writes `candidate.exported` before redirecting to a one-minute signed link; Phase 1 has no other export. `application.rejected` and the other decisions are written by `record_decision` (migration 0021)
 - [ ] T100 [US4] Scheduled retention purge in `supabase/migrations/0013_retention.sql` and `pipeline/src/masirah_pipeline/jobs/purge.py`, removing candidate identity fields, the stored original file and the profile content once the organisation's `retention_months` elapses. Scores and activity survive so retention does not destroy the audit trail (NFR-10)
 - [ ] T101 [US4] `DELETE /api/candidates/{id}` in `web/app/api/candidates/[id]/route.ts` removing the same set on demand within 30 days, writing an activity row recording what was removed and when (FR-076)
 - [ ] T102 [US4] Settings page at `web/app/[lang]/settings/page.tsx` exposing the retention period, interface language and deletion request

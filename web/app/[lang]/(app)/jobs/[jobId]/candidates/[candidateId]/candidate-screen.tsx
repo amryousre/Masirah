@@ -28,7 +28,14 @@ interface CandidateScreenProps {
   } | null;
   /** Null until the CV has been read. */
   profile: ProfileRow[] | null;
-  document: { fileName: string; mimeType: string; url: string | null } | null;
+  document: {
+    fileName: string;
+    mimeType: string;
+    /** A signed link for showing the file in the page. */
+    url: string | null;
+    /** Where the original is downloaded, through the audit trail. */
+    downloadHref: string;
+  } | null;
 }
 
 /**
@@ -249,11 +256,9 @@ function DocumentPane({
         <>
           <div className={styles.documentBar}>
             <bdi className={styles.fileName}>{document.fileName}</bdi>
-            {document.url !== null && (
-              <a href={document.url} target="_blank" rel="noreferrer" className={styles.link}>
-                {t("openOriginal")}
-              </a>
-            )}
+            <a href={document.downloadHref} className={styles.link}>
+              {t("openOriginal")}
+            </a>
           </div>
           {document.url === null || !SHOWN_INLINE.has(document.mimeType) ? (
             <p className={styles.quiet}>{t("noPreview")}</p>

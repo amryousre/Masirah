@@ -11,6 +11,7 @@ export interface CandidateScore {
 }
 
 export interface CandidateDocument {
+  id: string;
   fileName: string;
   mimeType: string;
   storagePath: string;
@@ -113,6 +114,7 @@ export async function readCandidatePage(
       file === null
         ? null
         : {
+            id: file.id,
             fileName: file.original_filename,
             mimeType: file.mime_type,
             storagePath: file.storage_path,

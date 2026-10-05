@@ -173,7 +173,7 @@ def test_members_cannot_write_scores(cur: Cursor, tenant: Tenant) -> None:
         )
 
 
-@pytest.mark.parametrize("role", ["authenticated", "service_role"])
+@pytest.mark.parametrize("role", ["authenticated", "service_role", "masirah_worker"])
 @pytest.mark.parametrize(
     "statement",
     [
@@ -185,10 +185,11 @@ def test_members_cannot_write_scores(cur: Cursor, tenant: Tenant) -> None:
 def test_the_audit_trail_is_insert_only(
     cur: Cursor, tenant: Tenant, role: str, statement: str
 ) -> None:
+    """T098: no API role, nor the worker, can change or remove an audit row."""
     if role == "authenticated":
         act_as_member(cur, tenant)
     else:
-        cur.execute("set local role service_role")
+        cur.execute(f"set local role {role}")
     with pytest.raises(psycopg.errors.InsufficientPrivilege):
         cur.execute(statement, (tenant.row_ids["activity"],))
 

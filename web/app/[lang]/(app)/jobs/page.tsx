@@ -7,6 +7,7 @@ import { ButtonLink } from "@/components/button/button-link";
 import { JobTable } from "@/components/jobs/job-table";
 import { routing } from "@/i18n/routing";
 import { listJobs } from "@/lib/adapters/jobs";
+import { getAccess } from "@/lib/adapters/session";
 import { createSupabaseServerClient } from "@/lib/adapters/supabase";
 import { MAX_BATCH_FILES } from "@/lib/domain/uploads";
 
@@ -25,6 +26,9 @@ export default async function JobsPage({ params }: PageProps<"/[lang]/jobs">) {
   const { lang } = await params;
   if (!hasLocale(routing.locales, lang)) notFound();
   const t = await getTranslations({ locale: lang, namespace: "jobs" });
+  // The layout redirects anyone who is not a member, but renders alongside this page; without
+  // this the page would ask the database for a job list on a visitor's behalf and be refused.
+  if ((await getAccess()).kind !== "member") return null;
   const jobs = await listJobs(await createSupabaseServerClient());
 
   if (jobs.length === 0) {
