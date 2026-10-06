@@ -6,6 +6,7 @@ an archived one, and it does not need the service role, which bypasses row level
 everywhere.
 """
 
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import psycopg
@@ -200,3 +201,33 @@ def test_the_migration_gives_the_worker_role_no_login(cur: Cursor) -> None:
     """Login is granted where the worker is deployed, with a password that never sits in git."""
     cur.execute("select rolcanlogin, rolbypassrls from pg_roles where rolname = %s", (WORKER,))
     assert cur.fetchone() == (False, False)
+
+
+def test_a_deferred_message_waits_until_then_and_comes_back_as_new(
+    cur: Cursor, queue: SupabaseQueue
+) -> None:
+    """Work waiting for its organisation's limits to renew uses none of its attempts (T093)."""
+    message_id = send(cur, CV_PROCESSING, BODY)
+    as_worker(cur)
+    queue.read(CV_PROCESSING, visibility_seconds=0, quantity=5)
+    queue.defer(CV_PROCESSING, message_id, datetime.now(UTC) + timedelta(hours=2))
+    assert queue.read(CV_PROCESSING, visibility_seconds=0, quantity=5) == []
+    cur.execute("reset role")
+    cur.execute(
+        "select msg_id, read_ct, message, vt > now() + interval '119 minutes'"
+        " from pgmq.q_cv_processing"
+    )
+    [(new_id, read_count, body, hidden)] = cur.fetchall()
+    assert (new_id != message_id, read_count, body, hidden) == (True, 0, BODY, True)
+
+
+def test_deferring_a_message_that_is_gone_changes_nothing(
+    cur: Cursor, queue: SupabaseQueue
+) -> None:
+    message_id = send(cur, CV_PROCESSING, BODY)
+    as_worker(cur)
+    queue.delete(CV_PROCESSING, message_id)
+    queue.defer(CV_PROCESSING, message_id, datetime.now(UTC) + timedelta(hours=2))
+    cur.execute("reset role")
+    cur.execute("select count(*) from pgmq.q_cv_processing")
+    assert cur.fetchone() == (0,)

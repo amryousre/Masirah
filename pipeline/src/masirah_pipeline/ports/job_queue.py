@@ -34,3 +34,8 @@ class JobQueue(Protocol):
     def archive(self, queue: str, message_id: int) -> bool:
         """Move a message that failed for good out of the queue, keeping it for inspection."""
         ...
+
+    def defer(self, queue: str, message_id: int, until: datetime) -> None:
+        """Put a message back to be read again from `until`, as new: work that waits for its
+        organisation's limits to renew has not used any of its attempts (T093)."""
+        ...

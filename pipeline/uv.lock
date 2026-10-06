@@ -416,6 +416,7 @@ dependencies = [
     { name = "pdfminer-six" },
     { name = "psycopg", extra = ["binary"] },
     { name = "python-docx" },
+    { name = "tzdata" },
 ]
 
 [package.dev-dependencies]
@@ -436,6 +437,7 @@ requires-dist = [
     { name = "pdfminer-six", specifier = ">=20260107" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.3.6" },
     { name = "python-docx", specifier = ">=1.2" },
+    { name = "tzdata", specifier = ">=2026.5" },
 ]
 
 [package.metadata.requires-dev]

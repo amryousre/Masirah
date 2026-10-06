@@ -31,12 +31,14 @@ import psycopg
 from masirah_pipeline.adapters.heartbeat import PostgresHeartbeat
 from masirah_pipeline.adapters.native_text import read_native_text
 from masirah_pipeline.adapters.postgres_purge_store import PostgresPurgeStore
+from masirah_pipeline.adapters.postgres_spend_ledger import PostgresSpendLedger
 from masirah_pipeline.adapters.postgres_worker_store import PostgresWorkerStore
 from masirah_pipeline.adapters.provider_registry import ConfigurationError, model_for
 from masirah_pipeline.adapters.score_repository import PostgresScoreRepository
 from masirah_pipeline.adapters.supabase_queue import SupabaseQueue
 from masirah_pipeline.adapters.supabase_storage import SupabaseStorage
 from masirah_pipeline.jobs.purge import purge_due
+from masirah_pipeline.metering import MeteredModel
 from masirah_pipeline.scoring_step import ApplicationScorer
 from masirah_pipeline.worker import Worker
 
@@ -139,13 +141,21 @@ def main(environment: Mapping[str, str] = os.environ) -> None:
     # timeout takes effect at once rather than when some later statement commits.
     with psycopg.connect(settings.database_url, autocommit=True) as connection:
         storage = SupabaseStorage(settings.supabase_url, settings.supabase_secret_key)
+        # Every model call is recorded with its cost as it is made, and the month's spend halts
+        # an organisation's processing at its ceiling (T093, AI-06).
+        ledger = PostgresSpendLedger(connection)
         worker = Worker(
             queue=SupabaseQueue(connection),
             store=PostgresWorkerStore(connection),
             files=storage,
             read_text=read_native_text,
-            model=cheap,
-            score=ApplicationScorer(PostgresScoreRepository(connection), strong, cheap),
+            model=MeteredModel(cheap, "extraction", ledger),
+            score=ApplicationScorer(
+                PostgresScoreRepository(connection),
+                MeteredModel(strong, "scoring", ledger),
+                MeteredModel(cheap, "summary", ledger),
+            ),
+            budget=ledger,
             beat=PostgresHeartbeat(connection, worker_name(environment)),
         )
         log.info("worker started")
