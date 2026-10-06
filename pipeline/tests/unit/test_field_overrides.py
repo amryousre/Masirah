@@ -56,8 +56,10 @@ def correct(
     file_id: uuid.UUID,
     corrections: dict[str, Any],
     folded: str | None = None,
+    *,
+    as_user: uuid.UUID | None = None,
 ) -> None:
-    act_as(cur, tenant.user_id)
+    act_as(cur, as_user or tenant.user_id)
     cur.execute("select public.correct_profile(%s, %s, %s)", (file_id, Jsonb(corrections), folded))
     cur.execute("reset role")
 
@@ -95,7 +97,8 @@ def test_the_correction_is_on_the_audit_trail(cur: Cursor, tenants: tuple[Tenant
     correct(cur, alpha, file_id, {"name": "Mona Abdallah", "skills": ["Excel", "SAP"]}, FOLDED)
     cur.execute(
         "select actor_id, subject_type, subject_id, metadata from public.activity"
-        " where action = 'candidate.corrected'"
+        " where action = 'candidate.corrected' and organisation_id = %s",
+        (alpha.organisation_id,),
     )
     [(actor, kind, subject, metadata)] = cur.fetchall()
     assert (actor, kind, subject) == (alpha.user_id, "candidate", alpha.row_ids["candidate"])
@@ -110,17 +113,35 @@ def test_correcting_back_to_the_extracted_value_restores_it(
     correct(cur, alpha, file_id, {"location": "Giza"})
     correct(cur, alpha, file_id, {"location": "Cairo"})
     assert overrides(cur, file_id) == {}
+    cur.execute(
+        "select location from public.candidate where id = %s", (alpha.row_ids["candidate"],)
+    )
+    assert cur.fetchone() == ("Cairo",)
 
 
 def test_an_unchanged_correction_keeps_who_first_made_it(
     cur: Cursor, tenants: tuple[Tenant, Tenant]
 ) -> None:
+    """A second member saving the same value again does not take it over."""
     alpha, _ = tenants
     file_id = alpha.row_ids["cv_file"]
     correct(cur, alpha, file_id, {"location": "Giza"})
     first = overrides(cur, file_id)["location"]
-    correct(cur, alpha, file_id, {"location": "Giza", "skills": ["Excel", "SAP"]})
-    assert overrides(cur, file_id)["location"] == first
+    colleague = uuid.uuid4()
+    cur.execute(
+        "insert into auth.users (id, email) values (%s, 'colleague@example.test')", (colleague,)
+    )
+    cur.execute(
+        "insert into public.app_user (id, organisation_id, email)"
+        " values (%s, %s, 'colleague@example.test')",
+        (colleague, alpha.organisation_id),
+    )
+    correct(
+        cur, alpha, file_id, {"location": "Giza", "skills": ["Excel", "SAP"]}, as_user=colleague
+    )
+    kept = overrides(cur, file_id)
+    assert kept["location"] == first
+    assert kept["skills"]["by"] == str(colleague)
 
 
 def test_a_corrected_name_is_the_candidates_name(
