@@ -1,4 +1,5 @@
 import { nameNormalised } from "@/lib/domain/names";
+import { likeLiteral } from "@/lib/domain/settings";
 
 import type { SupabaseClient } from "./supabase";
 
@@ -43,10 +44,11 @@ export async function findCandidates(
   pattern: string,
 ): Promise<CandidateMatch[]> {
   const form = nameNormalised(pattern);
+  const literal = likeLiteral(pattern);
   const matches = [
-    `full_name.ilike.%${pattern}%`,
-    `email.ilike.%${pattern}%`,
-    `phone.ilike.%${pattern}%`,
+    `full_name.ilike.%${literal}%`,
+    `email.ilike.%${literal}%`,
+    `phone.ilike.%${literal}%`,
     ...(form === "" ? [] : [`name_normalised.ilike.%${form}%`]),
   ];
   const { data, error } = await supabase

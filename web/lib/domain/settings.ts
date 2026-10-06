@@ -10,9 +10,15 @@ export function retentionFrom(value: string): number | null | undefined {
   return RETENTION_CHOICES.some((choice) => choice === value) ? Number(value) : undefined;
 }
 
-/** Characters a PostgREST filter reads as its own syntax, or a pattern as a wildcard. */
-const FILTER_SYNTAX = /[%_,()*\\]/gu;
+/** Characters a PostgREST filter reads as its own syntax, or a pattern as a wildcard. An underscore
+ * is kept, since emails use it, and escaped by likeLiteral instead. */
+const FILTER_SYNTAX = /[%,()*\\]/gu;
 const MIN_LENGTH = 2;
+
+/** A pattern's text matched as itself inside ilike, where an underscore stands for any letter. */
+export function likeLiteral(text: string): string {
+  return text.replaceAll("_", "\\_");
+}
 
 /** The text to look a candidate up by, safe inside a filter; null when too short to search. */
 export function lookupPattern(query: string): string | null {

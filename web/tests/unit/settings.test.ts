@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { lookupPattern, RETENTION_CHOICES, retentionFrom } from "@/lib/domain/settings";
+import {
+  likeLiteral,
+  lookupPattern,
+  RETENTION_CHOICES,
+  retentionFrom,
+} from "@/lib/domain/settings";
 
 // The settings page (T102): the retention periods it offers, and the text it searches candidates
 // by when one asks for their data to be deleted.
@@ -29,7 +34,12 @@ describe("lookupPattern", () => {
 
   it("drops the characters a database filter would read as its own syntax", () => {
     expect(lookupPattern("mona%,name.eq.x)(")).toBe("monaname.eq.x");
-    expect(lookupPattern("a_b*c\\d")).toBe("abcd");
+    expect(lookupPattern("a%b*c\\d")).toBe("abcd");
+  });
+
+  it("keeps an underscore, which emails use, and matches it literally", () => {
+    expect(lookupPattern("jane_doe@example.com")).toBe("jane_doe@example.com");
+    expect(likeLiteral("jane_doe@example.com")).toBe("jane\\_doe@example.com");
   });
 
   it("asks for at least two characters, so one letter does not list everyone", () => {

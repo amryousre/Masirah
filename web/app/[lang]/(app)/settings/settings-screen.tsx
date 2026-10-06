@@ -1,7 +1,7 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
-import { type ReactNode, useEffect, useId, useState, useTransition } from "react";
+import { type ReactNode, useEffect, useId, useRef, useState, useTransition } from "react";
 
 import { Button } from "@/components/button/button";
 import { DeleteCandidateData } from "@/components/delete-candidate-data/delete-candidate-data";
@@ -150,11 +150,16 @@ function CandidateDeletion() {
   const [requested, setRequested] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
   const [, startLookup] = useTransition();
+  // Each lookup is numbered; an older one that answers late is ignored, so the list always
+  // matches what is in the box and nobody is picked from stale results.
+  const latest = useRef(0);
 
   useEffect(() => {
     const timer = setTimeout(() => {
+      const ticket = ++latest.current;
       startLookup(async () => {
-        setMatches(await lookUpCandidates(query));
+        const found = await lookUpCandidates(query);
+        if (ticket === latest.current) setMatches(found);
       });
     }, LOOKUP_DELAY_MS);
     return () => {
