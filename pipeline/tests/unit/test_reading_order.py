@@ -76,6 +76,12 @@ class TestColumns:
             + [ln.text for ln in sorted([*right, wide], key=lambda ln: ln.top)]
         )
 
+    def test_a_sidebar_that_starts_above_the_main_column_is_still_read_second(self) -> None:
+        """Its first lines have no text to their left yet, which must not cut them off."""
+        main = column(27, 320, "main", [60, 80, 100, 120, 140, 160])
+        sidebar = column(378, 542, "side", [0, 20, 40, 75, 115, 150])
+        assert read(main + sidebar) == [ln.text for ln in main + sidebar]
+
     def test_a_column_with_a_gap_in_it_is_still_one_column(self) -> None:
         """A sidebar with a blank stretch beside the main column's text stays in one piece."""
         main = column(40, 300, "main", [top * 14 for top in range(12)])

@@ -67,8 +67,10 @@ def _sections(lines: list[Line]) -> list[tuple[list[Line], list[Interval]]]:
 
     A stretch grows band by band down the page for as long as some strip stays uncrossed, so a
     gap shared by both columns by chance does not cut them, and ends at a line crossing every
-    remaining strip. Only a strip with text on both sides counts: a sliver of margin past a
-    header that stops short of the edge would otherwise hold the header and both columns together.
+    remaining strip. A strip with all the page's text on one side is margin, not a gutter: a sliver
+    of it past a header that stops short of the edge would otherwise hold the header and both
+    columns together. A gutter whose other side has no text yet, beside a sidebar that starts
+    higher than the main column, still counts.
     """
     if not lines:
         return []
@@ -78,7 +80,7 @@ def _sections(lines: list[Line]) -> list[tuple[list[Line], list[Interval]]]:
     gaps: list[Interval] = []
     for band in _bands(lines):
         free = _uncovered(band, left, right)
-        shared = _between_text(_intersection(gaps, free), current + band)
+        shared = _not_margin(_intersection(gaps, free), lines)
         if current and shared:
             current, gaps = current + band, shared
         else:
@@ -115,12 +117,12 @@ def _uncovered(lines: list[Line], left: float, right: float) -> list[Interval]:
     return [(start, end) for start, end in strips if end - start >= MIN_GUTTER]
 
 
-def _between_text(strips: list[Interval], lines: list[Line]) -> list[Interval]:
-    """The strips that some of the lines lie wholly before and some wholly after."""
+def _not_margin(strips: list[Interval], lines: list[Line]) -> list[Interval]:
+    """The strips with some of the page's text reaching each side of them, not all on one."""
     return [
         (start, end)
         for start, end in strips
-        if any(line.x1 <= start for line in lines) and any(line.x0 >= end for line in lines)
+        if any(line.x1 <= end for line in lines) and any(line.x0 >= start for line in lines)
     ]
 
 
