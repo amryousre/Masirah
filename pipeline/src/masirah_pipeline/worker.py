@@ -27,9 +27,9 @@ from typing import Protocol
 from uuid import UUID
 
 from masirah_pipeline.domain.arabic import name_normalised
-from masirah_pipeline.domain.confidence import confidence, needs_review
-from masirah_pipeline.domain.language import detect_language
+from masirah_pipeline.domain.confidence import confidence
 from masirah_pipeline.domain.profile import Profile, profile_from_output
+from masirah_pipeline.domain.review_reason import Review, after_extraction, before_extraction
 from masirah_pipeline.extraction import extract_profile
 from masirah_pipeline.ports.cv_store import CvStore, MissingCvError
 from masirah_pipeline.ports.document_text import DocumentReader, UnreadableDocumentError
@@ -177,15 +177,16 @@ class Worker:
             self._reuse(message, cached)
             return
         text = self._text(cv_file)
-        if text is None or not detect_language(text).supported:
-            self.store.mark_needs_review(organisation, file_id)
+        waiting = before_extraction(text)
+        if waiting is not None or text is None:
+            self.store.mark_needs_review(organisation, file_id, waiting or Review("no_text"))
             return
         try:
             extracted = extract_profile(self.model, text)
         except RefusedError as error:
             raise _TerminalError(f"the model declined to read the CV: {error}") from error
         score = Decimal(str(round(confidence(extracted.profile, text), 3)))
-        doubtful = needs_review(float(score))
+        review = after_extraction(float(score))
         candidate_id = self.store.record_extraction(
             organisation,
             file_id,
@@ -194,16 +195,16 @@ class Worker:
                 confidence=score,
                 profile=extracted.profile.as_dict(),
                 candidate=_candidate(extracted.profile),
-                status="needs_review" if doubtful else "extracted",
+                review=review,
             ),
         )
-        if not doubtful:
+        if review is None:
             self._score(message, candidate_id, extracted.profile, extracted.response.cost_egp)
 
     def _reuse(self, message: CvProcessingMessage, cached: CachedProfile) -> None:
         """The same bytes were extracted before: take that profile, at no model cost (AI-03)."""
         profile = profile_from_output(cached.profile)
-        doubtful = needs_review(float(cached.confidence))
+        review = after_extraction(float(cached.confidence))
         candidate_id = self.store.record_extraction(
             message.organisation_id,
             message.cv_file_id,
@@ -212,11 +213,11 @@ class Worker:
                 confidence=cached.confidence,
                 profile=cached.profile,
                 candidate=_candidate(profile),
-                status="needs_review" if doubtful else "extracted",
+                review=review,
                 candidate_id=cached.candidate_id,
             ),
         )
-        if not doubtful:
+        if review is None:
             self._score(message, candidate_id, profile, Decimal(0))
 
     def _text(self, cv_file: CvFile) -> str | None:

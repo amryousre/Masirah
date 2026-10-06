@@ -223,6 +223,8 @@ export type Database = {
           organisation_id: string
           original_filename: string
           purged_at: string | null
+          review_language: string | null
+          review_reason: Database["public"]["Enums"]["review_reason"] | null
           status: Database["public"]["Enums"]["cv_file_status"]
           storage_path: string
           updated_at: string
@@ -239,6 +241,8 @@ export type Database = {
           organisation_id: string
           original_filename: string
           purged_at?: string | null
+          review_language?: string | null
+          review_reason?: Database["public"]["Enums"]["review_reason"] | null
           status?: Database["public"]["Enums"]["cv_file_status"]
           storage_path: string
           updated_at?: string
@@ -255,6 +259,8 @@ export type Database = {
           organisation_id?: string
           original_filename?: string
           purged_at?: string | null
+          review_language?: string | null
+          review_reason?: Database["public"]["Enums"]["review_reason"] | null
           status?: Database["public"]["Enums"]["cv_file_status"]
           storage_path?: string
           updated_at?: string
@@ -690,6 +696,7 @@ export type Database = {
         | "tesseract_ocr"
         | "manual"
       model_provider: "anthropic" | "openai"
+      review_reason: "no_text" | "unsupported_language" | "low_confidence"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -832,6 +839,7 @@ export const Constants = {
         "manual",
       ],
       model_provider: ["anthropic", "openai"],
+      review_reason: ["no_text", "unsupported_language", "low_confidence"],
     },
   },
 } as const

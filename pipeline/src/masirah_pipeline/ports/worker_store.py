@@ -11,6 +11,8 @@ from decimal import Decimal
 from typing import Any, Literal, Protocol
 from uuid import UUID
 
+from masirah_pipeline.domain.review_reason import Review
+
 ExtractionSource = Literal["native_text", "vision_ocr", "tesseract_ocr", "manual"]
 ExtractedStatus = Literal["extracted", "needs_review"]
 
@@ -62,10 +64,15 @@ class Extraction:
     confidence: Decimal
     profile: dict[str, Any]
     candidate: CandidateDetails
-    status: ExtractedStatus
+    # Why the profile waits in the review queue, or None when it is trusted.
+    review: Review | None
     # The candidate to link when the file has none yet, as when the same content was uploaded
     # before; otherwise a new candidate is created.
     candidate_id: UUID | None = None
+
+    @property
+    def status(self) -> ExtractedStatus:
+        return "extracted" if self.review is None else "needs_review"
 
 
 class WorkerStore(Protocol):
@@ -88,9 +95,10 @@ class WorkerStore(Protocol):
         describes, and set the file's status, all at once. Returns the candidate's id."""
         ...
 
-    def mark_needs_review(self, organisation_id: UUID, cv_file_id: UUID) -> None:
+    def mark_needs_review(self, organisation_id: UUID, cv_file_id: UUID, review: Review) -> None:
         """A file the worker cannot extract yet but has not failed on: no text, or a language
-        version 1.0 does not support. It stays visible in the review queue (FR-011, SC-006)."""
+        version 1.0 does not support. It stays visible in the review queue with its reason
+        (FR-011, SC-006, T080)."""
         ...
 
     def mark_failed(self, organisation_id: UUID, cv_file_id: UUID, reason: str) -> None: ...
