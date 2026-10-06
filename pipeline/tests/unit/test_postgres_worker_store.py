@@ -6,13 +6,14 @@ of reach even by identifier.
 """
 
 import uuid
+from dataclasses import replace
 from decimal import Decimal
 
 import pytest
 
 from masirah_pipeline.adapters.postgres_worker_store import PostgresWorkerStore
 from masirah_pipeline.ports.worker_store import CandidateDetails, Extraction
-from tests.database import Cursor, Tenant, seed_tenant
+from tests.database import Cursor, Tenant, purge_sql, seed_tenant
 
 pytestmark = pytest.mark.database
 
@@ -256,7 +257,10 @@ class TestSameContent:
         """Its profile was emptied when the candidate's data was removed (migration 0022); a
         re-upload of the same CV is read afresh rather than given nothing."""
         alpha, _ = tenants
-        cur.execute("select worker.purge_candidate(%s, 'request')", (alpha.row_ids["candidate"],))
+        cur.execute(
+            purge_sql("request"),
+            (alpha.row_ids["candidate"],),
+        )
         again = new_file(cur, alpha, self.SEEDED_HASH)
         assert store.profile_for_content(alpha.organisation_id, self.SEEDED_HASH, again) is None
 
@@ -279,3 +283,52 @@ class TestSameContent:
         )
         cur.execute("select count(*) from public.candidate")
         assert cur.fetchone() == (1,)
+
+
+class TestAfterAPurge:
+    """Nothing the worker does can bring back personal data the purge removed (migration 0022)."""
+
+    def purge(self, cur: Cursor, tenant: Tenant) -> None:
+        cur.execute(
+            purge_sql("request"),
+            (tenant.row_ids["candidate"],),
+        )
+
+    def test_a_purged_file_is_not_there_to_process(
+        self, store: PostgresWorkerStore, tenants: tuple[Tenant, Tenant], cur: Cursor
+    ) -> None:
+        alpha, _ = tenants
+        self.purge(cur, alpha)
+        assert store.cv_file(alpha.organisation_id, alpha.row_ids["cv_file"]) is None
+
+    def test_no_profile_is_written_onto_a_purged_file(
+        self, store: PostgresWorkerStore, tenants: tuple[Tenant, Tenant], cur: Cursor
+    ) -> None:
+        alpha, _ = tenants
+        self.purge(cur, alpha)
+        with pytest.raises(LookupError):
+            store.record_extraction(alpha.organisation_id, alpha.row_ids["cv_file"], extraction())
+        cur.execute("reset role")
+        cur.execute(
+            "select profile from public.parsed_profile where cv_file_id = %s and is_current",
+            (alpha.row_ids["cv_file"],),
+        )
+        assert cur.fetchone() == ({},)
+
+    def test_a_cv_for_a_purged_candidate_makes_a_new_candidate(
+        self, store: PostgresWorkerStore, tenants: tuple[Tenant, Tenant], cur: Cursor
+    ) -> None:
+        """A cache hit read just before the purge names a candidate now empty. That candidate
+        stays empty; the CV, sent again, belongs to a new one."""
+        alpha, _ = tenants
+        self.purge(cur, alpha)
+        again = new_file(cur, alpha)
+        reused = replace(extraction(), candidate_id=alpha.row_ids["candidate"])
+        created = store.record_extraction(alpha.organisation_id, again, reused)
+        assert created != alpha.row_ids["candidate"]
+        cur.execute("reset role")
+        cur.execute(
+            "select full_name, purged_at is not null from public.candidate where id = %s",
+            (alpha.row_ids["candidate"],),
+        )
+        assert cur.fetchone() == (None, True)

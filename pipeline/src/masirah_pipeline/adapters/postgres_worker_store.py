@@ -23,7 +23,7 @@ class PostgresWorkerStore:
         with acting_for(self._connection, organisation_id) as cur:
             row = cur.execute(
                 "select id, storage_path, mime_type, content_hash, status::text, candidate_id"
-                " from public.cv_file where id = %s",
+                " from public.cv_file where id = %s and purged_at is null",
                 (cv_file_id,),
             ).fetchone()
         return None if row is None else CvFile(*row)
@@ -72,12 +72,17 @@ class PostgresWorkerStore:
             details.name_normalised,
         )
         with acting_for(self._connection, organisation_id) as cur:
-            # Locks the file so two workers handling the same message cannot both add a version.
+            # Locks the file so two workers handling the same message cannot both add a version,
+            # and so a purge cannot clear it between this check and the write.
             row = cur.execute(
-                "select candidate_id from public.cv_file where id = %s for update", (cv_file_id,)
+                "select candidate_id from public.cv_file where id = %s and purged_at is null"
+                " for update",
+                (cv_file_id,),
             ).fetchone()
             if row is None:
-                raise LookupError(f"CV file {cv_file_id} is not in organisation {organisation_id}")
+                raise LookupError(
+                    f"CV file {cv_file_id} is not in organisation {organisation_id}, or was purged"
+                )
             existing = row[0] or extraction.candidate_id
             candidate_id = _candidate(cur, organisation_id, existing, fields)
             cur.execute(
@@ -137,14 +142,20 @@ class PostgresWorkerStore:
 def _candidate(
     cur: Cursor, organisation_id: UUID, existing: UUID | None, fields: tuple[str | None, ...]
 ) -> UUID:
-    """The file's candidate brought up to date, or a new candidate when the file has none."""
+    """The file's candidate brought up to date, or a new candidate when the file has none.
+
+    A candidate whose data was purged is never written to again (migration 0022): the CV that
+    names them, whether from a cache hit read just before the purge or a file linked to them
+    earlier, becomes a new candidate, as a CV sent after a deletion is new data.
+    """
     if existing is not None:
         cur.execute(
             "update public.candidate set full_name = %s, email = %s, phone = %s, location = %s,"
-            " name_normalised = %s where id = %s",
+            " name_normalised = %s where id = %s and purged_at is null",
             (*fields, existing),
         )
-        return existing
+        if cur.rowcount == 1:
+            return existing
     row = cur.execute(
         "insert into public.candidate (organisation_id, full_name, email, phone, location,"
         " name_normalised) values (%s, %s, %s, %s, %s, %s) returning id",

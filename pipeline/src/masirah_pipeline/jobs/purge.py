@@ -22,17 +22,17 @@ def purge_due(store: PurgeStore, files: OriginalRemover, at_most: int = BATCH) -
     """Purges up to at_most due candidates, then files, and returns how many were purged."""
     purged = 0
     for due in store.due(at_most):
-        paths = store.original_paths(due.candidate_id)
+        originals = store.originals(due.candidate_id)
         try:
-            if paths:
-                files.remove(paths)
+            if originals:
+                files.remove([original.storage_path for original in originals])
         except CvStoreUnavailableError:
             log.warning(
                 "originals of candidate %s could not be removed; it waits for the next sweep",
                 due.candidate_id,
             )
             continue
-        store.purge(due.candidate_id, due.reason)
+        store.purge(due.candidate_id, due.reason, [original.cv_file_id for original in originals])
         purged += 1
     for file in store.due_files(at_most - purged):
         try:

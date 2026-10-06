@@ -15,6 +15,14 @@ class DuePurge:
 
 
 @dataclass(frozen=True)
+class OriginalFile:
+    """One of a candidate's CVs whose stored original the sweep removes."""
+
+    cv_file_id: UUID
+    storage_path: str
+
+
+@dataclass(frozen=True)
 class DueFile:
     """A CV that never became a candidate, kept past its organisation's retention."""
 
@@ -28,12 +36,13 @@ class PurgeStore(Protocol):
         """Open deletion requests first, then candidates past their organisation's retention."""
         ...
 
-    def original_paths(self, candidate_id: UUID) -> list[str]:
-        """Where the candidate's stored originals are, until they are purged."""
+    def originals(self, candidate_id: UUID) -> list[OriginalFile]:
+        """The candidate's CVs whose stored originals are still there."""
         ...
 
-    def purge(self, candidate_id: UUID, reason: str) -> None:
-        """Clears the candidate's personal data and records it. Safe to repeat."""
+    def purge(self, candidate_id: UUID, reason: str, removed: list[UUID]) -> None:
+        """Clears the candidate's personal data once the originals of `removed` are gone, and
+        records it. A CV linked since the originals were listed is left for the next sweep."""
         ...
 
     def due_files(self, at_most: int) -> list[DueFile]:

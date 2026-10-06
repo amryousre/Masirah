@@ -121,3 +121,19 @@ def act_as(cur: Cursor, user_id: uuid.UUID | None) -> None:
     claims = json.dumps({"sub": str(user_id), "role": "authenticated"})
     cur.execute("select set_config('request.jwt.claims', %s, true)", (claims,))
     cur.execute("set local role authenticated")
+
+
+_PURGE = {
+    "request": "select worker.purge_candidate(c.id, 'request',"
+    " array(select cv_file_id from worker.purge_paths(c.id)))"
+    " from (select %s::uuid as id) c",
+    "retention": "select worker.purge_candidate(c.id, 'retention',"
+    " array(select cv_file_id from worker.purge_paths(c.id)))"
+    " from (select %s::uuid as id) c",
+}
+
+
+def purge_sql(reason: str) -> str:
+    """The worker's purge of one candidate, given as its only parameter: with the files whose
+    originals purge_paths listed, as the sweep passes them once those are removed."""
+    return _PURGE[reason]

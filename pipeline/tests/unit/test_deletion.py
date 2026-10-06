@@ -9,10 +9,12 @@ whose request, and the screening decisions with who made them, without personal 
 cannot delete candidate rows, files or originals themselves.
 """
 
+import uuid
+
 import psycopg
 import pytest
 
-from tests.database import Cursor, Tenant, act_as, seed_tenant
+from tests.database import Cursor, Tenant, act_as, purge_sql, seed_tenant
 
 pytestmark = pytest.mark.database
 
@@ -51,8 +53,8 @@ def due(cur: Cursor) -> list[tuple[object, ...]]:
 def purge(cur: Cursor, tenant: Tenant, reason: str = "request") -> None:
     as_worker(
         cur,
-        "select worker.purge_candidate(%s, %s)",
-        (tenant.row_ids["candidate"], reason),
+        purge_sql(reason),
+        (tenant.row_ids["candidate"],),
     )
 
 
@@ -115,9 +117,11 @@ def test_the_worker_is_told_which_originals_to_remove(
 ) -> None:
     alpha, _ = tenants
     paths = as_worker(
-        cur, "select storage_path from worker.purge_paths(%s)", (alpha.row_ids["candidate"],)
+        cur,
+        "select cv_file_id, storage_path from worker.purge_paths(%s)",
+        (alpha.row_ids["candidate"],),
     )
-    assert paths == [(alpha.storage_path,)]
+    assert paths == [(alpha.row_ids["cv_file"], alpha.storage_path)]
 
 
 def test_purging_removes_identity_profile_and_file_name(
@@ -216,4 +220,58 @@ def test_only_the_worker_purges(cur: Cursor, tenants: tuple[Tenant, Tenant], rol
     alpha, _ = tenants
     act_as(cur, alpha.user_id if role == "authenticated" else None)
     with pytest.raises(psycopg.errors.InsufficientPrivilege):
-        cur.execute("select worker.purge_candidate(%s, 'request')", (alpha.row_ids["candidate"],))
+        cur.execute(
+            purge_sql("request"),
+            (alpha.row_ids["candidate"],),
+        )
+
+
+def test_a_concurrent_second_request_returns_the_first(
+    cur: Cursor, tenants: tuple[Tenant, Tenant]
+) -> None:
+    """Two members asking at once: the second insert meets the open one and returns it."""
+    alpha, _ = tenants
+    first = request(cur, alpha)
+    cur.execute(
+        "insert into public.deletion_request (organisation_id, candidate_id, requested_by)"
+        " values (%s, %s, %s) on conflict (candidate_id) where completed_at is null do nothing",
+        (alpha.organisation_id, alpha.row_ids["candidate"], alpha.user_id),
+    )
+    assert cur.rowcount == 0
+    assert request(cur, alpha) == first
+
+
+def test_a_file_linked_after_its_originals_were_listed_keeps_the_request_open(
+    cur: Cursor, tenants: tuple[Tenant, Tenant]
+) -> None:
+    """A CV that joins the candidate between the worker listing the originals and purging the
+    rows still has its object in storage: it is not stamped, and the request stays open so the
+    next sweep comes back for it."""
+    alpha, _ = tenants
+    request(cur, alpha)
+    listed = [alpha.row_ids["cv_file"]]
+    late = uuid.uuid4()
+    cur.execute(
+        "insert into public.cv_file (id, organisation_id, candidate_id, storage_path,"
+        " original_filename, mime_type, byte_size, content_hash, status)"
+        " values (%s, %s, %s, %s, 'late.pdf', 'application/pdf', 10, %s, 'extracted')",
+        (
+            late,
+            alpha.organisation_id,
+            alpha.row_ids["candidate"],
+            alpha.storage_path.replace(str(alpha.row_ids["cv_file"]), str(late)),
+            "f" * 64,
+        ),
+    )
+    as_worker(
+        cur,
+        "select worker.purge_candidate(%s, 'request', %s)",
+        (alpha.row_ids["candidate"], listed),
+    )
+    cur.execute(
+        "select id, purged_at is not null from public.cv_file where candidate_id = %s"
+        " order by purged_at nulls last",
+        (alpha.row_ids["candidate"],),
+    )
+    assert cur.fetchall() == [(alpha.row_ids["cv_file"], True), (late, False)]
+    assert (alpha.organisation_id, alpha.row_ids["candidate"], "request") in due(cur)

@@ -5,7 +5,6 @@ be processed, while an outage, a rate limit or a rejected key is not the file's 
 not fail it: the message waits for the next attempt.
 """
 
-import json
 from collections.abc import Callable
 
 import httpx2
@@ -80,24 +79,36 @@ def test_the_key_never_appears_in_an_error() -> None:
 class TestRemove:
     """Removing a purged candidate's originals (T100, T101): the one deletion this key makes."""
 
-    def test_it_removes_every_path_in_one_request(self) -> None:
+    def test_it_removes_each_object_by_its_own_request(self) -> None:
+        """One answer per file, so a failure is never hidden inside a bulk success."""
         seen: list[httpx2.Request] = []
 
         def answer(request: httpx2.Request) -> httpx2.Response:
             seen.append(request)
-            return httpx2.Response(200, json=[{"name": PATH}])
+            return httpx2.Response(200, json={"message": "Successfully deleted"})
 
         storage(answer).remove([PATH, "organisations/0f0e/cv/2c2d/cv.pdf"])
-        [request] = seen
-        assert request.method == "DELETE"
-        assert request.headers["apikey"] == KEY
-        assert request.url.path == "/storage/v1/object/cv-originals"
-        assert json.loads(request.content) == {
-            "prefixes": [PATH, "organisations/0f0e/cv/2c2d/cv.pdf"]
-        }
+        assert [request.method for request in seen] == ["DELETE", "DELETE"]
+        assert all(request.headers["apikey"] == KEY for request in seen)
+        assert [request.url.path for request in seen] == [
+            "/storage/v1/object/cv-originals/organisations/0f0e/cv/1a1b/my cv.pdf",
+            "/storage/v1/object/cv-originals/organisations/0f0e/cv/2c2d/cv.pdf",
+        ]
 
-    def test_an_object_already_gone_is_not_an_error(self) -> None:
-        storage(lambda _: httpx2.Response(200, json=[])).remove([PATH])
+    @pytest.mark.parametrize(
+        "gone",
+        [
+            httpx2.Response(404),
+            httpx2.Response(400, json={"statusCode": "404", "error": "not_found"}),
+        ],
+    )
+    def test_an_object_already_gone_is_not_an_error(self, gone: httpx2.Response) -> None:
+        storage(lambda _: gone).remove([PATH])
+
+    def test_a_failure_part_way_stops_and_says_so(self) -> None:
+        answers = iter([httpx2.Response(200, json={}), httpx2.Response(503)])
+        with pytest.raises(CvStoreUnavailableError):
+            storage(lambda _: next(answers)).remove([PATH, "organisations/0f0e/cv/2c2d/cv.pdf"])
 
     @pytest.mark.parametrize("status", [401, 429, 500, 503])
     def test_a_refusal_or_outage_leaves_the_rows_for_the_next_sweep(self, status: int) -> None:

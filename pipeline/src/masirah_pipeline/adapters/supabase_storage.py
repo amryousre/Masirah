@@ -40,16 +40,18 @@ class SupabaseStorage:
         raise CvStoreUnavailableError(f"storage answered {response.status_code}")
 
     def remove(self, storage_paths: Sequence[str]) -> None:
-        url = f"{self._base}/storage/v1/object/{BUCKET}"
-        try:
-            response = self._client.request(
-                "DELETE", url, headers={"apikey": self._key}, json={"prefixes": list(storage_paths)}
-            )
-        except httpx2.HTTPError as error:
-            reason = f"storage could not be reached: {type(error).__name__}"
-            raise CvStoreUnavailableError(reason) from error
-        # Storage answers 200 with the objects it removed; one already gone is simply not listed.
-        if response.status_code != 200:
+        # One request per object: the bulk endpoint answers 200 whatever it managed, so a partial
+        # failure would read as success and leave a CV behind. Each answer here is about one file.
+        for storage_path in storage_paths:
+            url = f"{self._base}/storage/v1/object/{BUCKET}/{quote(storage_path)}"
+            try:
+                response = self._client.request("DELETE", url, headers={"apikey": self._key})
+            except httpx2.HTTPError as error:
+                reason = f"storage could not be reached: {type(error).__name__}"
+                raise CvStoreUnavailableError(reason) from error
+            # An object already gone is what removing it was for.
+            if response.status_code == 200 or _not_found(response):
+                continue
             raise CvStoreUnavailableError(f"storage answered {response.status_code}")
 
 

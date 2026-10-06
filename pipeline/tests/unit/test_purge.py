@@ -11,16 +11,19 @@ from uuid import UUID, uuid4
 
 from masirah_pipeline.jobs.purge import purge_due
 from masirah_pipeline.ports.cv_store import CvStoreUnavailableError
-from masirah_pipeline.ports.purge_store import DueFile, DuePurge
+from masirah_pipeline.ports.purge_store import DueFile, DuePurge, OriginalFile
 
 ORG = uuid4()
+FILE_IDS: dict[str, UUID] = {
+    name: uuid4() for name in ("a.pdf", "b.pdf", "c.pdf", "stuck.pdf", "fine.pdf")
+}
 
 
 @dataclass
 class FakeStore:
     due_now: list[DuePurge]
     paths: dict[UUID, list[str]]
-    purged: list[tuple[UUID, str]] = field(default_factory=list)
+    purged: list[tuple[UUID, str, list[UUID]]] = field(default_factory=list)
     events: list[str] = field(default_factory=list)
     files_due: list[DueFile] = field(default_factory=list)
     files_purged: list[UUID] = field(default_factory=list)
@@ -35,12 +38,12 @@ class FakeStore:
     def due(self, at_most: int) -> list[DuePurge]:
         return self.due_now[:at_most]
 
-    def original_paths(self, candidate_id: UUID) -> list[str]:
-        return self.paths.get(candidate_id, [])
+    def originals(self, candidate_id: UUID) -> list[OriginalFile]:
+        return [OriginalFile(FILE_IDS[path], path) for path in self.paths.get(candidate_id, [])]
 
-    def purge(self, candidate_id: UUID, reason: str) -> None:
+    def purge(self, candidate_id: UUID, reason: str, removed: list[UUID]) -> None:
         self.events.append(f"purge {candidate_id}")
-        self.purged.append((candidate_id, reason))
+        self.purged.append((candidate_id, reason, removed))
 
 
 @dataclass
@@ -64,7 +67,10 @@ def test_each_due_candidate_loses_its_originals_then_its_rows() -> None:
     )
     files = FakeFiles(store.events)
     assert purge_due(store, files) == 2
-    assert store.purged == [(first, "request"), (second, "retention")]
+    assert store.purged == [
+        (first, "request", [FILE_IDS["a.pdf"], FILE_IDS["b.pdf"]]),
+        (second, "retention", [FILE_IDS["c.pdf"]]),
+    ]
     assert store.events == [
         "remove ['a.pdf', 'b.pdf']",
         f"purge {first}",
@@ -79,7 +85,7 @@ def test_a_candidate_without_stored_files_is_still_purged() -> None:
     files = FakeFiles(store.events)
     assert purge_due(store, files) == 1
     assert files.removed == []
-    assert store.purged == [(candidate, "retention")]
+    assert store.purged == [(candidate, "retention", [])]
 
 
 def test_when_storage_fails_the_rows_wait_and_the_rest_go_ahead() -> None:
@@ -90,7 +96,7 @@ def test_when_storage_fails_the_rows_wait_and_the_rest_go_ahead() -> None:
     )
     files = FakeFiles(store.events, failing={"stuck.pdf"})
     assert purge_due(store, files) == 1
-    assert store.purged == [(fine, "request")]
+    assert store.purged == [(fine, "request", [FILE_IDS["fine.pdf"]])]
 
 
 def test_a_sweep_takes_at_most_its_batch() -> None:

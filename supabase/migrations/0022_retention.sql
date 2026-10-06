@@ -70,16 +70,17 @@ begin
     raise exception 'no such candidate' using errcode = 'P0002';
   end if;
 
-  select r.requested_at into open_since
-  from public.deletion_request r
-  where r.candidate_id = target_candidate and r.completed_at is null;
-  if found then
-    return open_since;
-  end if;
-
+  -- Two members asking at once meet at the unique open request: the second returns the first.
   insert into public.deletion_request (organisation_id, candidate_id, requested_by)
   values (organisation, target_candidate, actor)
+  on conflict (candidate_id) where completed_at is null do nothing
   returning requested_at into open_since;
+  if open_since is null then
+    select r.requested_at into open_since
+    from public.deletion_request r
+    where r.candidate_id = target_candidate and r.completed_at is null;
+    return open_since;
+  end if;
 
   insert into public.activity (organisation_id, actor_id, action, subject_type, subject_id)
   values (organisation, actor, 'candidate.deletion_requested', 'candidate', target_candidate);
@@ -136,19 +137,27 @@ as $$
 $$;
 
 -- The stored originals of a candidate's files, for the worker to remove before it purges the rows.
+-- The worker passes the ids back to purge_candidate, which stamps only those files: one linked in
+-- between still has its object in storage.
 create function worker.purge_paths(target_candidate uuid)
-returns table (storage_path text)
+returns table (cv_file_id uuid, storage_path text)
 language sql
 stable
 security definer
 set search_path = ''
 as $$
-  select f.storage_path from public.cv_file f
+  select f.id, f.storage_path from public.cv_file f
   where f.candidate_id = target_candidate and f.purged_at is null
 $$;
 
--- Clears the candidate's personal data, once their originals are gone. Safe to run again.
-create function worker.purge_candidate(target_candidate uuid, reason text)
+-- Clears the candidate's personal data, once the originals of removed_files are gone. Safe to run
+-- again. A file linked to the candidate after the worker listed the originals still has its object
+-- in storage, so it is never stamped here:
+--   * on request, everything else is cleared and the request stays open, so the next sweep removes
+--     that object and completes it;
+--   * by retention, the late file means the candidate has just been active again, so only the
+--     files whose originals went are cleared and the candidate keeps what they sent since.
+create function worker.purge_candidate(target_candidate uuid, reason text, removed_files uuid[])
 returns void
 language plpgsql
 security definer
@@ -157,6 +166,7 @@ as $$
 declare
   organisation uuid;
   files integer;
+  late integer;
 begin
   if reason not in ('request', 'retention') then
     raise exception 'unknown purge reason %', reason using errcode = '22023';
@@ -168,9 +178,39 @@ begin
     raise exception 'no such candidate' using errcode = 'P0002';
   end if;
 
+  select count(*) into late
+  from public.cv_file f
+  where f.candidate_id = target_candidate
+    and f.purged_at is null
+    and not (f.id = any(coalesce(removed_files, '{}')));
+
+  update public.parsed_profile p
+  set profile = '{}'::jsonb, field_overrides = '{}'::jsonb
+  from public.cv_file f
+  where p.cv_file_id = f.id and f.candidate_id = target_candidate
+    and f.id = any(coalesce(removed_files, '{}'));
+
+  update public.cv_file
+  set original_filename = 'removed', purged_at = coalesce(purged_at, now())
+  where candidate_id = target_candidate and id = any(coalesce(removed_files, '{}'));
+  get diagnostics files = row_count;
+
+  if late > 0 and reason = 'retention' then
+    insert into public.activity
+      (organisation_id, actor_id, action, subject_type, subject_id, metadata)
+    values (
+      organisation, null, 'candidate.purged', 'candidate', target_candidate,
+      jsonb_build_object(
+        'reason', reason, 'files', files, 'removed', jsonb_build_array('original', 'profile'),
+        'kept', 'active again during the sweep'
+      )
+    );
+    return;
+  end if;
+
   update public.candidate
   set full_name = null, email = null, phone = null, location = null, name_normalised = null,
-      purged_at = coalesce(purged_at, now())
+      purged_at = case when late = 0 then coalesce(purged_at, now()) end
   where id = target_candidate;
 
   update public.parsed_profile p
@@ -182,14 +222,11 @@ begin
   using public.application a
   where s.application_id = a.id and a.candidate_id = target_candidate;
 
-  update public.cv_file
-  set original_filename = 'removed', purged_at = coalesce(purged_at, now())
-  where candidate_id = target_candidate;
-  get diagnostics files = row_count;
-
-  update public.deletion_request
-  set completed_at = now()
-  where candidate_id = target_candidate and completed_at is null;
+  if late = 0 then
+    update public.deletion_request
+    set completed_at = now()
+    where candidate_id = target_candidate and completed_at is null;
+  end if;
 
   insert into public.activity (organisation_id, actor_id, action, subject_type, subject_id, metadata)
   values (
@@ -211,11 +248,11 @@ revoke execute on function worker.due_for_purge(integer)
   from public, anon, authenticated, service_role;
 revoke execute on function worker.purge_paths(uuid)
   from public, anon, authenticated, service_role;
-revoke execute on function worker.purge_candidate(uuid, text)
+revoke execute on function worker.purge_candidate(uuid, text, uuid[])
   from public, anon, authenticated, service_role;
 grant execute on function worker.due_for_purge(integer) to masirah_worker;
 grant execute on function worker.purge_paths(uuid) to masirah_worker;
-grant execute on function worker.purge_candidate(uuid, text) to masirah_worker;
+grant execute on function worker.purge_candidate(uuid, text, uuid[]) to masirah_worker;
 
 -- The organisation's retention period, set by a member (T102): 6, 12 or 24 months, or null for
 -- never deleting automatically. The change is recorded under the member, and starts the seven days

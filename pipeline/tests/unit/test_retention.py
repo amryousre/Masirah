@@ -11,7 +11,7 @@ import uuid
 import psycopg
 import pytest
 
-from tests.database import Cursor, Tenant, act_as, seed_tenant
+from tests.database import Cursor, Tenant, act_as, purge_sql, seed_tenant
 
 pytestmark = pytest.mark.database
 
@@ -127,7 +127,10 @@ def test_shortening_the_period_deletes_nobody_for_seven_days(cur: Cursor, tenant
 def test_a_purged_candidate_is_not_due_again(cur: Cursor, tenant: Tenant) -> None:
     age(cur, tenant, 25)
     cur.execute("set local role masirah_worker")
-    cur.execute("select worker.purge_candidate(%s, 'retention')", (tenant.row_ids["candidate"],))
+    cur.execute(
+        purge_sql("retention"),
+        (tenant.row_ids["candidate"],),
+    )
     cur.execute("reset role")
     assert entry(tenant) not in due(cur)
 
@@ -135,7 +138,10 @@ def test_a_purged_candidate_is_not_due_again(cur: Cursor, tenant: Tenant) -> Non
 def test_retention_keeps_the_decision_and_the_trail(cur: Cursor, tenant: Tenant) -> None:
     age(cur, tenant, 25)
     cur.execute("set local role masirah_worker")
-    cur.execute("select worker.purge_candidate(%s, 'retention')", (tenant.row_ids["candidate"],))
+    cur.execute(
+        purge_sql("retention"),
+        (tenant.row_ids["candidate"],),
+    )
     cur.execute("reset role")
     cur.execute(
         "select decision::text from public.application where id = %s",
@@ -263,3 +269,40 @@ class TestFilesWithoutACandidate:
             (old,),
         )
         assert cur.fetchall() == [({"reason": "retention", "removed": ["original", "profile"]},)]
+
+
+def test_a_candidate_active_again_during_the_sweep_keeps_what_they_sent(
+    cur: Cursor, tenant: Tenant
+) -> None:
+    """Retention listed one CV; a new one arrived before the rows were purged. The old CV's data
+    goes, but the candidate is active again, so their identity and new CV stay."""
+    age(cur, tenant, 25)
+    late = uuid.uuid4()
+    cur.execute(
+        "insert into public.cv_file (id, organisation_id, candidate_id, storage_path,"
+        " original_filename, mime_type, byte_size, content_hash, status)"
+        " values (%s, %s, %s, %s, 'new.pdf', 'application/pdf', 10, %s, 'extracted')",
+        (
+            late,
+            tenant.organisation_id,
+            tenant.row_ids["candidate"],
+            tenant.storage_path.replace(str(tenant.row_ids["cv_file"]), str(late)),
+            "f" * 64,
+        ),
+    )
+    cur.execute("set local role masirah_worker")
+    cur.execute(
+        "select worker.purge_candidate(%s, 'retention', %s)",
+        (tenant.row_ids["candidate"], [tenant.row_ids["cv_file"]]),
+    )
+    cur.execute("reset role")
+    cur.execute(
+        "select full_name, purged_at from public.candidate where id = %s",
+        (tenant.row_ids["candidate"],),
+    )
+    assert cur.fetchone() == ("gamma candidate", None)
+    cur.execute(
+        "select id, original_filename from public.cv_file where candidate_id = %s order by id",
+        (tenant.row_ids["candidate"],),
+    )
+    assert dict(cur.fetchall()) == {tenant.row_ids["cv_file"]: "removed", late: "new.pdf"}

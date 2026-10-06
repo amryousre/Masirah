@@ -9,7 +9,7 @@ from uuid import UUID
 
 import psycopg
 
-from masirah_pipeline.ports.purge_store import DueFile, DuePurge, PurgeReason
+from masirah_pipeline.ports.purge_store import DueFile, DuePurge, OriginalFile, PurgeReason
 
 
 class PostgresPurgeStore:
@@ -26,14 +26,16 @@ class PostgresPurgeStore:
             for org, candidate, reason in rows
         ]
 
-    def original_paths(self, candidate_id: UUID) -> list[str]:
+    def originals(self, candidate_id: UUID) -> list[OriginalFile]:
         rows = self._connection.execute(
-            "select storage_path from worker.purge_paths(%s)", (candidate_id,)
+            "select cv_file_id, storage_path from worker.purge_paths(%s)", (candidate_id,)
         ).fetchall()
-        return [str(path) for (path,) in rows]
+        return [OriginalFile(cast(UUID, file), str(path)) for file, path in rows]
 
-    def purge(self, candidate_id: UUID, reason: str) -> None:
-        self._connection.execute("select worker.purge_candidate(%s, %s)", (candidate_id, reason))
+    def purge(self, candidate_id: UUID, reason: str, removed: list[UUID]) -> None:
+        self._connection.execute(
+            "select worker.purge_candidate(%s, %s, %s)", (candidate_id, reason, removed)
+        )
 
     def due_files(self, at_most: int) -> list[DueFile]:
         rows = self._connection.execute(

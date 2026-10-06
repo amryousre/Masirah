@@ -5,7 +5,7 @@ import uuid
 import pytest
 
 from masirah_pipeline.adapters.postgres_purge_store import PostgresPurgeStore
-from masirah_pipeline.ports.purge_store import DueFile, DuePurge
+from masirah_pipeline.ports.purge_store import DueFile, DuePurge, OriginalFile
 from tests.database import Cursor, Tenant, act_as, seed_tenant
 
 pytestmark = pytest.mark.database
@@ -27,11 +27,12 @@ def test_a_requested_candidate_is_found_cleared_and_no_longer_due(
 
     due = DuePurge(tenant.organisation_id, tenant.row_ids["candidate"], "request")
     assert due in store.due(100)
-    assert store.original_paths(tenant.row_ids["candidate"]) == [tenant.storage_path]
+    original = OriginalFile(tenant.row_ids["cv_file"], tenant.storage_path)
+    assert store.originals(tenant.row_ids["candidate"]) == [original]
 
-    store.purge(tenant.row_ids["candidate"], "request")
+    store.purge(tenant.row_ids["candidate"], "request", [original.cv_file_id])
     assert due not in store.due(100)
-    assert store.original_paths(tenant.row_ids["candidate"]) == []
+    assert store.originals(tenant.row_ids["candidate"]) == []
 
 
 def test_an_old_file_without_a_candidate_is_found_and_cleared(cur: Cursor, tenant: Tenant) -> None:
