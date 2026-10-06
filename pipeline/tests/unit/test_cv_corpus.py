@@ -81,6 +81,8 @@ def test_labels_follow_the_documented_format(document: Path) -> None:
     assert about["pages"] == pymupdf.open(document).page_count
     assert about["origin"] in {"real", "synthetic"}
     assert isinstance(about["simulated"], bool)
+    if about["simulated"]:
+        assert about["capture"] != "native", "only a scan or a photograph can be simulated"
     if about["copy_of"] is None:
         # A real capture stands alone; a simulated one is either a copy of a corpus document or
         # an invented document photographed or scanned digitally, which never counts for the gate.
