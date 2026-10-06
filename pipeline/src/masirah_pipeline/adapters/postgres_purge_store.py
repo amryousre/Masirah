@@ -46,3 +46,6 @@ class PostgresPurgeStore:
 
     def purge_file(self, cv_file_id: UUID) -> None:
         self._connection.execute("select worker.purge_file(%s)", (cv_file_id,))
+
+    def defer(self, subject_id: UUID) -> None:
+        self._connection.execute("select worker.defer_purge(%s)", (subject_id,))

@@ -27,6 +27,10 @@ class FakeStore:
     events: list[str] = field(default_factory=list)
     files_due: list[DueFile] = field(default_factory=list)
     files_purged: list[UUID] = field(default_factory=list)
+    deferred: list[UUID] = field(default_factory=list)
+
+    def defer(self, subject_id: UUID) -> None:
+        self.deferred.append(subject_id)
 
     def due_files(self, at_most: int) -> list[DueFile]:
         return self.files_due[:at_most]
@@ -97,6 +101,25 @@ def test_when_storage_fails_the_rows_wait_and_the_rest_go_ahead() -> None:
     files = FakeFiles(store.events, failing={"stuck.pdf"})
     assert purge_due(store, files) == 1
     assert store.purged == [(fine, "request", [FILE_IDS["fine.pdf"]])]
+
+
+def test_a_candidate_storage_failed_on_is_put_back_so_it_cannot_hold_up_the_batch() -> None:
+    """The database lists the oldest first, so one that kept failing would come back at the head
+    of every batch and keep later requests from ever being reached."""
+    stuck, fine = uuid4(), uuid4()
+    store = FakeStore(
+        [DuePurge(ORG, stuck, "request"), DuePurge(ORG, fine, "request")],
+        {stuck: ["stuck.pdf"], fine: ["fine.pdf"]},
+    )
+    purge_due(store, FakeFiles(store.events, failing={"stuck.pdf"}))
+    assert store.deferred == [stuck]
+
+
+def test_a_file_storage_failed_on_is_put_back_too() -> None:
+    stuck = uuid4()
+    store = FakeStore([], {}, files_due=[DueFile(ORG, stuck, "stuck.pdf")])
+    assert purge_due(store, FakeFiles(store.events, failing={"stuck.pdf"})) == 0
+    assert store.deferred == [stuck]
 
 
 def test_a_sweep_takes_at_most_its_batch() -> None:

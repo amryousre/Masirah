@@ -50,3 +50,45 @@ def test_an_old_file_without_a_candidate_is_found_and_cleared(cur: Cursor, tenan
     assert DueFile(tenant.organisation_id, orphan, path) in store.due_files(100)
     store.purge_file(orphan)
     assert all(due.cv_file_id != orphan for due in store.due_files(100))
+
+
+def test_a_deferred_candidate_is_not_due_until_its_retry_time(cur: Cursor, tenant: Tenant) -> None:
+    candidate = tenant.row_ids["candidate"]
+    act_as(cur, tenant.user_id)
+    cur.execute("select public.request_candidate_deletion(%s)", (candidate,))
+    cur.execute("reset role")
+    cur.execute("select updated_at from public.candidate where id = %s", (candidate,))
+    updated_at = cur.fetchone()
+    cur.execute("set local role masirah_worker")
+    store = PostgresPurgeStore(cur.connection)
+    due = DuePurge(tenant.organisation_id, candidate, "request")
+
+    store.defer(candidate)
+    assert due not in store.due(100)
+    cur.execute("reset role")
+    cur.execute("select updated_at from public.candidate where id = %s", (candidate,))
+    assert cur.fetchone() == updated_at, "a deferral must not restart the retention clock"
+
+    cur.execute("update private.purge_retry set retry_at = now() - interval '1 second'")
+    cur.execute("set local role masirah_worker")
+    assert due in store.due(100)
+
+
+def test_a_deferred_file_is_not_due_until_its_retry_time(cur: Cursor, tenant: Tenant) -> None:
+    orphan = uuid.uuid4()
+    path = tenant.storage_path.replace(str(tenant.row_ids["cv_file"]), str(orphan))
+    cur.execute(
+        "insert into public.cv_file (id, organisation_id, storage_path, original_filename,"
+        " mime_type, byte_size, content_hash, status, failure_reason, created_at, updated_at)"
+        " values (%s, %s, %s, 'cv.pdf', 'application/pdf', 10, %s, 'failed', 'encrypted',"
+        " now() - interval '3 years', now() - interval '3 years')",
+        (orphan, tenant.organisation_id, path, "f" * 64),
+    )
+    cur.execute("set local role masirah_worker")
+    store = PostgresPurgeStore(cur.connection)
+    store.defer(orphan)
+    assert all(due.cv_file_id != orphan for due in store.due_files(100))
+    cur.execute("reset role")
+    cur.execute("update private.purge_retry set retry_at = now() - interval '1 second'")
+    cur.execute("set local role masirah_worker")
+    assert DueFile(tenant.organisation_id, orphan, path) in store.due_files(100)

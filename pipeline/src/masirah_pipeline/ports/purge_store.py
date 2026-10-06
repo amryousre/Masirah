@@ -52,3 +52,8 @@ class PurgeStore(Protocol):
     def purge_file(self, cv_file_id: UUID) -> None:
         """Empties what was read from the file and names it nothing personal."""
         ...
+
+    def defer(self, subject_id: UUID) -> None:
+        """Keeps a candidate or file whose originals could not be removed out of the next sweeps
+        for a while, so a failure that persists cannot hold the head of every batch."""
+        ...

@@ -33,6 +33,17 @@ create table public.deletion_request (
   foreign key (organisation_id, candidate_id) references public.candidate (organisation_id, id)
 );
 
+-- A candidate or file whose stored originals could not be removed waits here before the sweep
+-- tries it again. The due lists are oldest first, so without this one failing for good would come
+-- back at the head of every batch and keep later requests from ever being reached. It is kept
+-- apart from candidate and cv_file because writing to those restarts their retention clock.
+create table private.purge_retry (
+  subject_id uuid primary key,
+  retry_at timestamptz not null
+);
+-- Not in an exposed schema, but lint 0013 wants row level security on every table regardless.
+alter table private.purge_retry enable row level security;
+
 create index deletion_request_candidate_idx on public.deletion_request (organisation_id, candidate_id);
 create unique index deletion_request_one_open_idx on public.deletion_request (candidate_id)
   where completed_at is null;
@@ -105,6 +116,10 @@ as $$
     select r.organisation_id, r.candidate_id, 'request'
     from public.deletion_request r
     where r.completed_at is null
+      and not exists (
+        select 1 from private.purge_retry p
+        where p.subject_id = r.candidate_id and p.retry_at > now()
+      )
     order by r.requested_at
   )
   union all
@@ -130,6 +145,9 @@ as $$
       and not exists (
         select 1 from public.deletion_request r
         where r.candidate_id = c.id and r.completed_at is null
+      )
+      and not exists (
+        select 1 from private.purge_retry p where p.subject_id = c.id and p.retry_at > now()
       )
     order by seen.last_active
   )
@@ -370,6 +388,9 @@ as $$
     and o.retention_months is not null
     and greatest(f.created_at, f.updated_at) < now() - make_interval(months => o.retention_months)
     and (o.retention_changed_at is null or o.retention_changed_at < now() - interval '7 days')
+    and not exists (
+      select 1 from private.purge_retry p where p.subject_id = f.id and p.retry_at > now()
+    )
   order by f.created_at
   limit greatest(at_most, 0)
 $$;
@@ -412,3 +433,16 @@ revoke execute on function worker.purge_file(uuid)
   from public, anon, authenticated, service_role;
 grant execute on function worker.files_due_for_purge(integer) to masirah_worker;
 grant execute on function worker.purge_file(uuid) to masirah_worker;
+
+-- Puts a candidate or file the sweep could not remove the originals of back by an hour.
+create function worker.defer_purge(subject uuid)
+returns void
+language sql
+security definer
+set search_path = ''
+as $$
+  insert into private.purge_retry (subject_id, retry_at) values (subject, now() + interval '1 hour')
+  on conflict (subject_id) do update set retry_at = excluded.retry_at
+$$;
+revoke execute on function worker.defer_purge(uuid) from public, anon, authenticated, service_role;
+grant execute on function worker.defer_purge(uuid) to masirah_worker;
