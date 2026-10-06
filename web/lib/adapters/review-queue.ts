@@ -13,7 +13,7 @@ export async function listReviewQueue(supabase: SupabaseClient): Promise<ReviewI
   const { data, error } = await supabase
     .from("cv_file")
     .select(
-      "id, original_filename, mime_type, status, review_reason, review_language, failure_reason, job_id, updated_at, job:job!cv_file_job_in_same_organisation(title)",
+      "id, original_filename, mime_type, status, review_reason, review_language, failure_reason, candidate_id, job_id, updated_at, job:job!cv_file_job_in_same_organisation(title)",
     )
     .in("status", IN_QUEUE)
     .is("purged_at", null)
@@ -28,6 +28,7 @@ export async function listReviewQueue(supabase: SupabaseClient): Promise<ReviewI
       reviewReason: row.review_reason,
       reviewLanguage: row.review_language,
       failureReason: row.failure_reason,
+      candidateId: row.candidate_id,
       jobId: row.job_id,
       jobTitle: row.job?.title ?? null,
       updatedAt: row.updated_at,

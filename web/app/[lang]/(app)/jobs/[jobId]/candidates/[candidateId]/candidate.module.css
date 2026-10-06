@@ -144,6 +144,12 @@ a.step:hover {
   line-height: var(--leading-body-sm);
 }
 
+.profileActions {
+  display: flex;
+  justify-content: flex-end;
+  padding-block-end: var(--space-2);
+}
+
 .profileLabel {
   color: var(--color-text-secondary);
 }

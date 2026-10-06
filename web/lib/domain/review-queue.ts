@@ -32,6 +32,8 @@ export interface ReviewRow {
   reviewReason: "no_text" | "unsupported_language" | "low_confidence" | null;
   reviewLanguage: string | null;
   failureReason: string | null;
+  /** The candidate the file was read as, when it was read. */
+  candidateId: string | null;
   jobId: string | null;
   jobTitle: string | null;
   updatedAt: string;
@@ -45,6 +47,7 @@ export interface ReviewItem {
   status: ReviewStatus;
   /** The language found, as an ISO 639-1 code, for an unsupported language. */
   language: string | null;
+  candidateId: string | null;
   jobId: string | null;
   jobTitle: string | null;
   updatedAt: string;
@@ -86,6 +89,7 @@ export function reviewItem(row: ReviewRow): ReviewItem {
           ? "unsupportedLanguage"
           : "needsReview",
     language: kind === "unsupportedLanguage" ? row.reviewLanguage : null,
+    candidateId: row.candidateId,
     jobId: row.jobId,
     jobTitle: row.jobTitle,
     updatedAt: row.updatedAt,

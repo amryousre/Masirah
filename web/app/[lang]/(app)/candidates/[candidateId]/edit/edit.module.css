@@ -1,0 +1,137 @@
+/* Correcting a candidate's details (T082): one column of fields at reading width, the repeating
+   entries (jobs, studies, languages, certificates) as numbered groups with their own actions. */
+
+.page {
+  display: grid;
+  gap: var(--space-6);
+  max-inline-size: 48rem;
+  padding-block: var(--space-8);
+  padding-inline: var(--space-8);
+}
+
+.header {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.title {
+  font-size: var(--size-headline);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-headline);
+  text-wrap: balance;
+}
+
+.intro {
+  max-inline-size: var(--measure);
+  color: var(--color-text-secondary);
+  font-size: var(--size-body-sm);
+  line-height: var(--leading-body-sm);
+  text-wrap: pretty;
+}
+
+.form {
+  display: grid;
+  gap: var(--space-8);
+}
+
+.alert {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding-block: var(--space-3);
+  padding-inline: var(--space-4);
+  border: 1px solid var(--color-error);
+  border-radius: var(--radius-sm);
+  background: var(--color-error-bg);
+  color: var(--color-error-strong);
+  font-size: var(--size-body-sm);
+}
+
+.section {
+  display: grid;
+  gap: var(--space-5);
+}
+
+/* The divider sits on a wrapper: on the fieldset itself it would run through the legend. */
+.groupFrame {
+  padding-block-start: var(--space-6);
+  border-block-start: var(--border);
+}
+
+.group {
+  display: grid;
+  gap: var(--space-4);
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.legend {
+  padding: 0;
+  font-size: var(--size-title);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-title);
+}
+
+.help,
+.error {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-text-secondary);
+  font-size: var(--size-caption);
+  line-height: var(--leading-caption);
+}
+
+.error {
+  color: var(--color-error-strong);
+}
+
+.entry {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: var(--border);
+  border-radius: var(--radius-md);
+}
+
+.entryTitle {
+  color: var(--color-text-secondary);
+  font-size: var(--size-label);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-label);
+}
+
+.parts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.remove {
+  justify-self: start;
+}
+
+.add {
+  justify-self: start;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding-block-start: var(--space-4);
+  border-block-start: var(--border);
+}
+
+@media (width < 48rem) {
+  .page {
+    padding-block: var(--space-5);
+    padding-inline: var(--space-4);
+  }
+
+  .parts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

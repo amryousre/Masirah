@@ -488,7 +488,8 @@
     "shortlist": "Shortlist candidate",
     "removeShortlist": "Remove from shortlist",
     "undoRejection": "Undo rejection",
-    "decisionFailed": "The decision could not be recorded. Try again."
+    "decisionFailed": "The decision could not be recorded. Try again.",
+    "correctDetails": "Correct details"
   },
   "filters": {
     "label": "Search and filter candidates",
@@ -628,6 +629,64 @@
         "detail": "It was set aside before Masirah recorded the reason.",
         "action": "Open the original to see what needs attention."
       }
+    },
+    "correct": "Correct the details"
+  },
+  "corrected": {
+    "corrected": "Corrected",
+    "byWhom": "{name} · {when}",
+    "extracted": "Read from the CV: {value}",
+    "extractedNothing": "Read from the CV: nothing"
+  },
+  "correct": {
+    "title": "Correct {name}’s details",
+    "titleUnnamed": "Correct the candidate’s details",
+    "intro": "Corrections are kept beside what was read from {file}, with your name, and stay if the CV is read again. They don’t change a score already given.",
+    "fields": {
+      "name": "Name",
+      "emails": "Email addresses",
+      "phones": "Phone numbers",
+      "location": "City",
+      "years_of_experience": "Years of experience",
+      "employment": "Work experience",
+      "education": "Education",
+      "skills": "Skills",
+      "languages": "Languages",
+      "certifications": "Certifications and courses"
+    },
+    "parts": {
+      "title": "Job title",
+      "employer": "Employer",
+      "qualification": "Qualification",
+      "institution": "Institution",
+      "start": "From",
+      "end": "To",
+      "language": "Language",
+      "level": "Level",
+      "name": "Name",
+      "issuer": "Issued by"
+    },
+    "onePerLine": "One per line.",
+    "yearsHelp": "Only when the CV states it.",
+    "dateHelp": "A year, a year and month such as 2021-03, or present.",
+    "present": "present",
+    "entry": "Entry {number}",
+    "removeEntry": "Remove entry {number}",
+    "add": {
+      "employment": "Add a job",
+      "education": "Add a qualification",
+      "languages": "Add a language",
+      "certifications": "Add a certification"
+    },
+    "save": "Save corrections",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "errors": {
+      "email": "Check the email addresses: each needs a name, an @ and a domain.",
+      "years": "Enter a whole number of years, up to 60.",
+      "date": "Write each date as a year, a year and month such as 2021-03, or present.",
+      "save": "The corrections couldn’t be saved. Try again.",
+      "summary": "Some fields need fixing before the corrections can be saved."
     }
   }
 }

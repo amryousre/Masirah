@@ -3,6 +3,8 @@
 import { useLocale, useTranslations } from "next-intl";
 import { type KeyboardEvent, useId, useRef, useState } from "react";
 
+import { ButtonLink } from "@/components/button/button-link";
+import { type CorrectionNote, CorrectedField } from "@/components/corrected-field/corrected-field";
 import { cx } from "@/components/cx";
 import { ScoreBreakdown } from "@/components/score/score";
 import { Tabs } from "@/components/tabs/tabs";
@@ -28,8 +30,10 @@ interface CandidateScreenProps {
     /** Null when the stored components could not be read. */
     parts: ScorePart[] | null;
   } | null;
-  /** Null until the CV has been read. */
-  profile: ProfileRow[] | null;
+  /** Null until the CV has been read. A corrected row carries its note (T083). */
+  profile: (ProfileRow & { corrected?: CorrectionNote })[] | null;
+  /** Where the member corrects the profile, or null when it cannot be corrected. */
+  correctHref: { pathname: string; query: Record<string, string> } | null;
   document: {
     fileName: string;
     mimeType: string;
@@ -54,6 +58,7 @@ export function CandidateScreen({
   rank,
   score,
   profile,
+  correctHref,
   document,
 }: CandidateScreenProps) {
   const t = useTranslations("candidate");
@@ -96,7 +101,7 @@ export function CandidateScreen({
               <PersonalData privacy={privacy} candidate={candidate} />
             </>
           ) : (
-            <Profile rows={profile} removedAt={privacy.purgedAt} />
+            <Profile rows={profile} removedAt={privacy.purgedAt} correctHref={correctHref} />
           )}
         </Tabs>
       </section>
@@ -224,7 +229,15 @@ function Reasons({
   );
 }
 
-function Profile({ rows, removedAt }: { rows: ProfileRow[] | null; removedAt: string | null }) {
+function Profile({
+  rows,
+  removedAt,
+  correctHref,
+}: {
+  rows: CandidateScreenProps["profile"];
+  removedAt: string | null;
+  correctHref: CandidateScreenProps["correctHref"];
+}) {
   const t = useTranslations("candidate");
   const tPrivacy = useTranslations("privacy");
   if (removedAt !== null) {
@@ -232,26 +245,35 @@ function Profile({ rows, removedAt }: { rows: ProfileRow[] | null; removedAt: st
   }
   if (rows === null) return <p className={styles.quiet}>{t("profilePending")}</p>;
   return (
-    <dl className={styles.profile}>
-      {rows.map((row) => (
-        <div key={row.field} className={styles.profileRow}>
-          <dt className={styles.profileLabel}>{t(`fields.${row.field}`)}</dt>
-          <dd className={styles.profileValue}>
-            {row.values.length === 0 ? (
-              <span className={styles.quiet}>{t("notGiven")}</span>
-            ) : (
-              row.values.map((value) => (
-                <bdi key={value} className={styles.profileLine}>
-                  {row.field === "experience"
-                    ? t("experienceYears", { years: Number(value) })
-                    : value}
-                </bdi>
-              ))
-            )}
-          </dd>
+    <>
+      {correctHref !== null && (
+        <div className={styles.profileActions}>
+          <ButtonLink href={correctHref}>{t("correctDetails")}</ButtonLink>
         </div>
-      ))}
-    </dl>
+      )}
+      <dl className={styles.profile}>
+        {rows.map((row) => (
+          <div key={row.field} className={styles.profileRow}>
+            <dt className={styles.profileLabel}>{t(`fields.${row.field}`)}</dt>
+            <dd className={styles.profileValue}>
+              <CorrectedField correction={row.corrected}>
+                {row.values.length === 0 ? (
+                  <span className={styles.quiet}>{t("notGiven")}</span>
+                ) : (
+                  row.values.map((value) => (
+                    <bdi key={value} className={styles.profileLine}>
+                      {row.field === "experience"
+                        ? t("experienceYears", { years: Number(value) })
+                        : value}
+                    </bdi>
+                  ))
+                )}
+              </CorrectedField>
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </>
   );
 }
 

@@ -134,6 +134,17 @@ export default async function ReviewPage({ params, searchParams }: PageProps<"/[
               <p className={styles.body}>{t(`kind.${selected.kind}.action`)}</p>
             </div>
             <div className={styles.actions}>
+              {selected.kind === "lowConfidence" && selected.candidateId !== null && (
+                <Link
+                  href={{
+                    pathname: `/candidates/${selected.candidateId}/edit`,
+                    query: { file: selected.id },
+                  }}
+                  className={styles.action}
+                >
+                  {t("correct")}
+                </Link>
+              )}
               <a href={`/api/cv-files/${selected.id}/original`} className={styles.action}>
                 {t("download")}
               </a>

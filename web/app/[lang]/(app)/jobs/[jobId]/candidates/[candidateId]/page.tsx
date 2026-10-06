@@ -11,7 +11,9 @@ import { recordActivity } from "@/lib/adapters/activity";
 import { readCandidatePage } from "@/lib/adapters/candidate-page";
 import { getAccess } from "@/lib/adapters/session";
 import { createSupabaseServerClient } from "@/lib/adapters/supabase";
-import { placeInRanking, profileRows, scoreParts, summaryLines } from "@/lib/domain/candidate";
+import { memberNames } from "@/lib/adapters/corrections";
+import { placeInRanking, scoreParts, summaryLines } from "@/lib/domain/candidate";
+import { correctedRows, correctionsOf } from "@/lib/domain/corrections";
 import { confidenceLevel, rankJob } from "@/lib/domain/ranking";
 
 import { CandidateScreen } from "./candidate-screen";
@@ -106,6 +108,28 @@ export default async function CandidatePage({
     requestedAt: when(page.privacy.requestedAt),
   };
 
+  // The profile as corrected, each corrected row naming who corrected it and when (T083).
+  const corrections = correctionsOf(page.profile?.corrections);
+  const names = await memberNames(
+    supabase,
+    Object.values(corrections).map((correction) => correction.by),
+  );
+  const profile =
+    page.profile === null
+      ? null
+      : (correctedRows(page.profile.values, corrections) ?? []).map(({ corrected, ...row }) =>
+          corrected === undefined
+            ? row
+            : {
+                ...row,
+                corrected: {
+                  extracted: corrected.extracted,
+                  by: names.get(corrected.by) ?? "",
+                  when: when(corrected.at) ?? "",
+                },
+              },
+        );
+
   let documentUrl: string | null = null;
   if (page.document !== null) {
     const { data } = await supabase.storage
@@ -170,7 +194,15 @@ export default async function CandidatePage({
                 parts: scoreParts(page.score.components, page.job.weights),
               }
         }
-        profile={page.profile === null ? null : profileRows(page.profile.values)}
+        profile={profile}
+        correctHref={
+          page.document === null || page.profile === null || page.privacy.purgedAt !== null
+            ? null
+            : {
+                pathname: `/candidates/${candidateId}/edit`,
+                query: { file: page.document.id, job: jobId },
+              }
+        }
         document={
           page.document === null
             ? null

@@ -13,6 +13,7 @@ const row = (overrides: Partial<ReviewRow>): ReviewRow => ({
   reviewReason: null,
   reviewLanguage: null,
   failureReason: null,
+  candidateId: null,
   jobId: "j1",
   jobTitle: "Accountant",
   updatedAt: "2026-10-06T12:00:00Z",
