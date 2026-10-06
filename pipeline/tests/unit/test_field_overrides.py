@@ -172,6 +172,42 @@ def test_a_correction_survives_reprocessing(cur: Cursor, tenants: tuple[Tenant, 
     assert cur.fetchone() == ("Mona Abdallah", FOLDED)
 
 
+def test_a_name_cleared_by_a_person_stays_cleared(
+    cur: Cursor, tenants: tuple[Tenant, Tenant]
+) -> None:
+    """A name a person removed is not searchable under the old name, and a new extraction does
+    not bring the machine's name back."""
+    alpha, _ = tenants
+    file_id = alpha.row_ids["cv_file"]
+    correct(cur, alpha, file_id, {"name": None}, "")
+    cur.execute(
+        "select full_name, name_normalised from public.candidate where id = %s",
+        (alpha.row_ids["candidate"],),
+    )
+    assert cur.fetchone() == (None, None)
+
+    cur.execute("set local role masirah_worker")
+    PostgresWorkerStore(cur.connection).record_extraction(
+        alpha.organisation_id,
+        file_id,
+        Extraction(
+            source="native_text",
+            confidence=Decimal("0.96"),
+            profile=EXTRACTED,
+            candidate=CandidateDetails(
+                "Mona Abdalla", "mona@example.com", None, "Cairo", "mona abdalla"
+            ),
+            review=None,
+        ),
+    )
+    cur.execute("reset role")
+    cur.execute(
+        "select full_name, name_normalised from public.candidate where id = %s",
+        (alpha.row_ids["candidate"],),
+    )
+    assert cur.fetchone() == (None, None)
+
+
 @pytest.mark.parametrize(
     "corrections",
     [

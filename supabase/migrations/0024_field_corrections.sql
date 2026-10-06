@@ -141,7 +141,8 @@ begin
   if cardinality(changed) = 0 then
     return kept;
   end if;
-  if 'name' = any (changed) and corrected_name_normalised is null then
+  if 'name' = any (changed) and corrected_name_normalised is null
+    and corrections ->> 'name' is not null then
     raise exception 'a corrected name needs its searchable form';
   end if;
 
@@ -155,8 +156,11 @@ begin
     update public.candidate c
     set
       full_name = case when 'name' = any (changed) then effective ->> 'name' else c.full_name end,
+      -- A name removed is searchable under nothing, whatever form came with it.
       name_normalised = case
-        when 'name' = any (changed) then corrected_name_normalised else c.name_normalised
+        when 'name' = any (changed) and effective ->> 'name' is null then null
+        when 'name' = any (changed) then corrected_name_normalised
+        else c.name_normalised
       end,
       email = case when 'emails' = any (changed) then effective -> 'emails' ->> 0 else c.email end,
       phone = case when 'phones' = any (changed) then effective -> 'phones' ->> 0 else c.phone end,

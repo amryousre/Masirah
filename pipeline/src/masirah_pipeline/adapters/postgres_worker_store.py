@@ -206,9 +206,12 @@ def _corrected(details: CandidateDetails, corrections: dict[str, Any]) -> Candid
     def value(field: str) -> Any:
         return corrections[field]["value"]
 
-    if "name" in corrections and isinstance(value("name"), str):
+    if "name" in corrections:
+        name = value("name")
         details = replace(
-            details, full_name=value("name"), name_normalised=name_normalised(value("name"))
+            details,
+            full_name=name,
+            name_normalised=name_normalised(name) if isinstance(name, str) else None,
         )
     if "emails" in corrections:
         details = replace(details, email=next(iter(value("emails")), None))
