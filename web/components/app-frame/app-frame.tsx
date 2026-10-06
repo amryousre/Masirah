@@ -15,7 +15,7 @@ interface AppFrameProps {
   /** The name comes from the identity provider; an email-and-password account has none. */
   user: { name: string | null; email: string };
   /** Documents waiting in the review queue, shown beside its link. */
-  reviewCount?: number;
+  reviewCount?: number | undefined;
   /** Shown above the user: the usage meter, in practice. */
   usage?: ReactNode;
   /** Ends the session. A server action, so signing out works before any script has loaded. */

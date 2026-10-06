@@ -27,7 +27,10 @@ export default async function ProductLayout({ children, params }: LayoutProps<"/
 
   const { session } = access;
   // Beside the queue's link, so a file that was not ranked is seen from every screen (FR-011).
-  const reviewCount = await countReviewQueue(await createSupabaseServerClient());
+  // Only a badge: when it cannot be counted the link shows none, and the page still renders.
+  const reviewCount = await countReviewQueue(await createSupabaseServerClient()).catch(
+    () => undefined,
+  );
   return (
     <AppFrame
       organisation={session.organisationName}
