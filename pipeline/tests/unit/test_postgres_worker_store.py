@@ -9,9 +9,11 @@ import uuid
 from dataclasses import replace
 from decimal import Decimal
 
+import psycopg
 import pytest
 
 from masirah_pipeline.adapters.postgres_worker_store import PostgresWorkerStore
+from masirah_pipeline.domain.review_reason import Review
 from masirah_pipeline.ports.worker_store import CandidateDetails, Extraction
 from tests.database import Cursor, Tenant, purge_sql, seed_tenant
 
@@ -22,14 +24,25 @@ DETAILS = CandidateDetails(
 )
 
 
-def extraction(status: str = "extracted") -> Extraction:
+def extraction(review: Review | None = None) -> Extraction:
     return Extraction(
         source="native_text",
         confidence=Decimal("0.95"),
         profile={"name": "Mona Abdallah"},
         candidate=DETAILS,
-        status=status,  # type: ignore[arg-type]
+        review=review,
     )
+
+
+def review_of(cur: Cursor, cv_file_id: uuid.UUID) -> tuple[str, str | None, str | None]:
+    cur.execute(
+        "select status::text, review_reason::text, review_language from public.cv_file"
+        " where id = %s",
+        (cv_file_id,),
+    )
+    row = cur.fetchone()
+    assert row is not None
+    return row[0], row[1], row[2]
 
 
 @pytest.fixture
@@ -147,11 +160,62 @@ def test_a_doubtful_extraction_is_recorded_for_review(
 ) -> None:
     alpha, _ = tenants
     store.record_extraction(
-        alpha.organisation_id, alpha.row_ids["cv_file"], extraction("needs_review")
+        alpha.organisation_id, alpha.row_ids["cv_file"], extraction(Review("low_confidence"))
     )
     cv_file = store.cv_file(alpha.organisation_id, alpha.row_ids["cv_file"])
     assert cv_file is not None
     assert cv_file.status == "needs_review"
+
+
+def test_a_cv_waiting_for_review_keeps_its_reason_and_language(
+    store: PostgresWorkerStore, tenants: tuple[Tenant, Tenant], cur: Cursor
+) -> None:
+    alpha, _ = tenants
+    file_id = alpha.row_ids["cv_file"]
+    store.mark_needs_review(alpha.organisation_id, file_id, Review("unsupported_language", "fr"))
+    assert review_of(cur, file_id) == ("needs_review", "unsupported_language", "fr")
+    store.mark_needs_review(alpha.organisation_id, file_id, Review("no_text"))
+    assert review_of(cur, file_id) == ("needs_review", "no_text", None)
+
+
+def test_the_reason_goes_once_the_cv_leaves_review(
+    store: PostgresWorkerStore, tenants: tuple[Tenant, Tenant], cur: Cursor
+) -> None:
+    alpha, _ = tenants
+    file_id = alpha.row_ids["cv_file"]
+    store.mark_needs_review(alpha.organisation_id, file_id, Review("unsupported_language", "fr"))
+    store.mark_extracting(alpha.organisation_id, file_id)
+    assert review_of(cur, file_id) == ("extracting", None, None)
+    store.record_extraction(alpha.organisation_id, file_id, extraction(Review("low_confidence")))
+    assert review_of(cur, file_id) == ("needs_review", "low_confidence", None)
+    store.record_extraction(alpha.organisation_id, file_id, extraction())
+    assert review_of(cur, file_id) == ("extracted", None, None)
+
+
+def test_a_reason_cannot_be_stored_on_a_cv_outside_review(
+    tenants: tuple[Tenant, Tenant], cur: Cursor
+) -> None:
+    alpha, _ = tenants
+    cur.execute("reset role")
+    with pytest.raises(psycopg.errors.CheckViolation):
+        cur.execute(
+            "update public.cv_file set status = 'extracted', review_reason = 'no_text'"
+            " where id = %s",
+            (alpha.row_ids["cv_file"],),
+        )
+
+
+def test_only_an_unsupported_language_stores_the_language(
+    tenants: tuple[Tenant, Tenant], cur: Cursor
+) -> None:
+    alpha, _ = tenants
+    cur.execute("reset role")
+    with pytest.raises(psycopg.errors.CheckViolation):
+        cur.execute(
+            "update public.cv_file set status = 'needs_review', review_reason = 'no_text',"
+            " review_language = 'fr' where id = %s",
+            (alpha.row_ids["cv_file"],),
+        )
 
 
 def test_an_extraction_cannot_land_in_another_tenant(
@@ -173,7 +237,7 @@ def test_a_file_moves_through_its_statuses(
     store.mark_failed(alpha.organisation_id, file_id, "the PDF is encrypted")
     cur.execute("select status, failure_reason from public.cv_file where id = %s", (file_id,))
     assert cur.fetchone() == ("failed", "the PDF is encrypted")
-    store.mark_needs_review(alpha.organisation_id, file_id)
+    store.mark_needs_review(alpha.organisation_id, file_id, Review("no_text"))
     cur.execute("select status, failure_reason from public.cv_file where id = %s", (file_id,))
     assert cur.fetchone() == ("needs_review", None)
 
@@ -274,7 +338,7 @@ class TestSameContent:
             confidence=Decimal("0.95"),
             profile={"name": "Mona Abdallah"},
             candidate=DETAILS,
-            status="extracted",
+            review=None,
             candidate_id=alpha.row_ids["candidate"],
         )
         assert (

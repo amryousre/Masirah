@@ -16,6 +16,7 @@ from typing import Any
 import pytest
 
 from masirah_pipeline.domain.profile import Profile
+from masirah_pipeline.domain.review_reason import Review
 from masirah_pipeline.ports.cv_store import CvStoreUnavailableError, MissingCvError
 from masirah_pipeline.ports.document_text import UnreadableDocumentError
 from masirah_pipeline.ports.job_queue import ReceivedMessage
@@ -113,6 +114,7 @@ class FakeStore:
     profile: StoredProfile | None = None
     status: str = "queued"
     failure: str | None = None
+    review: Review | None = None
     extraction: Extraction | None = None
     applications: list[tuple[uuid.UUID, uuid.UUID]] = field(default_factory=list)
     organisations: set[uuid.UUID] = field(default_factory=set)
@@ -145,11 +147,14 @@ class FakeStore:
     ) -> uuid.UUID:
         self.organisations.add(organisation_id)
         self.extraction, self.status = extraction, extraction.status
+        self.review = extraction.review
         return CANDIDATE_ID
 
-    def mark_needs_review(self, organisation_id: uuid.UUID, cv_file_id: uuid.UUID) -> None:
+    def mark_needs_review(
+        self, organisation_id: uuid.UUID, cv_file_id: uuid.UUID, review: Review
+    ) -> None:
         self.organisations.add(organisation_id)
-        self.status = "needs_review"
+        self.status, self.review = "needs_review", review
 
     def mark_failed(self, organisation_id: uuid.UUID, cv_file_id: uuid.UUID, reason: str) -> None:
         self.organisations.add(organisation_id)
@@ -272,6 +277,7 @@ class TestExtraction:
         setup.model.output = OUTPUT | {"skills": ["Oracle", "SAP", "Python", "Java", "Go"]}
         assert setup.handle() is Outcome.DONE
         assert setup.store.status == "needs_review"
+        assert setup.store.review == Review("low_confidence")
         assert setup.store.extraction is not None
         assert setup.store.extraction.confidence < Decimal("0.8")
         assert setup.scorer.requests == []
@@ -316,6 +322,7 @@ class TestSameContent:
         )
         setup.handle()
         assert setup.store.status == "needs_review"
+        assert setup.store.review == Review("low_confidence")
         assert setup.scorer.requests == []
 
     def test_the_original_is_not_read_when_its_content_is_known(self, setup: Setup) -> None:
@@ -331,6 +338,7 @@ class TestReviewWithoutExtraction:
         )
         assert setup.handle() is Outcome.DONE
         assert setup.store.status == "needs_review"
+        assert setup.store.review == Review("unsupported_language", "fr")
         assert setup.model.calls == 0
         assert setup.queue.deleted == [7]
 
@@ -338,6 +346,7 @@ class TestReviewWithoutExtraction:
         setup.text = "   \n"
         assert setup.handle() is Outcome.DONE
         assert setup.store.status == "needs_review"
+        assert setup.store.review == Review("no_text")
         assert setup.model.calls == 0
 
     def test_a_photograph_waits_for_ocr_in_review(self, setup: Setup) -> None:
@@ -345,6 +354,7 @@ class TestReviewWithoutExtraction:
         setup.text = UnreadableDocumentError("not a PDF")
         assert setup.handle() is Outcome.DONE
         assert setup.store.status == "needs_review"
+        assert setup.store.review == Review("no_text")
         assert setup.model.calls == 0
 
 

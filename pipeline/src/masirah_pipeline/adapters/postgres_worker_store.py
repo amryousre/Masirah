@@ -12,6 +12,7 @@ import psycopg
 from psycopg.types.json import Jsonb
 
 from masirah_pipeline.adapters.tenant_transaction import Cursor, acting_for
+from masirah_pipeline.domain.review_reason import Review
 from masirah_pipeline.ports.worker_store import CachedProfile, CvFile, Extraction, StoredProfile
 
 
@@ -54,8 +55,8 @@ class PostgresWorkerStore:
     def mark_extracting(self, organisation_id: UUID, cv_file_id: UUID) -> None:
         self._set_status(organisation_id, cv_file_id, "extracting", None)
 
-    def mark_needs_review(self, organisation_id: UUID, cv_file_id: UUID) -> None:
-        self._set_status(organisation_id, cv_file_id, "needs_review", None)
+    def mark_needs_review(self, organisation_id: UUID, cv_file_id: UUID, review: Review) -> None:
+        self._set_status(organisation_id, cv_file_id, "needs_review", None, review)
 
     def mark_failed(self, organisation_id: UUID, cv_file_id: UUID, reason: str) -> None:
         self._set_status(organisation_id, cv_file_id, "failed", reason)
@@ -105,9 +106,14 @@ class PostgresWorkerStore:
                 ),
             )
             cur.execute(
-                "update public.cv_file set status = %s, failure_reason = null, candidate_id = %s"
-                " where id = %s",
-                (extraction.status, candidate_id, cv_file_id),
+                "update public.cv_file set status = %s, failure_reason = null, candidate_id = %s,"
+                " review_reason = %s, review_language = %s where id = %s",
+                (
+                    extraction.status,
+                    candidate_id,
+                    *_review_columns(extraction.review),
+                    cv_file_id,
+                ),
             )
         return candidate_id
 
@@ -128,12 +134,18 @@ class PostgresWorkerStore:
         return application_id
 
     def _set_status(
-        self, organisation_id: UUID, cv_file_id: UUID, status: str, reason: str | None
+        self,
+        organisation_id: UUID,
+        cv_file_id: UUID,
+        status: str,
+        reason: str | None,
+        review: Review | None = None,
     ) -> None:
         with acting_for(self._connection, organisation_id) as cur:
             cur.execute(
-                "update public.cv_file set status = %s, failure_reason = %s where id = %s",
-                (status, reason, cv_file_id),
+                "update public.cv_file set status = %s, failure_reason = %s,"
+                " review_reason = %s, review_language = %s where id = %s",
+                (status, reason, *_review_columns(review), cv_file_id),
             )
             if cur.rowcount != 1:
                 raise LookupError(f"CV file {cv_file_id} is not in organisation {organisation_id}")
@@ -165,3 +177,8 @@ def _candidate(
         raise LookupError("the new candidate was not returned")
     created: UUID = row[0]
     return created
+
+
+def _review_columns(review: Review | None) -> tuple[str | None, str | None]:
+    """The review reason and language columns: both null when the file is not in review."""
+    return (None, None) if review is None else (review.reason, review.language)
