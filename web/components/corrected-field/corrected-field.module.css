@@ -1,0 +1,41 @@
+/* A corrected value and its note. The note says "Corrected" with an icon, so the state is never
+   carried by colour alone (DESIGN.md section 3). */
+
+.corrected {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.value {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  color: var(--color-text-secondary);
+  font-size: var(--size-caption);
+  line-height: var(--leading-caption);
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding-inline: var(--space-1);
+  border: 1px solid var(--color-selected-edge);
+  border-radius: var(--radius-xs);
+  background: var(--color-selected);
+  color: var(--color-text);
+  font-weight: var(--weight-medium);
+}
+
+.extracted {
+  color: var(--color-text-secondary);
+  font-size: var(--size-caption);
+  line-height: var(--leading-caption);
+  overflow-wrap: anywhere;
+}

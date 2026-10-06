@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import { createClient } from "@supabase/supabase-js";
 
-import type { Database } from "@/lib/adapters/database.types";
+import type { Database, Json } from "@/lib/adapters/database.types";
 
 // Accounts for the sign-in tests, made the way the operator makes them while sign-ups are closed:
 // through the admin API, with the email already confirmed. The secret key is read by the test
@@ -387,4 +387,77 @@ export async function addFileInReview(
     if (upload.error) throw new Error(upload.error.message);
   }
   return fileId;
+}
+
+/** The candidate's CV file and its current profile, set to what extraction read. */
+export async function setExtraction(
+  candidateId: string,
+  profile: Record<string, unknown>,
+  review?: "low_confidence",
+): Promise<string> {
+  const client = admin();
+  const file = await client
+    .from("cv_file")
+    .select("id")
+    .eq("candidate_id", candidateId)
+    .limit(1)
+    .single();
+  if (file.error) throw new Error(file.error.message);
+  const updated = await client
+    .from("parsed_profile")
+    .update({ profile: profile as Json })
+    .eq("cv_file_id", file.data.id)
+    .eq("is_current", true);
+  if (updated.error) throw new Error(updated.error.message);
+  if (review !== undefined) {
+    const moved = await client
+      .from("cv_file")
+      .update({ status: "needs_review", review_reason: review })
+      .eq("id", file.data.id);
+    if (moved.error) throw new Error(moved.error.message);
+  }
+  return file.data.id;
+}
+
+/** What the worker does when it reads the file again: a new current version of the profile. */
+export async function extractAgain(
+  fileId: string,
+  profile: Record<string, unknown>,
+): Promise<void> {
+  const client = admin();
+  const current = await client
+    .from("parsed_profile")
+    .select("organisation_id, version")
+    .eq("cv_file_id", fileId)
+    .eq("is_current", true)
+    .single();
+  if (current.error) throw new Error(current.error.message);
+  const retired = await client
+    .from("parsed_profile")
+    .update({ is_current: false })
+    .eq("cv_file_id", fileId)
+    .eq("is_current", true);
+  if (retired.error) throw new Error(retired.error.message);
+  const added = await client.from("parsed_profile").insert({
+    organisation_id: current.data.organisation_id,
+    cv_file_id: fileId,
+    version: current.data.version + 1,
+    is_current: true,
+    extraction_source: "native_text",
+    confidence: 0.95,
+    profile: profile as Json,
+  });
+  if (added.error) throw new Error(added.error.message);
+}
+
+/** The corrections kept for a file's current profile. */
+export async function correctionsOf(fileId: string): Promise<Record<string, unknown>> {
+  const { data, error } = await admin()
+    .from("parsed_profile")
+    .select("field_overrides")
+    .eq("cv_file_id", fileId)
+    .eq("is_current", true)
+    .single();
+  if (error) throw new Error(error.message);
+  return data.field_overrides as Record<string, unknown>;
 }

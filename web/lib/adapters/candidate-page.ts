@@ -26,7 +26,8 @@ export interface CandidatePage {
   /** Null until the candidate has been scored for the job. */
   score: CandidateScore | null;
   /** The current extraction of the candidate's latest CV, if one was read. */
-  profile: { values: unknown; confidence: number } | null;
+  /** With the corrections people made, kept beside the extraction (migration 0024). */
+  profile: { values: unknown; confidence: number; corrections: unknown } | null;
   document: CandidateDocument | null;
   /** When the candidate's personal data was removed, and when an open removal was requested. */
   privacy: { purgedAt: string | null; requestedAt: string | null };
@@ -89,7 +90,7 @@ export async function readCandidatePage(
       ? Promise.resolve({ data: null, error: null })
       : supabase
           .from("parsed_profile")
-          .select("profile, confidence")
+          .select("profile, confidence, field_overrides")
           .eq("cv_file_id", file.id)
           .eq("is_current", true)
           .maybeSingle(),
@@ -120,7 +121,11 @@ export async function readCandidatePage(
     profile:
       profile.data === null
         ? null
-        : { values: profile.data.profile, confidence: profile.data.confidence },
+        : {
+            values: profile.data.profile,
+            confidence: profile.data.confidence,
+            corrections: profile.data.field_overrides,
+          },
     privacy: {
       purgedAt: person.data?.purged_at ?? null,
       requestedAt: removal.data?.requested_at ?? null,
