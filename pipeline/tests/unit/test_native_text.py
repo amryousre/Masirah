@@ -286,3 +286,12 @@ class TestDocx:
 def test_a_file_that_is_not_a_readable_pdf_or_docx_is_refused(content: bytes) -> None:
     with pytest.raises(UnreadableDocumentError):
         read_native_text(content)
+
+
+def test_a_password_protected_pdf_is_refused_as_such() -> None:
+    """The review queue tells the recruiter to ask for a copy without a password (T081)."""
+    locked = pymupdf.open(CORPUS / "en-native-02.pdf").tobytes(
+        encryption=pymupdf.PDF_ENCRYPT_AES_256, owner_pw="owner", user_pw="secret"
+    )
+    with pytest.raises(UnreadableDocumentError, match="password-protected"):
+        read_native_text(locked)

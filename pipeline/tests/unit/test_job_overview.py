@@ -19,7 +19,11 @@ pytestmark = pytest.mark.database
 def tenants(cur: Cursor) -> tuple[Tenant, Tenant]:
     seeded = seed_tenant(cur, "alpha"), seed_tenant(cur, "beta")
     # The seeded candidate is already scored, so their file has been read.
-    cur.execute("update public.cv_file set status = 'extracted'")
+    # Only theirs: another test's file, left in review, must keep its reason and its state.
+    cur.execute(
+        "update public.cv_file set status = 'extracted' where id = any(%s)",
+        ([tenant.row_ids["cv_file"] for tenant in seeded],),
+    )
     return seeded
 
 

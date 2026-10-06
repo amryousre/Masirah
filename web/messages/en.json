@@ -576,5 +576,58 @@
       "failed": "The request could not be recorded. Try again.",
       "requested": "{name}’s data will be deleted within the hour. The request is recorded under your name."
     }
+  },
+  "review": {
+    "title": "Review queue",
+    "summary": "{count, plural, one {{count} file was} other {{count} files were}} not ranked. Each stays here with its reason, so no CV is lost.",
+    "list": "Files waiting for review",
+    "noJob": "Uploaded without a job",
+    "original": "Original document",
+    "download": "Download original",
+    "noPreview": "This file type can’t be shown here. Download the original to read it.",
+    "openJob": "Open {job}",
+    "whatHelps": "What helps",
+    "back": "All files",
+    "empty": {
+      "title": "Nothing is waiting for review",
+      "body": "A CV that can’t be read or ranked appears here with its reason and its original, so none is ever lost."
+    },
+    "kind": {
+      "unreadable": {
+        "short": "No text could be read from this file.",
+        "detail": "It looks like a scan or a photo. Masirah doesn’t read those yet, so the CV was kept but not ranked.",
+        "action": "Ask the candidate for a PDF or Word file, then upload it to the job."
+      },
+      "unsupportedLanguage": {
+        "short": "Written in {language}, which Masirah doesn’t read.",
+        "detail": "Masirah reads CVs in Arabic and English. This one was kept but not ranked.",
+        "action": "Read it yourself, or ask the candidate for a CV in Arabic or English."
+      },
+      "lowConfidence": {
+        "short": "Some details read from this CV aren’t in the file.",
+        "detail": "The CV was read, but too much of what was read can’t be found in the document to rank it fairly.",
+        "action": "Compare it with the original before relying on it."
+      },
+      "locked": {
+        "short": "The file is protected by a password.",
+        "detail": "It couldn’t be opened, so the CV was kept but not read.",
+        "action": "Ask the candidate for a copy without a password."
+      },
+      "damaged": {
+        "short": "The file couldn’t be opened.",
+        "detail": "It’s damaged or empty, or it isn’t really a PDF or Word document.",
+        "action": "Ask the candidate to send the CV again."
+      },
+      "notProcessed": {
+        "short": "Something went wrong on our side while reading this file.",
+        "detail": "The file is kept. The problem is ours, not the candidate’s.",
+        "action": "Upload it again to try once more."
+      },
+      "needsLook": {
+        "short": "This CV needs a look before it can be ranked.",
+        "detail": "It was set aside before Masirah recorded the reason.",
+        "action": "Open the original to see what needs attention."
+      }
+    }
   }
 }

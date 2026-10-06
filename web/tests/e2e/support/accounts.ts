@@ -343,3 +343,48 @@ export async function storeOriginal(candidateId: string, pdf: Buffer): Promise<v
     .upload(data.storage_path, pdf, { contentType: "application/pdf", upsert: true });
   if (upload.error) throw new Error(upload.error.message);
 }
+
+/**
+ * A CV that was not ranked, as the worker leaves one: waiting for review with its reason, or
+ * failed with the worker's own reason. With `pdf`, its original is stored where the worker read it.
+ */
+export async function addFileInReview(
+  account: Account,
+  file: {
+    fileName: string;
+    jobId?: string;
+    status: "needs_review" | "failed";
+    reviewReason?: "no_text" | "unsupported_language" | "low_confidence";
+    reviewLanguage?: string;
+    failureReason?: string;
+    pdf?: Buffer;
+  },
+): Promise<string> {
+  const organisationId = account.organisationId;
+  if (organisationId === null) throw new Error("The account belongs to no organisation.");
+  const client = admin();
+  const fileId = randomUUID();
+  const storagePath = `organisations/${organisationId}/cv/${fileId}/${fileId}.pdf`;
+  const row = await client.from("cv_file").insert({
+    id: fileId,
+    organisation_id: organisationId,
+    job_id: file.jobId ?? null,
+    storage_path: storagePath,
+    original_filename: file.fileName,
+    mime_type: "application/pdf",
+    byte_size: file.pdf?.length ?? 1024,
+    content_hash: randomUUID().replaceAll("-", "").repeat(2),
+    status: file.status,
+    review_reason: file.reviewReason ?? null,
+    review_language: file.reviewLanguage ?? null,
+    failure_reason: file.failureReason ?? null,
+  });
+  if (row.error) throw new Error(row.error.message);
+  if (file.pdf !== undefined) {
+    const upload = await client.storage
+      .from("cv-originals")
+      .upload(storagePath, file.pdf, { contentType: "application/pdf" });
+    if (upload.error) throw new Error(upload.error.message);
+  }
+  return fileId;
+}
