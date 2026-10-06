@@ -1,0 +1,25 @@
+{
+  "document": { "capture": "native", "language": "ar", "layout": "two_column", "pages": 1, "origin": "synthetic", "copy_of": null, "simulated": false },
+  "expected": "parsed",
+  "profile": {
+    "name": "آية رفعت السعيد",
+    "emails": ["aya.refaat.admin@example.com"],
+    "phones": ["+201000000322"],
+    "location": "الإسماعيلية",
+    "years_of_experience": null,
+    "employment": [
+      { "employer": "جامعة قناة السويس - إدارة شؤون الطلاب", "title": "مساعدة إدارية", "start": "2020-11", "end": "present" },
+      { "employer": "شركة سيناء للخدمات البترولية", "title": "Data Entry", "start": "2019-01", "end": "2020-10" }
+    ],
+    "education": [
+      { "institution": "جامعة قناة السويس", "qualification": "بكالوريوس الحاسبات والمعلومات", "start": null, "end": "2018" }
+    ],
+    "skills": ["Excel", "Data Entry", "Google Sheets", "الأرشفة", "Typing 50 WPM"],
+    "languages": [
+      { "language": "العربية", "level": "اللغة الأم" },
+      { "language": "English", "level": "Good" }
+    ],
+    "certifications": []
+  },
+  "protected": {}
+}

@@ -1,0 +1,24 @@
+{
+  "document": { "capture": "photographed", "language": "ar", "layout": "single_column", "pages": 1, "origin": "synthetic", "copy_of": null, "simulated": true },
+  "expected": "parsed",
+  "profile": {
+    "name": "إبراهيم فاروق عبد الغني",
+    "emails": ["ibrahim.farouk.cash@example.com"],
+    "phones": ["+201005550917"],
+    "location": "دمنهور",
+    "years_of_experience": null,
+    "employment": [
+      { "employer": "شركة البحيرة للأسمدة", "title": "محاسب خزينة", "start": "2020-03", "end": "present" }
+    ],
+    "education": [
+      { "institution": "جامعة دمنهور", "qualification": "بكالوريوس التجارة", "start": null, "end": "2017" }
+    ],
+    "skills": ["إدارة النقدية", "التسويات البنكية", "Excel"],
+    "languages": [
+      { "language": "العربية", "level": "اللغة الأم" },
+      { "language": "الإنجليزية", "level": "مقبول" }
+    ],
+    "certifications": []
+  },
+  "protected": { "date_of_birth": "1995-01-30", "nationality": "مصري", "marital_status": "متزوج", "military_service": "أدى الخدمة العسكرية" }
+}

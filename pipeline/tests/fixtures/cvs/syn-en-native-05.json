@@ -1,0 +1,26 @@
+{
+  "document": { "capture": "native", "language": "en", "layout": "single_column", "pages": 1, "origin": "synthetic", "copy_of": null, "simulated": false },
+  "expected": "parsed",
+  "profile": {
+    "name": "Karim Adel Bassiouny",
+    "emails": ["karim.bassiouny.export@example.com"],
+    "phones": ["+201000000315"],
+    "location": "Alexandria",
+    "years_of_experience": null,
+    "employment": [
+      { "employer": "Egyptian Steel Export Co.", "title": "Export Sales Executive", "start": "2022-05", "end": "present" },
+      { "employer": "Lafarge Égypte", "title": "Sales Coordinator", "start": "2019-09", "end": "2022-04" }
+    ],
+    "education": [
+      { "institution": "Alexandria University", "qualification": "B.Sc. Business, French Section (Filière francophone)", "start": null, "end": "2019" }
+    ],
+    "skills": ["Export documentation (Incoterms 2020)", "Letters of credit", "CRM: HubSpot"],
+    "languages": [
+      { "language": "Arabic", "level": "Native" },
+      { "language": "French", "level": "Fluent (DALF C1)" },
+      { "language": "English", "level": "Fluent" }
+    ],
+    "certifications": []
+  },
+  "protected": {}
+}

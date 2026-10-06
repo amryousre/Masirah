@@ -91,6 +91,24 @@ def test_text_inside_an_embedded_figure_is_read() -> None:
     assert "Senior Accountant" in read_native_text(outer.tobytes())
 
 
+def test_text_drawn_again_as_a_shadow_or_outline_is_read_once() -> None:
+    """Canva draws a heading with an effect as two or three stacked copies, a few points apart."""
+    doc = pymupdf.open()
+    page = doc.new_page()
+    for offset in (0.0, 0.0, 2.7):
+        page.insert_text((72 + offset, 72 + offset), "Senior Accountant", fontsize=20)
+    page.insert_text((72, 140), "Cairo")
+    assert read_native_text(doc.tobytes()).split() == ["Senior", "Accountant", "Cairo"]
+
+
+def test_the_same_words_elsewhere_on_the_page_are_still_read() -> None:
+    doc = pymupdf.open()
+    page = doc.new_page()
+    page.insert_text((72, 72), "Excel")
+    page.insert_text((72, 200), "Excel")
+    assert read_native_text(doc.tobytes()).split() == ["Excel", "Excel"]
+
+
 @pytest.mark.parametrize("pdf", CAPTURED, ids=stem)
 def test_a_scan_or_photo_has_no_native_text(pdf: Path) -> None:
     """Empty text is what sends a document to OCR instead."""

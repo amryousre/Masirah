@@ -1,0 +1,27 @@
+{
+  "document": { "capture": "native", "language": "mixed", "layout": "single_column", "pages": 1, "origin": "synthetic", "copy_of": null, "simulated": false },
+  "expected": "parsed",
+  "profile": {
+    "name": "دينا وليد صبري",
+    "emails": ["dina.walid.hrbp@example.com"],
+    "phones": ["+201000000319"],
+    "location": "الجيزة",
+    "years_of_experience": null,
+    "employment": [
+      { "employer": "Vodafone Egypt - فودافون مصر", "title": "HR Business Partner", "start": "2021-10", "end": "present" },
+      { "employer": "Valeo Egypt", "title": "Talent Acquisition Specialist", "start": "2018-07", "end": "2021-09" }
+    ],
+    "education": [
+      { "institution": "جامعة القاهرة", "qualification": "بكالوريوس الآداب - Psychology", "start": null, "end": "2018" }
+    ],
+    "skills": ["Talent Acquisition", "Workday", "Employee Relations", "قانون العمل المصري"],
+    "languages": [
+      { "language": "العربية", "level": "اللغة الأم" },
+      { "language": "English", "level": "Fluent (IELTS 7.5)" }
+    ],
+    "certifications": [
+      { "name": "PHR Certification", "issuer": "HRCI" }
+    ]
+  },
+  "protected": {}
+}

@@ -1,0 +1,25 @@
+{
+  "document": { "capture": "native", "language": "mixed", "layout": "single_column", "pages": 1, "origin": "synthetic", "copy_of": null, "simulated": false },
+  "expected": "parsed",
+  "profile": {
+    "name": "Hassan Ibrahim Zaki",
+    "emails": ["hassan.zaki.scm@example.com"],
+    "phones": ["+201000000321"],
+    "location": "6th of October City",
+    "years_of_experience": 5,
+    "employment": [
+      { "employer": "Pharco Pharmaceuticals", "title": "Supply Chain Planner", "start": "2021-04", "end": "present" },
+      { "employer": "شركة أمون للأدوية", "title": "Inventory Controller", "start": "2019-06", "end": "2021-03" }
+    ],
+    "education": [
+      { "institution": "Helwan University", "qualification": "B.Sc. Industrial Engineering", "start": null, "end": "2019" }
+    ],
+    "skills": ["S&OP", "Oracle SCM", "Demand forecasting", "Excel / Power Query"],
+    "languages": [
+      { "language": "Arabic", "level": "Native" },
+      { "language": "English", "level": "Very good" }
+    ],
+    "certifications": []
+  },
+  "protected": { "marital_status": "أعزب", "military_service": "Completed / أدى الخدمة" }
+}

@@ -13,6 +13,7 @@ Three kinds, told apart in each document's labels:
 | Real CVs, anonymised | `en-native-*`, `ar-native-*` | `real` | `false` |
 | Synthetic CVs, invented from scratch | `syn-*-native-*` | `synthetic` | `false` |
 | Scans and photographs simulated from a document above | `*-scanned-*`, `*-photographed-*` | its source's | `true` |
+| Invented documents rendered only as a scan or photo | `syn-ar-scanned-02`, `syn-ar-photographed-02` to `05` | `synthetic` | `true` |
 
 **Real CVs** were collected by the project owner, who confirmed on 24 September 2026 that legal
 approval covers using them. The originals and the anonymisation plan never enter this repository.
@@ -24,7 +25,27 @@ detail in them is invented. research.md chose real CVs because synthetic ones mi
 parsers. These are used anyway, marked as synthetic, until real ones replace them.
 
 **Simulated captures** are real or synthetic PDFs rasterised and degraded to look scanned or
-photographed. Real scans and phone photos are still wanted.
+photographed. Five invented documents exist only as a capture, with no PDF in the corpus. Real scans and phone
+photos are still wanted.
+
+**Non-technical roles.** The real CVs are almost all software roles, while the SMEs Masirah serves
+hire accountants, sales staff, HR, administrators, teachers and warehouse staff. The 24 synthetic
+documents added on 6 October 2026 (`syn-ar-native-04` to `12`, `syn-mixed-native-03` to `07`,
+`syn-en-native-02` to `05`, `syn-fr-native-02` and the five captures) are all such roles. In their
+PDFs every phone number was rewritten to an invented one before they were committed. The five
+captures are images, so that rewrite could not reach them: they still show the `…555…` numbers
+they were rendered with, and their labels match those pixels. The contact guard reads only text
+layers and never sees image pixels; these numbers were found by viewing the images, and they are
+still to be redrawn or the captures replaced. Three more from the same batch were left out: their PDFs map Amiri's joined lam to a Syriac mark, so the text layer
+itself is wrong and no label can match it.
+
+**Designed templates.** Seven more were made in Canva the same day (`syn-en-native-06` to `10`,
+`syn-ar-native-13` and `14`), from briefs with invented details, and exported as PDF. Canva's
+generator changed some of what it was given, so each was labelled from its exported text. Three
+slips were redrawn in the PDF: an email domain written `exemple.com`, a real domain, and two phone
+numbers missing a digit. The export's metadata, which names the Canva account, was removed. These
+templates draw a heading's shadow or outline as stacked copies of its text, and one starts both
+columns under a header that stops short of the margin; the reader now handles both.
 
 Only real documents decide the gate. T029 reports accuracy for real documents on their own, and
 Phase 1 does not exit on synthetic or simulated results.
@@ -127,7 +148,7 @@ Each document has a `.json` file of the same name beside it:
 | `document.language` | `en`, `ar`, `mixed` or `fr`. French is outside version 1.0 (ADR 0005) |
 | `document.origin` | `real` for an anonymised real CV, `synthetic` for an invented one |
 | `document.copy_of` | For a scan or photo of another corpus document, that document's name. Otherwise `null` |
-| `document.simulated` | `true` when the scan or photo was made digitally rather than with a scanner or a phone |
+| `document.simulated` | `true` when the scan or photo was made digitally rather than with a scanner or a phone. A simulated capture is a copy of a corpus document, or an invented document rendered as a photo or scan (`origin` synthetic, `copy_of` null) |
 | `expected` | `parsed`, or `unsupported_language` for a CV the system must flag instead of extracting |
 | Dates | `YYYY-MM`, or `YYYY` when the CV gives only a year. An `end` of `"present"` means current. `null` means the CV does not say |
 | `phones` | E.164 with ASCII digits, so `01000000101` and `٠١٠٠٠٠٠٠٢٠٢` are labelled `+201000000101` and `+201000000202` |
@@ -136,7 +157,7 @@ Each document has a `.json` file of the same name beside it:
 | `education` | Degrees and diplomas. Courses and online programmes go in `certifications`, even when the CV lists them under education |
 | `employment` | Paid roles, including traineeships. Volunteering and projects are left out |
 | `skills` | Technical skills the CV lists as skills. Soft skills are not labelled |
-| `protected` | Attributes FR-017 redacts before scoring, when the CV shows them. Not extraction targets |
+| `protected` | Attributes FR-017 redacts before scoring, when the CV shows them. Not extraction targets. `military_service` is one: in Egypt only men have a status, so it discloses gender |
 
 Values are copied as the CV writes them, typos included ("Sofware Developer", "Markting"). That
 way every label can be checked against its document: `test_cv_corpus.py` requires each Latin-script
@@ -216,15 +237,17 @@ than extraction. The unit tests in `tests/unit/test_field_accuracy_harness.py` p
 
 | Kind | Real | Synthetic or simulated | Files |
 |---|---|---|---|
-| English, native PDF | 8 | 1 | `en-native-01` to `08`, `syn-en-native-01` |
-| Two-column layout | 3 | 2 | `en-native-03`, `05`, `06`, `syn-ar-native-02`, `syn-mixed-native-02` |
+| English, native PDF | 8 | 10 | `en-native-01` to `08`, `syn-en-native-01` to `10` |
+| Two-column layout | 3 | 12 | `en-native-03`, `05`, `06`, `syn-ar-native-02`, `11` to `13`, `syn-mixed-native-02`, `syn-en-native-02` to `04`, `06`, `07`, `09`, `10` |
 | Photo on the CV | 1 | 1 | `en-native-06`, `syn-ar-native-03` |
-| Arabic | 1 | 3 | `ar-native-01`, `syn-ar-native-01` to `03` |
-| Mixed Arabic and English | 0 | 2 | `syn-mixed-native-01`, `02` |
-| Scanned | 0 | 2 | `en-scanned-01`, `syn-ar-scanned-01` |
-| Photographed | 1 | 2 | `en-photographed-01`, `syn-ar-photographed-01`, `syn-en-photographed-01` |
-| Wholly French | 0 | 1 | `syn-fr-native-01` |
-| English with a few French lines | 0 | 1 | `syn-en-native-01` |
+| Arabic | 1 | 14 | `ar-native-01`, `syn-ar-native-01` to `14` |
+| Mixed Arabic and English | 0 | 7 | `syn-mixed-native-01` to `07` |
+| Scanned | 0 | 3 | `en-scanned-01`, `syn-ar-scanned-01`, `02` |
+| Photographed | 1 | 6 | `en-photographed-01`, `syn-ar-photographed-01` to `05`, `syn-en-photographed-01` |
+| Wholly French | 0 | 2 | `syn-fr-native-01`, `02` |
+| English with a few French lines | 0 | 2 | `syn-en-native-01`, `05` |
+| Non-technical role | 0 | 31 | the 6 October 2026 batch and the Canva templates above |
+| Designed template (Canva) | 0 | 7 | `syn-en-native-06` to `10`, `syn-ar-native-13`, `14` |
 
 Every row still needs real documents before the gate can close on it. On 26 September 2026 the
 project owner reported that no real mixed Arabic and English CV could be found, so that row rests on

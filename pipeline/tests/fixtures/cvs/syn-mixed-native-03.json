@@ -1,0 +1,25 @@
+{
+  "document": { "capture": "native", "language": "mixed", "layout": "single_column", "pages": 1, "origin": "synthetic", "copy_of": null, "simulated": false },
+  "expected": "parsed",
+  "profile": {
+    "name": "مصطفى هشام رضوان",
+    "emails": ["mostafa.hesham@example.com"],
+    "phones": ["+201000000317"],
+    "location": "القاهرة الجديدة",
+    "years_of_experience": 7,
+    "employment": [
+      { "employer": "Juhayna Food Industries", "title": "Key Account Manager", "start": "2021-06", "end": "present" },
+      { "employer": "Edita Group", "title": "Sales Supervisor", "start": "2018-01", "end": "2021-05" }
+    ],
+    "education": [
+      { "institution": "جامعة عين شمس", "qualification": "بكالوريوس التجارة - English Section", "start": null, "end": "2017" }
+    ],
+    "skills": ["Salesforce CRM", "Power BI", "إدارة الحسابات الرئيسية", "Trade Marketing"],
+    "languages": [
+      { "language": "العربية", "level": "اللغة الأم" },
+      { "language": "English", "level": "Fluent" }
+    ],
+    "certifications": []
+  },
+  "protected": {}
+}

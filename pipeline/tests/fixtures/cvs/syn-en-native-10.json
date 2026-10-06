@@ -1,0 +1,25 @@
+{
+  "document": { "capture": "native", "language": "en", "layout": "two_column", "pages": 1, "origin": "synthetic", "copy_of": null, "simulated": false },
+  "expected": "parsed",
+  "profile": {
+    "name": "Youssef Tarek Ragab",
+    "emails": ["youssef.ragab.med@example.com"],
+    "phones": ["+201000000406"],
+    "location": "Assiut",
+    "years_of_experience": null,
+    "employment": [
+      { "employer": "Pharco Pharmaceuticals", "title": "Medical Representative", "start": "2021-02", "end": "present" },
+      { "employer": "El Ezaby Pharmacy", "title": "Pharmacist", "start": "2018-08", "end": "2021-01" }
+    ],
+    "education": [
+      { "institution": "Assiut University", "qualification": "Bachelor of Pharmaceutical Sciences", "start": null, "end": "2018" }
+    ],
+    "skills": ["Product Detailing", "Key Account Management", "CRM Reporting"],
+    "languages": [
+      { "language": "Arabic", "level": "Native" },
+      { "language": "English", "level": "Very good" }
+    ],
+    "certifications": []
+  },
+  "protected": {}
+}

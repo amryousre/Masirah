@@ -1,0 +1,24 @@
+{
+  "document": { "capture": "photographed", "language": "ar", "layout": "single_column", "pages": 1, "origin": "synthetic", "copy_of": null, "simulated": true },
+  "expected": "parsed",
+  "profile": {
+    "name": "عبد الله مجدي سليمان",
+    "emails": ["abdallah.magdy.retail@example.com"],
+    "phones": ["+201145553806"],
+    "location": "الإسكندرية",
+    "years_of_experience": null,
+    "employment": [
+      { "employer": "محلات تاون تيم", "title": "موظف مبيعات", "start": "2021-05", "end": "present" },
+      { "employer": "هايبر وان", "title": "كاشير", "start": "2019-07", "end": "2021-04" }
+    ],
+    "education": [
+      { "institution": "مدرسة العجمي الثانوية التجارية", "qualification": "دبلوم فني تجاري", "start": null, "end": "2018" }
+    ],
+    "skills": ["خدمة العملاء", "البيع", "الكاشير"],
+    "languages": [
+      { "language": "العربية", "level": "اللغة الأم" }
+    ],
+    "certifications": []
+  },
+  "protected": {}
+}

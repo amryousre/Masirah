@@ -1,0 +1,26 @@
+{
+  "document": { "capture": "native", "language": "ar", "layout": "single_column", "pages": 1, "origin": "synthetic", "copy_of": null, "simulated": false },
+  "expected": "parsed",
+  "profile": {
+    "name": "نورهان خالد عبد العزيز",
+    "emails": ["nourhan.k.hr@example.com"],
+    "phones": ["+201000000303"],
+    "location": "الجيزة",
+    "years_of_experience": null,
+    "employment": [
+      { "employer": "مجموعة الهدى الطبية", "title": "أخصائي موارد بشرية", "start": "2022-04", "end": "present" },
+      { "employer": "شركة رواد للاستشارات الإدارية", "title": "منسق توظيف", "start": "2020-01", "end": "2022-03" }
+    ],
+    "education": [
+      { "institution": "جامعة القاهرة", "qualification": "بكالوريوس التجارة - إدارة أعمال", "start": null, "end": "2019" },
+      { "institution": "الجامعة الأمريكية بالقاهرة", "qualification": "دبلومة إدارة الموارد البشرية", "start": null, "end": "2021" }
+    ],
+    "skills": ["التوظيف", "شؤون العاملين", "التأمينات الاجتماعية", "قانون العمل", "Excel"],
+    "languages": [
+      { "language": "العربية", "level": "اللغة الأم" },
+      { "language": "الإنجليزية", "level": "جيد جدًا" }
+    ],
+    "certifications": []
+  },
+  "protected": {}
+}
