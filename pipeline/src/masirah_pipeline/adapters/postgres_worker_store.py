@@ -5,6 +5,7 @@ Row level security then confines the transaction to that tenant, so an operation
 tenant's identifier finds nothing and raises LookupError rather than writing.
 """
 
+from dataclasses import replace
 from typing import Any
 from uuid import UUID
 
@@ -12,8 +13,15 @@ import psycopg
 from psycopg.types.json import Jsonb
 
 from masirah_pipeline.adapters.tenant_transaction import Cursor, acting_for
+from masirah_pipeline.domain.arabic import name_normalised
 from masirah_pipeline.domain.review_reason import Review
-from masirah_pipeline.ports.worker_store import CachedProfile, CvFile, Extraction, StoredProfile
+from masirah_pipeline.ports.worker_store import (
+    CachedProfile,
+    CandidateDetails,
+    CvFile,
+    Extraction,
+    StoredProfile,
+)
 
 
 class PostgresWorkerStore:
@@ -64,14 +72,6 @@ class PostgresWorkerStore:
     def record_extraction(
         self, organisation_id: UUID, cv_file_id: UUID, extraction: Extraction
     ) -> UUID:
-        details = extraction.candidate
-        fields = (
-            details.full_name,
-            details.email,
-            details.phone,
-            details.location,
-            details.name_normalised,
-        )
         with acting_for(self._connection, organisation_id) as cur:
             # Locks the file so two workers handling the same message cannot both add a version,
             # and so a purge cannot clear it between this check and the write.
@@ -85,6 +85,14 @@ class PostgresWorkerStore:
                     f"CV file {cv_file_id} is not in organisation {organisation_id}, or was purged"
                 )
             existing = row[0] or extraction.candidate_id
+            details = _corrected(extraction.candidate, _corrections(cur, cv_file_id))
+            fields = (
+                details.full_name,
+                details.email,
+                details.phone,
+                details.location,
+                details.name_normalised,
+            )
             candidate_id = _candidate(cur, organisation_id, existing, fields)
             cur.execute(
                 "update public.parsed_profile set is_current = false"
@@ -177,6 +185,41 @@ def _candidate(
         raise LookupError("the new candidate was not returned")
     created: UUID = row[0]
     return created
+
+
+def _corrections(cur: Cursor, cv_file_id: UUID) -> dict[str, Any]:
+    """The corrections people made to the file's profile, which its next version inherits
+    (migration 0024)."""
+    row = cur.execute(
+        "select field_overrides from public.parsed_profile where cv_file_id = %s"
+        " order by version desc limit 1",
+        (cv_file_id,),
+    ).fetchone()
+    corrections: dict[str, Any] = row[0] if row is not None else {}
+    return corrections
+
+
+def _corrected(details: CandidateDetails, corrections: dict[str, Any]) -> CandidateDetails:
+    """The candidate's details with what a person corrected in place of what was extracted, so
+    a new extraction of the same file does not undo the correction (FR-010)."""
+
+    def value(field: str) -> Any:
+        return corrections[field]["value"]
+
+    if "name" in corrections:
+        name = value("name")
+        details = replace(
+            details,
+            full_name=name,
+            name_normalised=name_normalised(name) if isinstance(name, str) else None,
+        )
+    if "emails" in corrections:
+        details = replace(details, email=next(iter(value("emails")), None))
+    if "phones" in corrections:
+        details = replace(details, phone=next(iter(value("phones")), None))
+    if "location" in corrections:
+        details = replace(details, location=value("location"))
+    return details
 
 
 def _review_columns(review: Review | None) -> tuple[str | None, str | None]:

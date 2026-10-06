@@ -171,7 +171,7 @@ Every table below carries `organisation_id` and has row level security enabled w
 
 - [ ] T072 [P] [US2] Accuracy gate test for scanned and photographed CVs at 85 percent field accuracy in `pipeline/tests/accuracy/test_scanned_accuracy.py` (SC-003)
 - [X] T073 [P] [US2] Integration test for the review queue in `pipeline/tests/integration/test_review_queue.py` asserting no submitted file is ever lost, including password-protected, corrupt and zero-byte files (SC-006)
-- [ ] T074 [P] [US2] Test that a user correction survives reprocessing in `pipeline/tests/unit/test_field_overrides.py`
+- [X] T074 [P] [US2] Test that a user correction survives reprocessing in `pipeline/tests/unit/test_field_overrides.py`
 - [ ] T075 [P] [US2] End-to-end test in `web/tests/e2e/review-queue.spec.ts` covering correction of a wrongly extracted field
 
 ### Implementation for User Story 2
