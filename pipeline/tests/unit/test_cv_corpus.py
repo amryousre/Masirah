@@ -82,7 +82,11 @@ def test_labels_follow_the_documented_format(document: Path) -> None:
     assert about["origin"] in {"real", "synthetic"}
     assert isinstance(about["simulated"], bool)
     if about["copy_of"] is None:
-        assert not about["simulated"], "only a copy of a corpus document can be simulated"
+        # A real capture stands alone; a simulated one is either a copy of a corpus document or
+        # an invented document photographed or scanned digitally, which never counts for the gate.
+        assert not about["simulated"] or about["origin"] == "synthetic", (
+            "only a copy of a corpus document, or an invented one, can be simulated"
+        )
     else:
         assert about["capture"] != "native", "a copy is a scan or a photograph"
     assert truth["expected"] in {"parsed", "unsupported_language"}
@@ -97,6 +101,7 @@ def test_labels_follow_the_documented_format(document: Path) -> None:
         assert entry["end"] in {None, "present"} or DATE.fullmatch(entry["end"])
     assert set(truth["protected"]) <= {
         "date_of_birth", "gender", "nationality", "marital_status", "photograph",
+        "military_service",
     }  # fmt: skip
 
 

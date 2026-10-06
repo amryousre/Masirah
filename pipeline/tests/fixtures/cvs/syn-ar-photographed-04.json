@@ -1,0 +1,24 @@
+{
+  "document": { "capture": "photographed", "language": "ar", "layout": "single_column", "pages": 1, "origin": "synthetic", "copy_of": null, "simulated": true },
+  "expected": "parsed",
+  "profile": {
+    "name": "شيماء أحمد رشدي",
+    "emails": ["shaimaa.roshdy.pa@example.com"],
+    "phones": ["+201225551473"],
+    "location": "الزقازيق",
+    "years_of_experience": null,
+    "employment": [
+      { "employer": "مستشفى الزقازيق التخصصي", "title": "موظفة شؤون عاملين", "start": "2019-02", "end": "present" }
+    ],
+    "education": [
+      { "institution": "جامعة الزقازيق", "qualification": "بكالوريوس الآداب - قسم الاجتماع", "start": null, "end": "2018" }
+    ],
+    "skills": ["شؤون العاملين", "التأمينات", "Excel"],
+    "languages": [
+      { "language": "العربية", "level": "اللغة الأم" },
+      { "language": "الإنجليزية", "level": "مقبول" }
+    ],
+    "certifications": []
+  },
+  "protected": {}
+}

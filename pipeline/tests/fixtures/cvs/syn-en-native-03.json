@@ -1,0 +1,26 @@
+{
+  "document": { "capture": "native", "language": "en", "layout": "two_column", "pages": 1, "origin": "synthetic", "copy_of": null, "simulated": false },
+  "expected": "parsed",
+  "profile": {
+    "name": "Youssef Nabil Farouk",
+    "emails": ["youssef.farouk.sales@example.com"],
+    "phones": ["+201000000313"],
+    "location": "New Cairo",
+    "years_of_experience": null,
+    "employment": [
+      { "employer": "Palm Hills Developments", "title": "Sales Manager", "start": "2022-01", "end": "present" },
+      { "employer": "Coldwell Banker Egypt", "title": "Senior Property Consultant", "start": "2019-02", "end": "2021-12" }
+    ],
+    "education": [
+      { "institution": "The British University in Egypt", "qualification": "BBA, Marketing", "start": null, "end": "2018" }
+    ],
+    "skills": ["Salesforce", "Market analysis"],
+    "languages": [
+      { "language": "Arabic", "level": "Native" },
+      { "language": "English", "level": "Fluent" },
+      { "language": "Italian", "level": "Basic" }
+    ],
+    "certifications": []
+  },
+  "protected": {}
+}

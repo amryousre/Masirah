@@ -1,0 +1,25 @@
+{
+  "document": { "capture": "native", "language": "ar", "layout": "single_column", "pages": 1, "origin": "synthetic", "copy_of": null, "simulated": false },
+  "expected": "parsed",
+  "profile": {
+    "name": "ريم طارق منصور",
+    "emails": ["reem.tarek.pharm@example.com"],
+    "phones": ["+201000000306"],
+    "location": "طنطا",
+    "years_of_experience": null,
+    "employment": [
+      { "employer": "شركة إيفا للأدوية", "title": "مندوبة دعاية طبية", "start": "2022-09", "end": "present" },
+      { "employer": "صيدليات العزبي", "title": "صيدلانية", "start": "2020-08", "end": "2022-08" }
+    ],
+    "education": [
+      { "institution": "جامعة طنطا", "qualification": "بكالوريوس العلوم الصيدلية", "start": null, "end": "2020" }
+    ],
+    "skills": ["الدعاية الطبية", "العروض التقديمية", "إدارة العلاقات مع الأطباء", "رخصة قيادة"],
+    "languages": [
+      { "language": "العربية", "level": "اللغة الأم" },
+      { "language": "الإنجليزية", "level": "ممتاز" }
+    ],
+    "certifications": []
+  },
+  "protected": {}
+}

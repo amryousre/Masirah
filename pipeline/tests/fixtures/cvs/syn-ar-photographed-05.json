@@ -1,0 +1,23 @@
+{
+  "document": { "capture": "photographed", "language": "ar", "layout": "single_column", "pages": 1, "origin": "synthetic", "copy_of": null, "simulated": true },
+  "expected": "parsed",
+  "profile": {
+    "name": "محمد رجب عبد الفتاح",
+    "emails": ["mohamed.ragab.cashier@example.com"],
+    "phones": ["+201065554590"],
+    "location": "الفيوم",
+    "years_of_experience": null,
+    "employment": [
+      { "employer": "سوبر ماركت الحمد", "title": "كاشير", "start": "2021-01", "end": "present" }
+    ],
+    "education": [
+      { "institution": "جامعة الفيوم", "qualification": "بكالوريوس الخدمة الاجتماعية", "start": null, "end": "2022" }
+    ],
+    "skills": ["الكاشير", "خدمة العملاء", "فوري ونقاط البيع"],
+    "languages": [
+      { "language": "العربية", "level": "اللغة الأم" }
+    ],
+    "certifications": []
+  },
+  "protected": { "date_of_birth": "2000-07-09", "nationality": "مصري", "marital_status": "أعزب", "military_service": "مؤجل" }
+}

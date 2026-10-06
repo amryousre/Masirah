@@ -1,0 +1,25 @@
+{
+  "document": { "capture": "native", "language": "mixed", "layout": "single_column", "pages": 1, "origin": "synthetic", "copy_of": null, "simulated": false },
+  "expected": "parsed",
+  "profile": {
+    "name": "Omar Tarek Abdelhamid",
+    "emails": ["omar.abdelhamid.acc@example.com"],
+    "phones": ["+201000000318"],
+    "location": "Alexandria",
+    "years_of_experience": 6,
+    "employment": [
+      { "employer": "Alexandria Shipping Agencies", "title": "Senior Accountant", "start": "2022-02", "end": "present" },
+      { "employer": "مكتب حازم حسن - KPMG", "title": "Accountant", "start": "2019-09", "end": "2022-01" }
+    ],
+    "education": [
+      { "institution": "Alexandria University", "qualification": "B.Com, Accounting", "start": null, "end": "2019" }
+    ],
+    "skills": ["SAP Business One", "IFRS / EAS", "VAT & e-invoicing", "Advanced Excel"],
+    "languages": [
+      { "language": "Arabic", "level": "Native" },
+      { "language": "English", "level": "Fluent" }
+    ],
+    "certifications": []
+  },
+  "protected": { "marital_status": "متزوج", "military_service": "أدى الخدمة" }
+}

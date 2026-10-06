@@ -1,0 +1,23 @@
+{
+  "document": { "capture": "scanned", "language": "ar", "layout": "single_column", "pages": 1, "origin": "synthetic", "copy_of": null, "simulated": true },
+  "expected": "parsed",
+  "profile": {
+    "name": "فاطمة الزهراء علي",
+    "emails": ["fatma.ali.data@example.com"],
+    "phones": ["+201555557325"],
+    "location": "بني سويف",
+    "years_of_experience": null,
+    "employment": [
+      { "employer": "مكتب بريد بني سويف الرئيسي", "title": "موظفة إدخال بيانات", "start": "2020-09", "end": "present" }
+    ],
+    "education": [
+      { "institution": "جامعة بني سويف", "qualification": "بكالوريوس الآداب - قسم التاريخ", "start": null, "end": "2019" }
+    ],
+    "skills": ["إدخال البيانات", "Microsoft Word", "الأرشفة"],
+    "languages": [
+      { "language": "العربية", "level": "اللغة الأم" }
+    ],
+    "certifications": []
+  },
+  "protected": {}
+}

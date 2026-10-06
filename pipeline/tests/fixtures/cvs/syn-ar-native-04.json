@@ -1,0 +1,25 @@
+{
+  "document": { "capture": "native", "language": "ar", "layout": "single_column", "pages": 2, "origin": "synthetic", "copy_of": null, "simulated": false },
+  "expected": "parsed",
+  "profile": {
+    "name": "أحمد سمير فتحي",
+    "emails": ["ahmed.samir.sales@example.com"],
+    "phones": ["+201000000302"],
+    "location": "القاهرة",
+    "years_of_experience": null,
+    "employment": [
+      { "employer": "شركة الفجر للمواد الغذائية", "title": "مندوب مبيعات ميداني", "start": "2022-01", "end": "present" },
+      { "employer": "معرض الصفا للأجهزة المنزلية", "title": "موظف مبيعات معرض", "start": "2019-09", "end": "2021-12" }
+    ],
+    "education": [
+      { "institution": "جامعة عين شمس", "qualification": "بكالوريوس الآداب - قسم الجغرافيا", "start": null, "end": "2019" }
+    ],
+    "skills": ["إدارة خط السير", "رخصة قيادة خاصة", "Microsoft Office"],
+    "languages": [
+      { "language": "العربية", "level": "اللغة الأم" },
+      { "language": "الإنجليزية", "level": "متوسط" }
+    ],
+    "certifications": []
+  },
+  "protected": { "date_of_birth": "1997-08-21", "nationality": "مصري", "marital_status": "أعزب", "military_service": "أدى الخدمة العسكرية" }
+}

@@ -1,0 +1,24 @@
+{
+  "document": { "capture": "native", "language": "ar", "layout": "single_column", "pages": 1, "origin": "synthetic", "copy_of": null, "simulated": false },
+  "expected": "parsed",
+  "profile": {
+    "name": "كريم عصام الدين",
+    "emails": ["karim.essam.wh@example.com"],
+    "phones": ["+201000000308"],
+    "location": "العاشر من رمضان",
+    "years_of_experience": 8,
+    "employment": [
+      { "employer": "مصنع السلام للصناعات البلاستيكية", "title": "مشرف مخازن", "start": "2019-01", "end": "present" },
+      { "employer": "شركة المتحدة للأخشاب", "title": "أمين مخزن", "start": "2015-03", "end": "2018-12" }
+    ],
+    "education": [
+      { "institution": "مدرسة الزقازيق الثانوية التجارية", "qualification": "دبلوم المدارس الثانوية التجارية", "start": null, "end": "2009" }
+    ],
+    "skills": ["إدارة المخزون", "الجرد", "قيادة الرافعة الشوكية", "Excel"],
+    "languages": [
+      { "language": "العربية", "level": "اللغة الأم" }
+    ],
+    "certifications": []
+  },
+  "protected": { "date_of_birth": "1990-05-17", "nationality": "مصري", "marital_status": "متزوج", "military_service": "أدى الخدمة العسكرية" }
+}
