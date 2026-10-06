@@ -31,9 +31,12 @@ photos are still wanted.
 **Non-technical roles.** The real CVs are almost all software roles, while the SMEs Masirah serves
 hire accountants, sales staff, HR, administrators, teachers and warehouse staff. The 24 synthetic
 documents added on 6 October 2026 (`syn-ar-native-04` to `12`, `syn-mixed-native-03` to `07`,
-`syn-en-native-02` to `05`, `syn-fr-native-02` and the five captures) are all such roles. Their
-phone numbers were rewritten to invented ones before they were committed. Three more from the
-same batch were left out: their PDFs map Amiri's joined lam to a Syriac mark, so the text layer
+`syn-en-native-02` to `05`, `syn-fr-native-02` and the five captures) are all such roles. In their
+PDFs every phone number was rewritten to an invented one before they were committed. The five
+captures are images, so that rewrite could not reach them: they still show the `…555…` numbers
+they were rendered with, and their labels match those pixels. The contact guard reads only text
+layers and never sees image pixels; these numbers were found by viewing the images, and they are
+still to be redrawn or the captures replaced. Three more from the same batch were left out: their PDFs map Amiri's joined lam to a Syriac mark, so the text layer
 itself is wrong and no label can match it.
 
 Only real documents decide the gate. T029 reports accuracy for real documents on their own, and
