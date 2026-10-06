@@ -1,0 +1,331 @@
+/* The review queue (T081): the files on the reading-start side, the chosen one beside them with
+   its reason, what helps and its original, as in the approved Phase 1 design. */
+
+.page {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-block-size: 100dvb;
+}
+
+.header {
+  display: grid;
+  gap: var(--space-1);
+  padding-block: var(--space-8) var(--space-5);
+  padding-inline: var(--space-8);
+  border-block-end: var(--border);
+}
+
+.title {
+  font-size: var(--size-headline);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-headline);
+}
+
+.summary {
+  max-inline-size: var(--measure);
+  color: var(--color-text-secondary);
+  font-size: var(--size-body-sm);
+  line-height: var(--leading-body-sm);
+}
+
+.queue {
+  display: grid;
+  grid-template-columns: minmax(18rem, 24rem) minmax(0, 1fr);
+}
+
+.list {
+  border-inline-end: var(--border);
+}
+
+.list ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: grid;
+  gap: var(--space-1);
+  padding-block: var(--space-4);
+  padding-inline: var(--space-5);
+  border-block-end: var(--border-divider);
+  color: var(--color-text);
+  text-decoration: none;
+  transition: background-color var(--duration-fast) var(--ease);
+}
+
+.item:hover {
+  background: var(--color-fill-hover);
+}
+
+.item[aria-current] {
+  background: var(--color-selected);
+  box-shadow: inset 0 0 0 1px var(--color-selected-edge);
+}
+
+.item[aria-current]:hover {
+  background: var(--color-selected-hover);
+}
+
+/* The tertiary grey falls below 4.5:1 on the selection tint, so it darkens one step there. */
+.item[aria-current] .placed {
+  color: var(--color-text-secondary);
+}
+
+.fileName,
+.detailName {
+  font-family: var(--font-mono);
+  overflow-wrap: anywhere;
+}
+
+.fileName {
+  font-size: var(--size-body-sm);
+  line-height: var(--leading-body-sm);
+  font-weight: var(--weight-medium);
+}
+
+.reason {
+  font-size: var(--size-body-sm);
+  line-height: var(--leading-body-sm);
+}
+
+.placed {
+  color: var(--color-text-tertiary);
+  font-size: var(--size-caption);
+  line-height: var(--leading-caption);
+}
+
+.detail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  align-items: start;
+  gap: var(--space-8);
+  padding-block: var(--space-6);
+  padding-inline: var(--space-6);
+}
+
+.info {
+  display: grid;
+  gap: var(--space-4);
+  max-inline-size: var(--measure);
+}
+
+.heading {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.detailName {
+  font-size: var(--size-title);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-title);
+}
+
+/* The reason, set off by a tint of its state. The status word and its icon say the same, so the
+   tint is never the only channel (DESIGN.md section 3). */
+.callout {
+  display: grid;
+  gap: var(--space-1);
+  padding-block: var(--space-3);
+  padding-inline: var(--space-4);
+  border: var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--color-fill-subtle);
+}
+
+.callout[data-status="needsReview"] {
+  border-color: var(--color-warning);
+  background: var(--color-warning-bg);
+}
+
+.callout[data-status="failed"] {
+  border-color: var(--color-error);
+  background: var(--color-error-bg);
+}
+
+.calloutText {
+  font-size: var(--size-body);
+  line-height: var(--leading-body);
+}
+
+.body {
+  color: var(--color-text-secondary);
+  font-size: var(--size-body-sm);
+  line-height: var(--leading-body-sm);
+  text-wrap: pretty;
+}
+
+.helps {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.helpsTitle {
+  font-size: var(--size-label);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-label);
+}
+
+.helps .body {
+  color: var(--color-text);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding-block-start: var(--space-2);
+  border-block-start: var(--border-divider);
+}
+
+.action {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: var(--control-height);
+  padding-inline: var(--space-4);
+  border: var(--border-control);
+  border-radius: var(--radius-sm);
+  background: var(--color-canvas);
+  color: var(--color-text);
+  font-size: var(--size-body-sm);
+  font-weight: var(--weight-medium);
+  text-decoration: none;
+  transition:
+    background-color var(--duration-fast) var(--ease),
+    border-color var(--duration-fast) var(--ease);
+}
+
+.action:hover {
+  border-color: var(--color-control-border-hover);
+  background: var(--color-fill-hover);
+}
+
+.action:active {
+  background: var(--color-fill-pressed);
+}
+
+.original {
+  position: sticky;
+  inset-block-start: var(--space-6);
+  display: grid;
+  block-size: min(80dvb, 56rem);
+  margin: 0;
+  overflow: hidden;
+  border: var(--border);
+  border-radius: var(--radius-md);
+  background: var(--color-fill-subtle);
+}
+
+.viewer {
+  inline-size: 100%;
+  block-size: 100%;
+  border: none;
+}
+
+.image {
+  max-inline-size: 100%;
+  max-block-size: 100%;
+  margin: auto;
+  padding: var(--space-5);
+  object-fit: contain;
+}
+
+.noPreview {
+  align-self: center;
+  padding: var(--space-6);
+  color: var(--color-text-secondary);
+  font-size: var(--size-body-sm);
+  line-height: var(--leading-body-sm);
+  text-align: center;
+}
+
+/* Back to the list exists for phones only, where the list and the file take turns. */
+.back {
+  display: none;
+}
+
+.empty {
+  display: grid;
+  gap: var(--space-4);
+  max-inline-size: 35rem;
+  padding-block: var(--space-12);
+  padding-inline: var(--space-8);
+}
+
+.emptyTitle {
+  font-size: var(--size-title);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-title);
+}
+
+.emptyBody {
+  color: var(--color-text-secondary);
+  font-size: var(--size-body);
+  line-height: var(--leading-body);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .item,
+  .action {
+    transition: none;
+  }
+}
+
+/* A narrower screen puts the original under the reason. */
+@media (width < 72rem) {
+  .detail {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .original {
+    position: static;
+    block-size: 70dvb;
+  }
+}
+
+/* A phone shows the list, or the chosen file with a way back, never both at once. */
+@media (width < 48rem) {
+  .header {
+    padding-block: var(--space-5) var(--space-4);
+    padding-inline: var(--space-4);
+  }
+
+  .queue {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .list {
+    border-inline-end: none;
+  }
+
+  .page:not([data-chosen]) .detail,
+  .page[data-chosen] .list {
+    display: none;
+  }
+
+  .page[data-chosen] .header {
+    display: none;
+  }
+
+  .item {
+    padding-inline: var(--space-4);
+  }
+
+  .detail {
+    padding-block: var(--space-4);
+    padding-inline: var(--space-4);
+  }
+
+  .back {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    color: var(--color-link);
+    font-size: var(--size-body-sm);
+  }
+
+  .empty {
+    padding-inline: var(--space-4);
+  }
+}

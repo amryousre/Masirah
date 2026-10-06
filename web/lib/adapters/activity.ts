@@ -1,8 +1,12 @@
 import type { Json } from "./database.types";
 import type { SupabaseClient } from "./supabase";
 
-/** What the audit trail records about candidate data (FR-074); decisions are written by the database. */
-export type AuditedAction = "candidate.viewed" | "candidate.exported";
+/**
+ * What the audit trail records about candidate data (FR-074); decisions are written by the
+ * database. A CV in the review queue may have no candidate yet, so it is recorded by its file.
+ */
+export type AuditedAction =
+  "candidate.viewed" | "candidate.exported" | "cv_file.viewed" | "cv_file.exported";
 
 /**
  * Writes one audit row as the signed-in member (T099). The activity table takes inserts only, and
@@ -13,7 +17,7 @@ export async function recordActivity(
   supabase: SupabaseClient,
   actor: { userId: string; organisationId: string },
   action: AuditedAction,
-  subject: { type: "candidate"; id: string },
+  subject: { type: "candidate" | "cv_file"; id: string },
   metadata: Record<string, Json> = {},
 ): Promise<void> {
   const { error } = await supabase.from("activity").insert({

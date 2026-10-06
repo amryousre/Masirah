@@ -25,6 +25,7 @@ from docx.document import Document as DocxDocument
 from docx.section import Section
 from pdfminer.high_level import extract_pages
 from pdfminer.layout import LAParams, LTContainer, LTPage, LTTextLine
+from pdfminer.pdfdocument import PDFEncryptionError, PDFPasswordIncorrect
 
 from masirah_pipeline.adapters.reading_order import Line, reading_order
 from masirah_pipeline.adapters.visual_order import (
@@ -80,6 +81,9 @@ def _pdf_text(content: bytes) -> str:
     layout = LAParams(all_texts=True)
     try:
         pages = list(extract_pages(io.BytesIO(content), maxpages=MAX_PAGES, laparams=layout))
+    # Named apart, because the recruiter can ask for a copy without the password (T081).
+    except (PDFPasswordIncorrect, PDFEncryptionError) as error:
+        raise UnreadableDocumentError("the PDF is password-protected") from error
     # A broken or hostile PDF fails inside pdfminer in many ways, and each means the same thing.
     except Exception as error:
         raise UnreadableDocumentError(f"the PDF cannot be read: {error}") from error
