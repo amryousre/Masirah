@@ -652,6 +652,14 @@ export type Database = {
       }
     }
     Functions: {
+      correct_profile: {
+        Args: {
+          corrected_name_normalised?: string
+          corrections: Json
+          target_file: string
+        }
+        Returns: Json
+      }
       enqueue_cv_processing: {
         Args: { cv_file_id: string; locale: string }
         Returns: number
