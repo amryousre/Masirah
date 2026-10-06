@@ -1,0 +1,25 @@
+{
+  "document": { "capture": "native", "language": "en", "layout": "two_column", "pages": 1, "origin": "synthetic", "copy_of": null, "simulated": false },
+  "expected": "parsed",
+  "profile": {
+    "name": "Nourhan Adel Fahmy",
+    "emails": ["nourhan.fahmy.sales@example.com"],
+    "phones": ["+201000000402"],
+    "location": "Alexandria",
+    "years_of_experience": null,
+    "employment": [
+      { "employer": "Alex Cement Distribution", "title": "Sales Executive", "start": "2022-01", "end": "present" },
+      { "employer": "Coastal Paints", "title": "Sales Representative", "start": "2019-09", "end": "2021-12" }
+    ],
+    "education": [
+      { "institution": "Alexandria University", "qualification": "Bachelor of Commerce, Business Administration", "start": null, "end": "2019" }
+    ],
+    "skills": ["B2B Sales", "CRM (Salesforce)", "Route Planning"],
+    "languages": [
+      { "language": "Arabic", "level": "Native" },
+      { "language": "English", "level": "Good" }
+    ],
+    "certifications": []
+  },
+  "protected": {}
+}

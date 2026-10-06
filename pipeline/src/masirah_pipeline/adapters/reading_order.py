@@ -67,7 +67,8 @@ def _sections(lines: list[Line]) -> list[tuple[list[Line], list[Interval]]]:
 
     A stretch grows band by band down the page for as long as some strip stays uncrossed, so a
     gap shared by both columns by chance does not cut them, and ends at a line crossing every
-    remaining strip.
+    remaining strip. Only a strip with text on both sides counts: a sliver of margin past a
+    header that stops short of the edge would otherwise hold the header and both columns together.
     """
     if not lines:
         return []
@@ -77,7 +78,7 @@ def _sections(lines: list[Line]) -> list[tuple[list[Line], list[Interval]]]:
     gaps: list[Interval] = []
     for band in _bands(lines):
         free = _uncovered(band, left, right)
-        shared = _intersection(gaps, free)
+        shared = _between_text(_intersection(gaps, free), current + band)
         if current and shared:
             current, gaps = current + band, shared
         else:
@@ -112,6 +113,15 @@ def _uncovered(lines: list[Line], left: float, right: float) -> list[Interval]:
         edge = max(edge, line.x1)
     strips.append((edge, right))
     return [(start, end) for start, end in strips if end - start >= MIN_GUTTER]
+
+
+def _between_text(strips: list[Interval], lines: list[Line]) -> list[Interval]:
+    """The strips that some of the lines lie wholly before and some wholly after."""
+    return [
+        (start, end)
+        for start, end in strips
+        if any(line.x1 <= start for line in lines) and any(line.x0 >= end for line in lines)
+    ]
 
 
 def _intersection(first: list[Interval], second: list[Interval]) -> list[Interval]:

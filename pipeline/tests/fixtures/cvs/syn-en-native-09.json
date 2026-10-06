@@ -1,0 +1,27 @@
+{
+  "document": { "capture": "native", "language": "en", "layout": "two_column", "pages": 1, "origin": "synthetic", "copy_of": null, "simulated": false },
+  "expected": "parsed",
+  "profile": {
+    "name": "Karim Wael Shawky",
+    "emails": ["karim.shawky.log@example.com"],
+    "phones": ["+201000000407"],
+    "location": "Port Said",
+    "years_of_experience": null,
+    "employment": [
+      { "employer": "Canal Food Distribution", "title": "Logistics Coordinator", "start": "2020-06", "end": "present" },
+      { "employer": "Suez Canal Container Terminal", "title": "Warehouse Clerk", "start": "2017-03", "end": "2020-05" }
+    ],
+    "education": [
+      { "institution": "Port Said University", "qualification": "Bachelor of Commerce, Accounting", "start": null, "end": "2016" }
+    ],
+    "skills": ["Customs Clearance", "SAP MM", "Shipment Tracking", "Inventory Control"],
+    "languages": [
+      { "language": "Arabic", "level": "Native" },
+      { "language": "English", "level": "Good" }
+    ],
+    "certifications": [
+      { "name": "Certified Supply Chain Associate", "issuer": null }
+    ]
+  },
+  "protected": {}
+}

@@ -1,0 +1,27 @@
+{
+  "document": { "capture": "native", "language": "ar", "layout": "single_column", "pages": 1, "origin": "synthetic", "copy_of": null, "simulated": false },
+  "expected": "parsed",
+  "profile": {
+    "name": "أحمد فتحي البنا",
+    "emails": ["ahmed.elbanna.hr@example.com"],
+    "phones": ["+201000000404"],
+    "location": "المنصورة",
+    "years_of_experience": null,
+    "employment": [
+      { "employer": "مصنع المنصورة للملابس الجاهزة", "title": "أخصائي موارد بشرية", "start": "2021-04", "end": "present" },
+      { "employer": "شركة الدقهلية للتجارة", "title": "مساعد شؤون عاملين", "start": "2018-08", "end": "2021-03" }
+    ],
+    "education": [
+      { "institution": "جامعة المنصورة", "qualification": "بكالوريوس التجارة - إدارة أعمال", "start": null, "end": "2018" }
+    ],
+    "skills": ["التوظيف", "الرواتب", "التأمينات الاجتماعية", "قانون العمل", "Excel"],
+    "languages": [
+      { "language": "العربية", "level": "اللغة الأم" },
+      { "language": "الإنجليزية", "level": "جيد" }
+    ],
+    "certifications": [
+      { "name": "دبلومة إدارة الموارد البشرية", "issuer": "الجامعة الأمريكية بالقاهرة" }
+    ]
+  },
+  "protected": {}
+}

@@ -39,6 +39,14 @@ layers and never sees image pixels; these numbers were found by viewing the imag
 still to be redrawn or the captures replaced. Three more from the same batch were left out: their PDFs map Amiri's joined lam to a Syriac mark, so the text layer
 itself is wrong and no label can match it.
 
+**Designed templates.** Seven more were made in Canva the same day (`syn-en-native-06` to `10`,
+`syn-ar-native-13` and `14`), from briefs with invented details, and exported as PDF. Canva's
+generator changed some of what it was given, so each was labelled from its exported text. Three
+slips were redrawn in the PDF: an email domain written `exemple.com`, a real domain, and two phone
+numbers missing a digit. The export's metadata, which names the Canva account, was removed. These
+templates draw a heading's shadow or outline as stacked copies of its text, and one starts both
+columns under a header that stops short of the margin; the reader now handles both.
+
 Only real documents decide the gate. T029 reports accuracy for real documents on their own, and
 Phase 1 does not exit on synthetic or simulated results.
 
@@ -229,16 +237,17 @@ than extraction. The unit tests in `tests/unit/test_field_accuracy_harness.py` p
 
 | Kind | Real | Synthetic or simulated | Files |
 |---|---|---|---|
-| English, native PDF | 8 | 5 | `en-native-01` to `08`, `syn-en-native-01` to `05` |
-| Two-column layout | 3 | 7 | `en-native-03`, `05`, `06`, `syn-ar-native-02`, `11`, `12`, `syn-mixed-native-02`, `syn-en-native-02` to `04` |
+| English, native PDF | 8 | 10 | `en-native-01` to `08`, `syn-en-native-01` to `10` |
+| Two-column layout | 3 | 12 | `en-native-03`, `05`, `06`, `syn-ar-native-02`, `11` to `13`, `syn-mixed-native-02`, `syn-en-native-02` to `04`, `06`, `07`, `09`, `10` |
 | Photo on the CV | 1 | 1 | `en-native-06`, `syn-ar-native-03` |
-| Arabic | 1 | 12 | `ar-native-01`, `syn-ar-native-01` to `12` |
+| Arabic | 1 | 14 | `ar-native-01`, `syn-ar-native-01` to `14` |
 | Mixed Arabic and English | 0 | 7 | `syn-mixed-native-01` to `07` |
 | Scanned | 0 | 3 | `en-scanned-01`, `syn-ar-scanned-01`, `02` |
 | Photographed | 1 | 6 | `en-photographed-01`, `syn-ar-photographed-01` to `05`, `syn-en-photographed-01` |
 | Wholly French | 0 | 2 | `syn-fr-native-01`, `02` |
 | English with a few French lines | 0 | 2 | `syn-en-native-01`, `05` |
-| Non-technical role | 0 | 24 | the 6 October 2026 batch above |
+| Non-technical role | 0 | 31 | the 6 October 2026 batch and the Canva templates above |
+| Designed template (Canva) | 0 | 7 | `syn-en-native-06` to `10`, `syn-ar-native-13`, `14` |
 
 Every row still needs real documents before the gate can close on it. On 26 September 2026 the
 project owner reported that no real mixed Arabic and English CV could be found, so that row rests on

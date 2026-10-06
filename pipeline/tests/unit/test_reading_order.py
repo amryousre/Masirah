@@ -62,6 +62,20 @@ class TestColumns:
         sidebar = column(340, 550, "side", [3, 17, 31, 45])
         assert read(main + sidebar) == [ln.text for ln in main + sidebar]
 
+    def test_columns_under_a_header_that_stops_short_of_the_margin_are_still_columns(self) -> None:
+        """A Canva header crosses the gutter but not the strip of margin past it. That strip has
+        no text beyond it, so it is no gutter and must not hold the header and the top of both
+        columns together, where their first lines happen to share baselines."""
+        header = line(30, -40, 430, "contact line across the page")
+        left = column(27, 320, "left", [0, 20, 40, 100, 120, 140, 160, 180, 200])
+        right = column(378, 542, "right", [0, 20, 40, 85, 110, 145, 175])
+        wide = line(378, 60, 551, "right wide")
+        assert read([header, *left, *right, wide]) == (
+            [header.text]
+            + [ln.text for ln in left]
+            + [ln.text for ln in sorted([*right, wide], key=lambda ln: ln.top)]
+        )
+
     def test_a_column_with_a_gap_in_it_is_still_one_column(self) -> None:
         """A sidebar with a blank stretch beside the main column's text stays in one piece."""
         main = column(40, 300, "main", [top * 14 for top in range(12)])
@@ -201,6 +215,27 @@ def assert_in_sequence(rows: list[str], expected: list[str]) -> None:
             ],
         ),
         ("ar-native-01", ["تاريخ الميلاد :\t14\\03\\1984"]),
+        # A Canva template whose header stops short of the right margin, and whose two columns
+        # start on one baseline grid.
+        (
+            "syn-en-native-07",
+            [
+                "SUMMARY",
+                "Field sales executive selling building materials to",
+                "contractors and retailers, consistently above target.",
+                "WORK EXPERIENCE",
+            ],
+        ),
+        (
+            "syn-en-native-07",
+            [
+                "EDUCATION",
+                "Bachelor of Commerce,",
+                "Business Administration —",
+                "Alexandria University, 2019",
+                "SKILLS",
+            ],
+        ),
     ],
     ids=lambda value: value if isinstance(value, str) else value[0][:24],
 )

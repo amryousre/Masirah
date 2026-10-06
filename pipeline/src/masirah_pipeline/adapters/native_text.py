@@ -58,6 +58,8 @@ SPACES = re.compile(r" {2,}")
 # The share of a line's letters in the other script that makes it a line in that direction.
 OTHER_DIRECTION_SHARE = 0.6
 
+# How far apart, in points, two copies of one line can be drawn as a shadow or an outline.
+STACKED = 4.0
 W = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
 # Word stores a text box twice: as a modern shape and, under this element, as a fallback copy
 # for older readers. Only the first is read.
@@ -91,15 +93,25 @@ def _pdf_text(content: bytes) -> str:
 
 
 def _page_lines(page: LTPage, backwards: bool) -> list[Line]:
-    lines = []
+    lines: list[Line] = []
     for item in _text_lines(page):
         text = _without_icons(_line_text(item, backwards)).strip()
         if text:
             x0, y0, x1, y1 = item.bbox
-            lines.append(
-                Line(x0=x0, top=page.height - y1, x1=x1, bottom=page.height - y0, text=text)
-            )
+            line = Line(x0=x0, top=page.height - y1, x1=x1, bottom=page.height - y0, text=text)
+            if not any(_stacked(line, kept) for kept in lines):
+                lines.append(line)
     return lines
+
+
+def _stacked(line: Line, other: Line) -> bool:
+    """Whether the line is another copy of one already read: Canva draws a heading's shadow or
+    outline as the same text again, a few points off, and a reader sees it once."""
+    return (
+        line.text == other.text
+        and abs(line.x0 - other.x0) <= STACKED
+        and abs(line.top - other.top) <= STACKED
+    )
 
 
 def _text_lines(container: LTContainer[Any]) -> Iterator[LTTextLine]:
