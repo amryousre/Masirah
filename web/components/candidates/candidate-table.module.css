@@ -197,3 +197,9 @@
     display: inline-flex;
   }
 }
+
+/* A candidate whose personal data was deleted: nothing to read but that it went. */
+.removed {
+  color: var(--color-text-tertiary);
+  font-weight: var(--weight-regular);
+}

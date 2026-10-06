@@ -97,6 +97,8 @@ export function JobScreen({
           fileName: entry.label,
           reason: entry.reason ?? t("failedUnknown"),
         };
+      case "removed":
+        return { kind: "removed", id: entry.id };
     }
   });
 

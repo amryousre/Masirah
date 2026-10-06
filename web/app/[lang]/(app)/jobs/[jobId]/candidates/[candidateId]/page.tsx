@@ -16,6 +16,7 @@ import { confidenceLevel, rankJob } from "@/lib/domain/ranking";
 
 import { CandidateScreen } from "./candidate-screen";
 import { type DecisionState, ShortlistButton } from "./decision-controls";
+import type { PrivacyState } from "./personal-data";
 import styles from "./candidate.module.css";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -91,6 +92,20 @@ export default async function CandidatePage({
           }).format(new Date(page.decision.at)),
   };
 
+  const when = (at: string | null) =>
+    at === null
+      ? null
+      : new Intl.DateTimeFormat(locale, {
+          dateStyle: "medium",
+          timeStyle: "short",
+          timeZone: TIME_ZONE,
+        }).format(new Date(at));
+  const privacy: PrivacyState = {
+    candidateId,
+    purgedAt: when(page.privacy.purgedAt),
+    requestedAt: when(page.privacy.requestedAt),
+  };
+
   let documentUrl: string | null = null;
   if (page.document !== null) {
     const { data } = await supabase.storage
@@ -143,6 +158,7 @@ export default async function CandidatePage({
         candidate={page.candidate.name ?? tJob("unnamed")}
         actor={actor}
         decision={decision}
+        privacy={privacy}
         rank={place?.rank ?? null}
         score={
           page.score === null

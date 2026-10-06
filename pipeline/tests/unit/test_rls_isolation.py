@@ -160,3 +160,55 @@ def test_cannot_store_a_file_under_another_organisations_path(
             "insert into storage.objects (bucket_id, name) values (%s, %s)",
             (CV_BUCKET, f"organisations/{beta.organisation_id}/cv/{uuid.uuid4()}/planted.pdf"),
         )
+
+
+# T095: what has been added since T020 reads tenant data through views and functions as well as
+# tables. The tests below hold every one of them to the same rule, and fail on a new one until it
+# is accounted for.
+
+TENANT_VIEWS = ["job_overview", "job_candidates"]
+
+
+def test_every_public_view_runs_with_the_callers_row_security(cur: Cursor) -> None:
+    cur.execute(
+        "select c.relname, coalesce(c.reloptions, '{}')"
+        " from pg_class c join pg_namespace n on n.oid = c.relnamespace"
+        " where n.nspname = 'public' and c.relkind = 'v' order by c.relname"
+    )
+    views = cur.fetchall()
+    assert sorted(name for name, _ in views) == sorted(TENANT_VIEWS)
+    for name, options in views:
+        assert "security_invoker=true" in options, f"{name} would bypass row level security"
+
+
+@pytest.mark.parametrize("view", TENANT_VIEWS)
+def test_unfiltered_view_returns_only_own_rows(
+    cur: Cursor, tenants: tuple[Tenant, Tenant], view: str
+) -> None:
+    alpha, beta = tenants
+    act_as(cur, beta.user_id)
+    assert select_column(cur, view, "organisation_id") <= {beta.organisation_id}
+    cur.execute("reset role")
+    act_as(cur, alpha.user_id)
+    assert select_column(cur, view, "organisation_id") == {alpha.organisation_id}
+
+
+# Each runs as its owner and so must check the caller's organisation itself; each has tests of
+# exactly that in its own file. A function added here needs the same before it joins the list.
+DEFINER_FUNCTIONS_MEMBERS_CAN_CALL = {
+    "enqueue_cv_processing": "test_enqueue_cv.py",
+    "record_decision": "test_decisions.py",
+    "request_candidate_deletion": "test_deletion.py",
+    "set_retention": "test_retention.py",
+    "service_health": "test_service_health.py (no tenant data: counts and ages only)",
+}
+
+
+def test_every_definer_function_a_member_can_call_is_accounted_for(cur: Cursor) -> None:
+    cur.execute(
+        "select p.proname from pg_proc p join pg_namespace n on n.oid = p.pronamespace"
+        " where n.nspname = 'public' and p.prosecdef"
+        " and has_function_privilege('authenticated', p.oid, 'execute')"
+        " order by p.proname"
+    )
+    assert {row[0] for row in cur.fetchall()} == set(DEFINER_FUNCTIONS_MEMBERS_CAN_CALL)

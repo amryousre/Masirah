@@ -36,7 +36,9 @@ export type CandidateRow =
   | { kind: "processing"; id: string; fileName: string }
   /** Read, but too doubtful to rank until someone checks it (FR-011). */
   | { kind: "review"; id: string; fileName: string }
-  | { kind: "failed"; id: string; fileName: string; reason: string };
+  | { kind: "failed"; id: string; fileName: string; reason: string }
+  /** A candidate whose personal data was deleted; their application and decision remain. */
+  | { kind: "removed"; id: string };
 
 type RankedRow = Extract<CandidateRow, { kind: "ranked" }>;
 
@@ -173,26 +175,35 @@ export function CandidateTable({
               {t("notRanked")}
             </td>
           </tr>
-          {unranked.map((row) => (
-            <tr key={row.id} className={cx(styles.row, styles.unranked)}>
-              <td className={styles.rank} />
-              <th scope="row" className={styles.file}>
-                {row.fileName}
-              </th>
-              <td colSpan={4}>
-                {row.kind === "processing" ? (
-                  <DocumentStatus status="processing" />
-                ) : row.kind === "review" ? (
-                  <DocumentStatus status="needsReview" />
-                ) : (
-                  <span className={styles.failed}>
-                    <Icon name="xCircle" size={14} />
-                    {t("readFailed", { reason: row.reason })}
-                  </span>
-                )}
-              </td>
-            </tr>
-          ))}
+          {unranked.map((row) =>
+            row.kind === "removed" ? (
+              <tr key={row.id} className={cx(styles.row, styles.unranked)}>
+                <td className={styles.rank} />
+                <th scope="row" colSpan={COLUMNS - 1} className={styles.removed}>
+                  {t("removed")}
+                </th>
+              </tr>
+            ) : (
+              <tr key={row.id} className={cx(styles.row, styles.unranked)}>
+                <td className={styles.rank} />
+                <th scope="row" className={styles.file}>
+                  {row.fileName}
+                </th>
+                <td colSpan={4}>
+                  {row.kind === "processing" ? (
+                    <DocumentStatus status="processing" />
+                  ) : row.kind === "review" ? (
+                    <DocumentStatus status="needsReview" />
+                  ) : (
+                    <span className={styles.failed}>
+                      <Icon name="xCircle" size={14} />
+                      {t("readFailed", { reason: row.reason })}
+                    </span>
+                  )}
+                </td>
+              </tr>
+            ),
+          )}
         </tbody>
       )}
     </table>

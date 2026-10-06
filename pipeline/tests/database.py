@@ -22,6 +22,7 @@ TENANT_TABLES = [
     "application",
     "score",
     "activity",
+    "deletion_request",
 ]
 WEIGHTS = {
     "skills_match": 30,
@@ -97,6 +98,12 @@ def seed_tenant(cur: Cursor, name: str) -> Tenant:
             (ids["activity"], org, user, ids["candidate"]),
         ),
         (
+            # Completed, so the seeded candidate is not waiting to be purged.
+            "insert into public.deletion_request (id, organisation_id, candidate_id, requested_by,"
+            " completed_at) values (%s, %s, %s, %s, now())",
+            (ids["deletion_request"], org, ids["candidate"], user),
+        ),
+        (
             "insert into storage.objects (bucket_id, name) values (%s, %s)",
             (CV_BUCKET, path),
         ),
@@ -114,3 +121,19 @@ def act_as(cur: Cursor, user_id: uuid.UUID | None) -> None:
     claims = json.dumps({"sub": str(user_id), "role": "authenticated"})
     cur.execute("select set_config('request.jwt.claims', %s, true)", (claims,))
     cur.execute("set local role authenticated")
+
+
+_PURGE = {
+    "request": "select worker.purge_candidate(c.id, 'request',"
+    " array(select cv_file_id from worker.purge_paths(c.id)))"
+    " from (select %s::uuid as id) c",
+    "retention": "select worker.purge_candidate(c.id, 'retention',"
+    " array(select cv_file_id from worker.purge_paths(c.id)))"
+    " from (select %s::uuid as id) c",
+}
+
+
+def purge_sql(reason: str) -> str:
+    """The worker's purge of one candidate, given as its only parameter: with the files whose
+    originals purge_paths listed, as the sweep passes them once those are removed."""
+    return _PURGE[reason]

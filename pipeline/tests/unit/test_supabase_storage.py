@@ -74,3 +74,50 @@ def test_the_key_never_appears_in_an_error() -> None:
     with pytest.raises(CvStoreUnavailableError) as raised:
         storage(lambda request: httpx2.Response(500, text=KEY)).fetch(PATH)
     assert KEY not in str(raised.value)
+
+
+class TestRemove:
+    """Removing a purged candidate's originals (T100, T101): the one deletion this key makes."""
+
+    def test_it_removes_each_object_by_its_own_request(self) -> None:
+        """One answer per file, so a failure is never hidden inside a bulk success."""
+        seen: list[httpx2.Request] = []
+
+        def answer(request: httpx2.Request) -> httpx2.Response:
+            seen.append(request)
+            return httpx2.Response(200, json={"message": "Successfully deleted"})
+
+        storage(answer).remove([PATH, "organisations/0f0e/cv/2c2d/cv.pdf"])
+        assert [request.method for request in seen] == ["DELETE", "DELETE"]
+        assert all(request.headers["apikey"] == KEY for request in seen)
+        assert [request.url.path for request in seen] == [
+            "/storage/v1/object/cv-originals/organisations/0f0e/cv/1a1b/my cv.pdf",
+            "/storage/v1/object/cv-originals/organisations/0f0e/cv/2c2d/cv.pdf",
+        ]
+
+    @pytest.mark.parametrize(
+        "gone",
+        [
+            httpx2.Response(404),
+            httpx2.Response(400, json={"statusCode": "404", "error": "not_found"}),
+        ],
+    )
+    def test_an_object_already_gone_is_not_an_error(self, gone: httpx2.Response) -> None:
+        storage(lambda _: gone).remove([PATH])
+
+    def test_a_failure_part_way_stops_and_says_so(self) -> None:
+        answers = iter([httpx2.Response(200, json={}), httpx2.Response(503)])
+        with pytest.raises(CvStoreUnavailableError):
+            storage(lambda _: next(answers)).remove([PATH, "organisations/0f0e/cv/2c2d/cv.pdf"])
+
+    @pytest.mark.parametrize("status", [401, 429, 500, 503])
+    def test_a_refusal_or_outage_leaves_the_rows_for_the_next_sweep(self, status: int) -> None:
+        with pytest.raises(CvStoreUnavailableError):
+            storage(lambda _: httpx2.Response(status)).remove([PATH])
+
+    def test_an_unreachable_store_is_an_outage(self) -> None:
+        def answer(request: httpx2.Request) -> httpx2.Response:
+            raise httpx2.ConnectError("refused", request=request)
+
+        with pytest.raises(CvStoreUnavailableError):
+            storage(answer).remove([PATH])

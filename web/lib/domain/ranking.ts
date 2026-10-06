@@ -24,6 +24,8 @@ export interface CandidateFigures {
   /** The extracted fields search compares. */
   searchText: string;
   scoredAt: string | null;
+  /** When the candidate's personal data was deleted, on request or by retention. */
+  purgedAt: string | null;
 }
 
 /** A CV uploaded for the job (cv_file with job_id). */
@@ -55,7 +57,9 @@ export type RankingEntry =
     }
   | { kind: "processing"; id: string; label: string | null }
   | { kind: "review"; id: string; label: string }
-  | { kind: "failed"; id: string; label: string; reason: string | null };
+  | { kind: "failed"; id: string; label: string; reason: string | null }
+  /** A candidate whose personal data was deleted: the application and its decision remain. */
+  | { kind: "removed"; id: string };
 
 export function confidenceLevel(confidence: number | null): ConfidenceLevel {
   if (confidence === null || confidence < REVIEW_BELOW) return "low";
@@ -72,7 +76,8 @@ export function rankJob(
   candidates: readonly CandidateFigures[],
   files: readonly JobFile[],
 ): RankingEntry[] {
-  const scored = candidates
+  const present = candidates.filter((candidate) => candidate.purgedAt === null);
+  const scored = present
     .filter(
       (candidate): candidate is CandidateFigures & { total: number } => candidate.total !== null,
     )
@@ -98,7 +103,7 @@ export function rankJob(
     searchText: candidate.searchText,
     scoredAt: candidate.scoredAt,
   }));
-  const scoring: RankingEntry[] = candidates
+  const scoring: RankingEntry[] = present
     .filter((candidate) => candidate.total === null)
     .map((candidate) => ({
       kind: "processing",
@@ -123,5 +128,9 @@ export function rankJob(
           : [{ kind: "processing", id: file.id, label: file.fileName }];
     }
   });
-  return [...ranked, ...scoring, ...waiting];
+  // Deleted candidates come last, so the list still accounts for every application.
+  const removed: RankingEntry[] = candidates
+    .filter((candidate) => candidate.purgedAt !== null)
+    .map((candidate) => ({ kind: "removed", id: candidate.applicationId }));
+  return [...ranked, ...scoring, ...waiting, ...removed];
 }

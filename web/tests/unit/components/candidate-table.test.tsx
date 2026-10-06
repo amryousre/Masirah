@@ -120,6 +120,15 @@ describe("CandidateTable", () => {
     );
   });
 
+  it("keeps a candidate whose data was deleted in the list, saying so and nothing more", () => {
+    renderIn(
+      "en",
+      <CandidateTable rows={[...rows, { kind: "removed", id: "gone" }]} onSelect={vi.fn()} />,
+    );
+    const row = screen.getByRole("row", { name: "Personal data deleted" });
+    expect(row).toHaveTextContent(/^Personal data deleted$/);
+  });
+
   it("marks nothing when the scores have no break", () => {
     renderIn("en", <CandidateTable rows={rows} onSelect={vi.fn()} />);
     expect(screen.queryByText(/Scores drop/)).not.toBeInTheDocument();

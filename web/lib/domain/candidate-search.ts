@@ -67,6 +67,8 @@ function keep(entry: RankingEntry, view: ListView): boolean {
     if (view.reviewOnly && !entry.needsReview) return false;
     return query === "" || rankedMatches(entry, query);
   }
+  // A deleted candidate has nothing left to search or filter by, so any narrowing leaves it out.
+  if (entry.kind === "removed") return !isNarrowed(view);
   // A file not yet ranked has no decision, and needs review only when it is waiting for one.
   if (view.decision !== "all") return false;
   if (view.reviewOnly && entry.kind !== "review") return false;

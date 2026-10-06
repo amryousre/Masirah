@@ -30,11 +30,13 @@ import psycopg
 
 from masirah_pipeline.adapters.heartbeat import PostgresHeartbeat
 from masirah_pipeline.adapters.native_text import read_native_text
+from masirah_pipeline.adapters.postgres_purge_store import PostgresPurgeStore
 from masirah_pipeline.adapters.postgres_worker_store import PostgresWorkerStore
 from masirah_pipeline.adapters.provider_registry import ConfigurationError, model_for
 from masirah_pipeline.adapters.score_repository import PostgresScoreRepository
 from masirah_pipeline.adapters.supabase_queue import SupabaseQueue
 from masirah_pipeline.adapters.supabase_storage import SupabaseStorage
+from masirah_pipeline.jobs.purge import purge_due
 from masirah_pipeline.scoring_step import ApplicationScorer
 from masirah_pipeline.worker import Worker
 
@@ -44,6 +46,7 @@ REQUIRED = ("MASIRAH_DATABASE_URL", "SUPABASE_URL", "SUPABASE_SECRET_KEY")
 IDLE_SECONDS = 5.0
 # How often stranded files are queued again, and how old a queued file must be to count as one.
 RECONCILE_SECONDS = 5 * 60.0
+PURGE_SECONDS = 60 * 60.0
 STRANDED_AFTER_SECONDS = 10 * 60
 
 
@@ -66,33 +69,57 @@ def worker_name(environment: Mapping[str, str]) -> str:
     return environment.get("MASIRAH_WORKER_NAME", "").strip() or socket.gethostname()
 
 
-class Reconciling:
-    """Runs a batch, and before it, at most once per RECONCILE_SECONDS, queues again any file left
-    queued without a message (migration 0018), so no upload waits for ever (SC-006). A failed
-    reconciliation is logged; the batch runs regardless."""
+class Every:
+    """Runs a batch, and before it, at most once per `every` seconds, a housekeeping task. A failed
+    task is logged; the batch runs regardless, so housekeeping can never stop the processing."""
 
     def __init__(
         self,
         run_once: Callable[[], int],
-        reconcile: Callable[[], int],
+        task: Callable[[], int],
+        every: float,
+        describe: str,
         *,
         clock: Callable[[], float] = time.monotonic,
     ) -> None:
-        self._run_once, self._reconcile, self._clock = run_once, reconcile, clock
+        self._run_once, self._task, self._every = run_once, task, every
+        self._describe, self._clock = describe, clock
         self._last: float | None = None
 
     def __call__(self) -> int:
         now = self._clock()
-        if self._last is None or now - self._last >= RECONCILE_SECONDS:
+        if self._last is None or now - self._last >= self._every:
             self._last = now
             try:
-                requeued = self._reconcile()
+                done = self._task()
             except Exception:
-                log.exception("stranded files could not be reconciled; processing continues")
+                log.exception("%s failed; processing continues", self._describe)
             else:
-                if requeued:
-                    log.warning("queued %s stranded files again", requeued)
+                if done:
+                    log.warning("%s: %s", self._describe, done)
         return self._run_once()
+
+
+def Reconciling(  # noqa: N802 - reads as the wrapper it returns
+    run_once: Callable[[], int],
+    reconcile: Callable[[], int],
+    *,
+    clock: Callable[[], float] = time.monotonic,
+) -> Every:
+    """Queues again any file left queued without a message (migration 0018), at most once per
+    RECONCILE_SECONDS, so no upload waits for ever (SC-006)."""
+    return Every(run_once, reconcile, RECONCILE_SECONDS, "stranded files queued again", clock=clock)
+
+
+def Purging(  # noqa: N802 - reads as the wrapper it returns
+    run_once: Callable[[], int],
+    sweep: Callable[[], int],
+    *,
+    clock: Callable[[], float] = time.monotonic,
+) -> Every:
+    """Removes personal data due to go, on request or past retention (migration 0022), at most
+    once per PURGE_SECONDS: a request is met within the hour, well inside FR-076's 30 days."""
+    return Every(run_once, sweep, PURGE_SECONDS, "candidates purged", clock=clock)
 
 
 def poll(run_once: Callable[[], int], stop: threading.Event, wait: Callable[[float], bool]) -> None:
@@ -111,10 +138,11 @@ def main(environment: Mapping[str, str] = os.environ) -> None:
     # Autocommit: each store operation opens its own transaction, and a read's visibility
     # timeout takes effect at once rather than when some later statement commits.
     with psycopg.connect(settings.database_url, autocommit=True) as connection:
+        storage = SupabaseStorage(settings.supabase_url, settings.supabase_secret_key)
         worker = Worker(
             queue=SupabaseQueue(connection),
             store=PostgresWorkerStore(connection),
-            files=SupabaseStorage(settings.supabase_url, settings.supabase_secret_key),
+            files=storage,
             read_text=read_native_text,
             model=cheap,
             score=ApplicationScorer(PostgresScoreRepository(connection), strong, cheap),
@@ -129,5 +157,7 @@ def main(environment: Mapping[str, str] = os.environ) -> None:
             return int(row[0]) if row else 0
 
         with contextlib.suppress(KeyboardInterrupt):
-            poll(Reconciling(worker.run_once, requeue_stranded), stop, stop.wait)
+            purge_store = PostgresPurgeStore(connection)
+            batch = Reconciling(worker.run_once, requeue_stranded)
+            poll(Purging(batch, lambda: purge_due(purge_store, storage)), stop, stop.wait)
         log.info("worker stopped")

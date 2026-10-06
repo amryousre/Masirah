@@ -12,12 +12,14 @@ import type { ProfileRow, ScorePart } from "@/lib/domain/candidate";
 
 import styles from "./candidate.module.css";
 import { DecisionSection, type DecisionState } from "./decision-controls";
+import { PersonalData, type PrivacyState } from "./personal-data";
 
 interface CandidateScreenProps {
   candidate: string;
   /** The signed-in member, recorded as deciding. */
   actor: string;
   decision: DecisionState;
+  privacy: PrivacyState;
   rank: number | null;
   score: {
     total: number;
@@ -48,6 +50,7 @@ export function CandidateScreen({
   candidate,
   actor,
   decision,
+  privacy,
   rank,
   score,
   profile,
@@ -88,11 +91,12 @@ export function CandidateScreen({
         >
           {section === "reasons" ? (
             <>
-              <Reasons rank={rank} score={score} />
+              <Reasons rank={rank} score={score} removedAt={privacy.purgedAt} />
               <DecisionSection decision={decision} candidate={candidate} actor={actor} />
+              <PersonalData privacy={privacy} candidate={candidate} />
             </>
           ) : (
-            <Profile rows={profile} />
+            <Profile rows={profile} removedAt={privacy.purgedAt} />
           )}
         </Tabs>
       </section>
@@ -170,8 +174,21 @@ function ViewTabs({
   );
 }
 
-function Reasons({ rank, score }: Pick<CandidateScreenProps, "rank" | "score">) {
+function Reasons({
+  rank,
+  score,
+  removedAt,
+}: Pick<CandidateScreenProps, "rank" | "score"> & { removedAt: string | null }) {
   const t = useTranslations("candidate");
+  const tPrivacy = useTranslations("privacy");
+  // A purged candidate has no score left to calculate: their reasons went with their data.
+  if (removedAt !== null) {
+    return (
+      <div className={styles.reasons}>
+        <p className={styles.quiet}>{tPrivacy("removed", { when: removedAt })}</p>
+      </div>
+    );
+  }
   if (score === null) {
     return (
       <div className={styles.reasons}>
@@ -207,8 +224,12 @@ function Reasons({ rank, score }: Pick<CandidateScreenProps, "rank" | "score">) 
   );
 }
 
-function Profile({ rows }: { rows: ProfileRow[] | null }) {
+function Profile({ rows, removedAt }: { rows: ProfileRow[] | null; removedAt: string | null }) {
   const t = useTranslations("candidate");
+  const tPrivacy = useTranslations("privacy");
+  if (removedAt !== null) {
+    return <p className={styles.quiet}>{tPrivacy("removed", { when: removedAt })}</p>;
+  }
   if (rows === null) return <p className={styles.quiet}>{t("profilePending")}</p>;
   return (
     <dl className={styles.profile}>
