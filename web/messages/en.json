@@ -719,11 +719,11 @@
     },
     "retention": {
       "title": "How long it is kept",
-      "body": "Your personal data is deleted automatically once your application has been inactive for the period the employer chooses: 6, 12 or 24 months. It is kept longer only if the employer has shortlisted you or has turned automatic deletion off."
+      "body": "Your personal data is deleted automatically once your application has been inactive for the period the employer chooses: 6, 12 or 24 months. If the employer shortens that period, nothing is deleted under the new period for 7 days. It is kept longer only if the employer has shortlisted you or has turned automatic deletion off."
     },
     "rights": {
       "title": "Your rights",
-      "body": "To see, correct or delete your data, contact the employer you applied to. Once they record your request to delete it, Masirah deletes your personal data within the hour. A record that a decision was made stays, without your personal data."
+      "body": "To see, correct or delete your data, contact the employer you applied to. Once they record your request to delete it, Masirah deletes your personal data, normally within the hour. If a fault delays it, the deletion is retried until it completes. A record that a decision was made stays, without your personal data."
     }
   }
 }
