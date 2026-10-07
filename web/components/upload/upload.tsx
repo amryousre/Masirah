@@ -120,7 +120,9 @@ interface DropZoneProps {
   onFiles: (files: File[]) => void;
   max?: number;
   /** At the processing limit the zone takes nothing, and says when it renews. */
-  limitReached?: { limit: number; renewsOn: string };
+  /** Processing is paused for the month. The limit is the CV count reached, or null when
+   *  something else paused it, the spend ceiling, so no count is named that was not reached. */
+  limitReached?: { limit: number | null; renewsOn: string } | undefined;
 }
 
 export function DropZone({ job, onFiles, max = MAX_BATCH_FILES, limitReached }: DropZoneProps) {
@@ -167,7 +169,9 @@ export function DropZone({ job, onFiles, max = MAX_BATCH_FILES, limitReached }: 
           the limit, the drop about to happen, or the invitation. */}
       <p id={promptId} className={styles.prompt}>
         {disabled
-          ? t("limitReached", { limit: limitReached.limit })
+          ? limitReached.limit === null
+            ? t("paused")
+            : t("limitReached", { limit: limitReached.limit })
           : dragging !== null
             ? t("dropNow", { count: dragging })
             : t("drop", { max })}

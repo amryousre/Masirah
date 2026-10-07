@@ -7,6 +7,7 @@ import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 import { readJobPage } from "@/lib/adapters/job-page";
 import { createSupabaseServerClient } from "@/lib/adapters/supabase";
+import { readUsage, renewalDay } from "@/lib/adapters/usage";
 import { dropOff } from "@/lib/domain/drop-off";
 import { rankJob } from "@/lib/domain/ranking";
 
@@ -38,6 +39,8 @@ export default async function JobPage({ params }: PageProps<"/[lang]/jobs/[jobId
   const t = await getTranslations({ locale, namespace: "job" });
   const { job } = page;
   const entries = rankJob(page.candidates, page.files);
+  // At a limit the drop target says processing is paused, and when it resumes (FR-026).
+  const usage = await readUsage(await createSupabaseServerClient()).catch(() => null);
   const scores = entries.flatMap((entry) => (entry.kind === "ranked" ? [entry.score] : []));
   const meta = [
     job.location,
@@ -66,7 +69,21 @@ export default async function JobPage({ params }: PageProps<"/[lang]/jobs/[jobId
           </p>
         )}
       </header>
-      <JobScreen jobId={job.id} jobTitle={job.title} entries={entries} dropOff={dropOff(scores)} />
+      <JobScreen
+        jobId={job.id}
+        jobTitle={job.title}
+        entries={entries}
+        dropOff={dropOff(scores)}
+        limitReached={
+          usage?.atLimit === true
+            ? {
+                // The count is named only when it is what paused processing.
+                limit: usage.used >= usage.limit ? usage.limit : null,
+                renewsOn: renewalDay(usage.renewsAt, locale),
+              }
+            : undefined
+        }
+      />
     </div>
   );
 }

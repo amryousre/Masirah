@@ -146,4 +146,21 @@ describe("DropZone", () => {
     ).toBeInTheDocument();
     expect(screen.getByTestId("drop-zone").querySelector("input")).toBeDisabled();
   });
+
+  it("paused by spending with CVs left, it names no count it has not reached", () => {
+    renderIn(
+      "en",
+      <DropZone
+        job="Accountant"
+        onFiles={vi.fn()}
+        limitReached={{ limit: null, renewsOn: "1 Oct" }}
+      />,
+    );
+    expect(screen.getByText("Processing is paused for this month")).toBeInTheDocument();
+    expect(screen.queryByText(/limit of/)).toBeNull();
+    expect(
+      screen.getByText("Everything you uploaded is still here. The limit renews on 1 Oct."),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("drop-zone").querySelector("input")).toBeDisabled();
+  });
 });

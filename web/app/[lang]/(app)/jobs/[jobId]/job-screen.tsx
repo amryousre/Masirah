@@ -40,11 +40,14 @@ export function JobScreen({
   jobTitle,
   entries,
   dropOff,
+  limitReached,
 }: {
   jobId: string;
   jobTitle: string;
   entries: readonly RankingEntry[];
   dropOff: DropOff | null;
+  /** Set when the organisation's processing is halted for the month (FR-026). */
+  limitReached?: { limit: number | null; renewsOn: string } | undefined;
 }) {
   const t = useTranslations("job");
   const locale = useLocale();
@@ -166,7 +169,7 @@ export function JobScreen({
   return (
     <div className={styles.screen}>
       <section aria-label={t("addCvs")} className={styles.uploads}>
-        <DropZone job={jobTitle} onFiles={upload} />
+        <DropZone job={jobTitle} onFiles={upload} limitReached={limitReached} />
         {uploads.length > 0 && <UploadList items={uploads} />}
       </section>
       {entries.length > 0 && (

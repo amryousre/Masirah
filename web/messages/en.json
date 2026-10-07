@@ -66,6 +66,7 @@
     "renews": "Renews on {date}.",
     "remaining": "{left, plural, =0 {No CVs left this month.} one {{left} CV left this month.} other {{left} CVs left this month.}} Processing continues.",
     "paused": "Processing is paused. {waiting, plural, =0 {No files are waiting} one {{waiting} file is waiting and will be processed} other {{waiting} files are waiting and will be processed}} when you upgrade or on {date}. Nothing was deleted or hidden.",
+    "pausedUntil": "Processing is paused. {waiting, plural, =0 {No files are waiting} one {{waiting} file is waiting and will be processed} other {{waiting} files are waiting and will be processed}} on {date}. Nothing was deleted or hidden.",
     "loading": "Loading usage…",
     "upgrade": "Upgrade plan",
     "viewUsage": "View usage"
@@ -114,6 +115,7 @@
     "dropNow": "{count, plural, one {Drop {count} file to upload it} other {Drop {count} files to upload them}}",
     "destination": "They'll be added to “{job}”.",
     "limitReached": "Processing is paused: you've reached this month's limit of {limit} CVs",
+    "paused": "Processing is paused for this month",
     "limitDetail": "Everything you uploaded is still here. The limit renews on {date}.",
     "sizeKb": "{size} KB",
     "sizeMb": "{size} MB",

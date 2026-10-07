@@ -717,6 +717,16 @@ export type Database = {
         Args: { cv_file_id: string; locale: string }
         Returns: number
       }
+      organisation_usage: {
+        Args: never
+        Returns: {
+          at_limit: boolean
+          cv_limit: number
+          cvs: number
+          renews_at: string
+          waiting: number
+        }[]
+      }
       record_decision: {
         Args: {
           chosen: Database["public"]["Enums"]["application_decision"]
