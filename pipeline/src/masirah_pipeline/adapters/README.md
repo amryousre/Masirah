@@ -28,8 +28,9 @@ registry cannot configure fails it too.
    key from `KEY_VARIABLES` in `provider_registry.py`, and its section here, in the same change.
    The worker then refuses to start with any of its models.
 
-The candidate-facing statement of this position is in the privacy policy (spec US3, scenario 6).
-Change both together.
+Candidates must also be told this in the privacy policy (spec US3, scenario 6). That policy does
+not exist yet, and its wording is for the product owner to approve, so the statement is still to be
+added (T094 stays open until it is). Once it exists, change it and this file together.
 
 ## Each provider's position
 
