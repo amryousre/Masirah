@@ -171,7 +171,8 @@
       "invalid": "That email and password don't match. Check both and try again.",
       "unavailable": "Sign-in isn't available right now. Try again in a few minutes.",
       "google": "Google sign-in didn't finish. Try again, or sign in with your email and password."
-    }
+    },
+    "privacy": "Privacy for candidates"
   },
   "noAccess": {
     "title": "This account has no access yet",
@@ -689,6 +690,40 @@
       "date": "Write each date as a year, a year and month such as 2021-03, or present.",
       "save": "The corrections couldn’t be saved. Try again.",
       "summary": "Some fields need fixing before the corrections can be saved."
+    }
+  },
+  "privacyPolicy": {
+    "title": "Privacy for candidates",
+    "lede": "How your CV is handled when an employer uses Masirah to screen job applications.",
+    "updated": "Last updated 7 October 2026",
+    "who": {
+      "title": "Who is responsible",
+      "body": "The employer you applied to decides how your CV is used and is responsible for it. Masirah is the tool they use, and handles your CV only on their instructions."
+    },
+    "what": {
+      "title": "What is processed",
+      "body": "Your CV file and the details read from it: your name and contact details, work history, education, skills, languages and certifications."
+    },
+    "use": {
+      "title": "How it is used",
+      "body": "To help the employer compare applications for a job. An AI model reads your CV and suggests how well it matches the job, with its reasons. The suggestion is advice only: a person at the employer makes every decision.",
+      "fairness": "Your name, contact details and education dates are removed before your CV is scored. Gender, age, photograph, nationality and marital status are not used in scoring."
+    },
+    "ai": {
+      "title": "AI providers",
+      "body": "The AI models are run by Anthropic and OpenAI. Under their terms, neither uses what Masirah sends to train its models. Each deletes it within 30 days, unless it must be kept longer to investigate misuse or because the law requires it."
+    },
+    "where": {
+      "title": "Where it is kept",
+      "body": "In private storage in Frankfurt, Germany. In Masirah, only people at the employer you applied to can see it."
+    },
+    "retention": {
+      "title": "How long it is kept",
+      "body": "Your personal data is deleted automatically once your application has been inactive for the period the employer chooses: 6, 12 or 24 months. It is kept longer only if the employer has shortlisted you or has turned automatic deletion off."
+    },
+    "rights": {
+      "title": "Your rights",
+      "body": "To see, correct or delete your data, contact the employer you applied to. Once they record your request to delete it, Masirah deletes your personal data within the hour. A record that a decision was made stays, without your personal data."
     }
   }
 }

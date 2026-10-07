@@ -6,9 +6,16 @@ import styles from "./auth-frame.module.css";
 
 /**
  * The frame around the screens before the product: sign-in and its outcomes. The product's name
- * at the reading start, the language switch at the end, and one narrow column of content.
+ * at the reading start, the language switch at the end, and one narrow column of content. A page
+ * of text to read, such as the privacy page, takes a reading-width column instead.
  */
-export function AuthFrame({ children }: { children: ReactNode }) {
+export function AuthFrame({
+  children,
+  width = "narrow",
+}: {
+  children: ReactNode;
+  width?: "narrow" | "reading";
+}) {
   const product = useTranslations("meta")("product");
   return (
     <div className={styles.frame}>
@@ -17,7 +24,7 @@ export function AuthFrame({ children }: { children: ReactNode }) {
         <LanguageSwitch />
       </header>
       <main className={styles.main}>
-        <div className={styles.column}>{children}</div>
+        <div className={width === "reading" ? styles.reading : styles.column}>{children}</div>
       </main>
     </div>
   );

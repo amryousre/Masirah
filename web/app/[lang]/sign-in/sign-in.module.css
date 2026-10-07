@@ -31,6 +31,14 @@
   line-height: var(--leading-caption);
 }
 
+.privacy {
+  justify-self: start;
+  color: var(--color-link);
+  font-size: var(--size-caption);
+  line-height: var(--leading-caption);
+  text-underline-offset: 3px;
+}
+
 .alert {
   display: flex;
   align-items: flex-start;

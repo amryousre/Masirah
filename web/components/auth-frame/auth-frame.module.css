@@ -38,6 +38,12 @@
   inline-size: min(100%, 380px);
 }
 
+.reading {
+  display: grid;
+  gap: var(--space-8);
+  inline-size: min(100%, var(--measure));
+}
+
 .heading {
   display: grid;
   gap: calc(var(--space-1) + var(--space-0_5));
