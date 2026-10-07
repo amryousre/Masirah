@@ -10,6 +10,8 @@ and no transaction stays open while a CV is processed. Tests pass a connection i
 transaction they roll back.
 """
 
+import math
+from datetime import UTC, datetime
 from typing import Any
 
 import psycopg
@@ -40,6 +42,13 @@ class SupabaseQueue:
 
     def archive(self, queue: str, message_id: int) -> bool:
         return self._called("select worker.archive(%s, %s)", queue, message_id)
+
+    def defer(self, queue: str, message_id: int, until: datetime) -> None:
+        # Whole seconds, rounded up, so the message never comes back before `until`.
+        delay = max(0, math.ceil((until - datetime.now(UTC)).total_seconds()))
+        self._connection.execute(
+            "select worker.defer(%s, %s, %s)", (_known(queue), message_id, delay)
+        )
 
     def _called(self, statement: str, queue: str, message_id: int) -> bool:
         row = self._connection.execute(statement, (_known(queue), message_id)).fetchone()

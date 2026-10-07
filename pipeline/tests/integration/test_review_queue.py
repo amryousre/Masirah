@@ -19,10 +19,12 @@ import pytest
 from psycopg.types.json import Jsonb
 
 from masirah_pipeline.adapters.native_text import read_native_text
+from masirah_pipeline.adapters.postgres_spend_ledger import PostgresSpendLedger
 from masirah_pipeline.adapters.postgres_worker_store import PostgresWorkerStore
 from masirah_pipeline.adapters.score_repository import PostgresScoreRepository
 from masirah_pipeline.adapters.supabase_queue import SupabaseQueue
 from masirah_pipeline.extraction import PROMPT_VERSION as EXTRACT_PROMPT_VERSION
+from masirah_pipeline.metering import MeteredModel
 from masirah_pipeline.ports.model_provider import (
     ModelIdentity,
     StructuredRequest,
@@ -153,13 +155,19 @@ def run(cur: Cursor) -> dict[str, uuid.UUID]:
     uploaded = {name: upload(cur, tenant, uploads, name) for name in FILES}
     cur.execute("set local role masirah_worker")
     connection = cur.connection
+    ledger = PostgresSpendLedger(connection)
     worker = Worker(
         queue=SupabaseQueue(connection),
         store=PostgresWorkerStore(connection),
         files=uploads,
         read_text=read_native_text,
-        model=model,
-        score=ApplicationScorer(PostgresScoreRepository(connection), model, model),
+        model=MeteredModel(model, "extraction", ledger),
+        score=ApplicationScorer(
+            PostgresScoreRepository(connection),
+            MeteredModel(model, "scoring", ledger),
+            MeteredModel(model, "summary", ledger),
+        ),
+        budget=ledger,
     )
     handled = 0
     while batch := worker.run_once():

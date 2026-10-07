@@ -21,16 +21,19 @@ score's cost (obligation 5), sits behind the Scorer (T056, T057).
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from decimal import Decimal
 from enum import Enum
 from typing import Protocol
 from uuid import UUID
 
 from masirah_pipeline.domain.arabic import name_normalised
+from masirah_pipeline.domain.budget import halt_reason, month_start, next_month_start
 from masirah_pipeline.domain.confidence import confidence
 from masirah_pipeline.domain.profile import Profile, profile_from_output
 from masirah_pipeline.domain.review_reason import Review, after_extraction, before_extraction
 from masirah_pipeline.extraction import extract_profile
+from masirah_pipeline.metering import spending_for
 from masirah_pipeline.ports.cv_store import CvStore, MissingCvError
 from masirah_pipeline.ports.document_text import DocumentReader, UnreadableDocumentError
 from masirah_pipeline.ports.job_queue import JobQueue, ReceivedMessage
@@ -43,6 +46,7 @@ from masirah_pipeline.ports.queue_message import (
     RejectedMessageError,
     parse_queue_message,
 )
+from masirah_pipeline.ports.spend_ledger import SpendLedger
 from masirah_pipeline.ports.worker_store import (
     CachedProfile,
     CandidateDetails,
@@ -67,6 +71,8 @@ class Outcome(Enum):
     DONE = "done"
     LEFT = "left"
     ARCHIVED = "archived"
+    # Put back until the organisation's monthly limits renew (T093).
+    DEFERRED = "deferred"
 
 
 @dataclass(frozen=True)
@@ -101,9 +107,12 @@ class Worker:
     read_text: DocumentReader
     model: StructuredModel
     score: Scorer
+    # This month's spend and limits per organisation, which halt its processing (T093).
+    budget: SpendLedger
     # Records that the worker is alive (T030): before each batch and after every message, so a
     # long batch still shows it working.
     beat: Callable[[], None] = _silent
+    clock: Callable[[], datetime] = lambda: datetime.now(UTC)
 
     def run_once(self) -> int:
         self._beat()
@@ -139,7 +148,18 @@ class Worker:
         try:
             if received.read_count > MAX_ATTEMPTS:
                 raise _TerminalError(f"processing failed after {MAX_ATTEMPTS} attempts")
-            self._process(message)
+            if self._halted(message.organisation_id):
+                until = next_month_start(self.clock())
+                self.queue.defer(queue, received.message_id, until)
+                log.warning(
+                    "organisation %s is at its monthly limit; CV file %s waits until %s",
+                    message.organisation_id,
+                    message.cv_file_id,
+                    until.isoformat(),
+                )
+                return Outcome.DEFERRED
+            with spending_for(message.organisation_id, message.cv_file_id):
+                self._process(message)
         except _TerminalError as error:
             self._fail(queue, received, message, str(error))
             return Outcome.ARCHIVED
@@ -153,6 +173,13 @@ class Worker:
             return Outcome.LEFT
         self.queue.delete(queue, received.message_id)
         return Outcome.DONE
+
+    def _halted(self, organisation: UUID) -> bool:
+        """Whether the organisation has reached its monthly CV limit or spend ceiling (AI-06):
+        checked before any of a CV's work, so the most it can be passed by is the cost of the
+        CVs already being read when it is reached."""
+        usage = self.budget.usage(organisation, month_start(self.clock()))
+        return halt_reason(usage, self.budget.limits(organisation)) is not None
 
     def _process(self, message: CvProcessingMessage) -> None:
         organisation, file_id = message.organisation_id, message.cv_file_id

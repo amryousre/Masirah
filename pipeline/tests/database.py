@@ -23,6 +23,7 @@ TENANT_TABLES = [
     "score",
     "activity",
     "deletion_request",
+    "model_spend",
 ]
 WEIGHTS = {
     "skills_match": 30,
@@ -102,6 +103,11 @@ def seed_tenant(cur: Cursor, name: str) -> Tenant:
             "insert into public.deletion_request (id, organisation_id, candidate_id, requested_by,"
             " completed_at) values (%s, %s, %s, %s, now())",
             (ids["deletion_request"], org, ids["candidate"], user),
+        ),
+        (
+            "insert into public.model_spend (id, organisation_id, cv_file_id, kind, cost_egp)"
+            " values (%s, %s, %s, 'extraction', 0.4)",
+            (ids["model_spend"], org, ids["cv_file"]),
         ),
         (
             "insert into storage.objects (bucket_id, name) values (%s, %s)",

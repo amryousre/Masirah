@@ -19,11 +19,13 @@ import pytest
 from psycopg.types.json import Jsonb
 
 from masirah_pipeline.adapters.native_text import read_native_text
+from masirah_pipeline.adapters.postgres_spend_ledger import PostgresSpendLedger
 from masirah_pipeline.adapters.postgres_worker_store import PostgresWorkerStore
 from masirah_pipeline.adapters.score_repository import PostgresScoreRepository
 from masirah_pipeline.adapters.supabase_queue import SupabaseQueue
 from masirah_pipeline.assessment import SCORE_PROMPT_VERSION, SUMMARY_PROMPT_VERSION
 from masirah_pipeline.extraction import PROMPT_VERSION as EXTRACT_PROMPT_VERSION
+from masirah_pipeline.metering import MeteredModel
 from masirah_pipeline.ports.model_provider import (
     ModelIdentity,
     StructuredRequest,
@@ -135,17 +137,26 @@ def upload(cur: Cursor, tenant: Tenant, files: CorpusFiles, name: str) -> uuid.U
 def run(cur: Cursor) -> tuple[Tenant, dict[str, uuid.UUID], CorpusModel]:
     cur.execute("delete from pgmq.q_cv_processing")
     tenant = seed_tenant(cur, "alpha")
+    cur.execute(
+        "delete from public.model_spend where organisation_id = %s", (tenant.organisation_id,)
+    )
     files, model = CorpusFiles(), CorpusModel()
     uploaded = {name: upload(cur, tenant, files, name) for name in CVS}
     cur.execute("set local role masirah_worker")
     connection = cur.connection
+    ledger = PostgresSpendLedger(connection)
     worker = Worker(
         queue=SupabaseQueue(connection),
         store=PostgresWorkerStore(connection),
         files=files,
         read_text=read_native_text,
-        model=model,
-        score=ApplicationScorer(PostgresScoreRepository(connection), model, model),
+        model=MeteredModel(model, "extraction", ledger),
+        score=ApplicationScorer(
+            PostgresScoreRepository(connection),
+            MeteredModel(model, "scoring", ledger),
+            MeteredModel(model, "summary", ledger),
+        ),
+        budget=ledger,
     )
     assert worker.run_once() == len(CVS)
     cur.execute("reset role")
@@ -207,3 +218,20 @@ def test_no_scoring_or_summary_request_carries_a_candidates_name(
     later = [r for r in model.requests if r.prompt_version != EXTRACT_PROMPT_VERSION]
     assert len(later) == 2 * len(CVS)
     assert not any(name in request.content for name in names for request in later)
+
+
+def test_every_model_call_is_on_the_spend_ledger(
+    cur: Cursor, run: tuple[Tenant, dict[str, uuid.UUID], CorpusModel]
+) -> None:
+    """Extraction, scoring and summary, each recorded with what it cost (T093, AI-02)."""
+    tenant, uploaded, _ = run
+    cur.execute(
+        "select cv_file_id, kind, cost_egp from public.model_spend where organisation_id = %s"
+        " order by kind",
+        (tenant.organisation_id,),
+    )
+    rows = cur.fetchall()
+    assert sorted((file, kind) for file, kind, _ in rows) == sorted(
+        (file, kind) for file in uploaded.values() for kind in ("extraction", "scoring", "summary")
+    )
+    assert {cost for _, _, cost in rows} == {Decimal(1)}

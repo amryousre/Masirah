@@ -15,8 +15,11 @@ from typing import Any
 
 import pytest
 
+from masirah_pipeline.domain.budget import Limits, next_month_start
+from masirah_pipeline.domain.budget import Usage as BudgetUsage
 from masirah_pipeline.domain.profile import Profile
 from masirah_pipeline.domain.review_reason import Review
+from masirah_pipeline.metering import MeteredModel
 from masirah_pipeline.ports.cv_store import CvStoreUnavailableError, MissingCvError
 from masirah_pipeline.ports.document_text import UnreadableDocumentError
 from masirah_pipeline.ports.job_queue import ReceivedMessage
@@ -29,6 +32,7 @@ from masirah_pipeline.ports.model_provider import (
     Usage,
 )
 from masirah_pipeline.ports.queue_message import CV_PROCESSING
+from masirah_pipeline.ports.spend_ledger import Spend
 from masirah_pipeline.ports.worker_store import CachedProfile, CvFile, Extraction, StoredProfile
 from masirah_pipeline.worker import MAX_ATTEMPTS, Outcome, ScoringRequest, Worker
 
@@ -40,6 +44,7 @@ CANDIDATE_ID = uuid.uuid4()
 HASH = "a" * 64
 PATH = f"organisations/{ORG}/cv/{FILE_ID}/cv.pdf"
 COST = Decimal("0.42")
+NOW = datetime(2026, 10, 6, 12, 0, tzinfo=UTC)
 
 TEXT = """\
 منى عبد الله
@@ -90,6 +95,7 @@ class FakeQueue:
     waiting: list[ReceivedMessage] = field(default_factory=list)
     deleted: list[int] = field(default_factory=list)
     archived: list[int] = field(default_factory=list)
+    deferred: list[tuple[int, datetime]] = field(default_factory=list)
     reads: list[tuple[str, int, int]] = field(default_factory=list)
 
     def read(self, queue: str, *, visibility_seconds: int, quantity: int) -> list[ReceivedMessage]:
@@ -104,6 +110,27 @@ class FakeQueue:
     def archive(self, queue: str, message_id: int) -> bool:
         self.archived.append(message_id)
         return True
+
+    def defer(self, queue: str, message_id: int, until: datetime) -> None:
+        self.deferred.append((message_id, until))
+
+
+@dataclass
+class FakeBudget:
+    usage_now: BudgetUsage = field(default_factory=lambda: BudgetUsage(0, Decimal(0)))
+    limits_now: Limits = field(default_factory=lambda: Limits(300, Decimal("750")))
+    asked: list[tuple[uuid.UUID, datetime]] = field(default_factory=list)
+    spent: list[Spend] = field(default_factory=list)
+
+    def record(self, spend: Spend) -> None:
+        self.spent.append(spend)
+
+    def usage(self, organisation_id: uuid.UUID, since: datetime) -> BudgetUsage:
+        self.asked.append((organisation_id, since))
+        return self.usage_now
+
+    def limits(self, organisation_id: uuid.UUID) -> Limits:
+        return self.limits_now
 
 
 @dataclass
@@ -217,6 +244,7 @@ class Setup:
     files: FakeFiles = field(default_factory=FakeFiles)
     model: FakeModel = field(default_factory=FakeModel)
     scorer: FakeScorer = field(default_factory=FakeScorer)
+    budget: FakeBudget = field(default_factory=FakeBudget)
     text: str | Exception = TEXT
 
     def read_text(self, content: bytes) -> str:
@@ -233,6 +261,8 @@ class Setup:
             read_text=self.read_text,
             model=self.model,
             score=self.scorer,
+            budget=self.budget,
+            clock=lambda: NOW,
         )
 
     def handle(self, body: Any = None, read_count: int = 1) -> Outcome:
@@ -557,3 +587,34 @@ class TestRunOnce:
         setup.queue.waiting = [received(message()), received("broken")]
         worker.run_once()
         assert len(beats) == 3
+
+
+class TestBudget:
+    """AI-06, FR-026: an organisation at its limit waits for next month, at no further cost."""
+
+    def test_an_organisation_at_its_spend_ceiling_waits_for_next_month(self, setup: Setup) -> None:
+        setup.budget.usage_now = BudgetUsage(12, Decimal("750"))
+        assert setup.handle() is Outcome.DEFERRED
+        assert setup.queue.deferred == [(7, next_month_start(NOW))]
+        assert setup.model.calls == 0
+        assert setup.store.status == "queued"
+        assert (setup.queue.deleted, setup.queue.archived) == ([], [])
+
+    def test_an_organisation_at_its_cv_limit_waits_too(self, setup: Setup) -> None:
+        setup.budget.usage_now = BudgetUsage(300, Decimal("10"))
+        assert setup.handle() is Outcome.DEFERRED
+        assert setup.model.calls == 0
+
+    def test_usage_is_counted_from_the_start_of_the_month(self, setup: Setup) -> None:
+        assert setup.handle() is Outcome.DONE
+        assert setup.budget.asked == [(ORG, datetime(2026, 9, 30, 21, 0, tzinfo=UTC))]
+
+    def test_model_calls_are_charged_to_the_cv_they_are_for(self, setup: Setup) -> None:
+        metered = MeteredModel(setup.model, "extraction", setup.budget)
+        worker = setup.worker
+        worker.model = metered
+        worker.handle(CV_PROCESSING, received(message()))
+        assert [
+            (spend.organisation_id, spend.cv_file_id, spend.cost_egp)
+            for spend in setup.budget.spent
+        ] == [(ORG, FILE_ID, COST)]

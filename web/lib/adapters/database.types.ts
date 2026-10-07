@@ -397,11 +397,60 @@ export type Database = {
           },
         ]
       }
+      model_spend: {
+        Row: {
+          cost_egp: number
+          created_at: string
+          cv_file_id: string
+          id: string
+          kind: string
+          model: string | null
+          organisation_id: string
+          provider: string | null
+          spent_at: string
+          updated_at: string
+        }
+        Insert: {
+          cost_egp: number
+          created_at?: string
+          cv_file_id: string
+          id?: string
+          kind: string
+          model?: string | null
+          organisation_id: string
+          provider?: string | null
+          spent_at?: string
+          updated_at?: string
+        }
+        Update: {
+          cost_egp?: number
+          created_at?: string
+          cv_file_id?: string
+          id?: string
+          kind?: string
+          model?: string | null
+          organisation_id?: string
+          provider?: string | null
+          spent_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "model_spend_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisation"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organisation: {
         Row: {
           created_at: string
           id: string
           locale: string
+          monthly_cv_limit: number
+          monthly_spend_ceiling_egp: number
           name: string
           retention_changed_at: string | null
           retention_months: number | null
@@ -411,6 +460,8 @@ export type Database = {
           created_at?: string
           id?: string
           locale: string
+          monthly_cv_limit?: number
+          monthly_spend_ceiling_egp?: number
           name: string
           retention_changed_at?: string | null
           retention_months?: number | null
@@ -420,6 +471,8 @@ export type Database = {
           created_at?: string
           id?: string
           locale?: string
+          monthly_cv_limit?: number
+          monthly_spend_ceiling_egp?: number
           name?: string
           retention_changed_at?: string | null
           retention_months?: number | null
