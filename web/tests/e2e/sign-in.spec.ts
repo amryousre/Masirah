@@ -98,7 +98,9 @@ test("on a phone, a short page does not stretch the frame's bar", async ({ page 
   const bar = await page.getByRole("complementary").boundingBox();
   const heading = await page.getByRole("heading", { level: 1 }).boundingBox();
   expect(bar?.height).toBeLessThan(780 / 2);
-  expect((heading?.y ?? Infinity) - ((bar?.y ?? 0) + (bar?.height ?? 0))).toBeLessThan(64);
+  const gap = (heading?.y ?? Infinity) - ((bar?.y ?? 0) + (bar?.height ?? 0));
+  expect(gap).toBeGreaterThanOrEqual(0);
+  expect(gap).toBeLessThan(64);
 });
 
 test("a wrong password says so without saying which part was wrong", async ({ page }) => {

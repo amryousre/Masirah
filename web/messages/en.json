@@ -115,6 +115,7 @@
     "dropNow": "{count, plural, one {Drop {count} file to upload it} other {Drop {count} files to upload them}}",
     "destination": "They'll be added to “{job}”.",
     "limitReached": "Processing is paused: you've reached this month's limit of {limit} CVs",
+    "paused": "Processing is paused for this month",
     "limitDetail": "Everything you uploaded is still here. The limit renews on {date}.",
     "sizeKb": "{size} KB",
     "sizeMb": "{size} MB",

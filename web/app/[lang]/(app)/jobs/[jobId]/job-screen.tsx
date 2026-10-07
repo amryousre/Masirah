@@ -47,7 +47,7 @@ export function JobScreen({
   entries: readonly RankingEntry[];
   dropOff: DropOff | null;
   /** Set when the organisation's processing is halted for the month (FR-026). */
-  limitReached?: { limit: number; renewsOn: string } | undefined;
+  limitReached?: { limit: number | null; renewsOn: string } | undefined;
 }) {
   const t = useTranslations("job");
   const locale = useLocale();

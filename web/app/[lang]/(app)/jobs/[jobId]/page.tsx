@@ -76,7 +76,11 @@ export default async function JobPage({ params }: PageProps<"/[lang]/jobs/[jobId
         dropOff={dropOff(scores)}
         limitReached={
           usage?.atLimit === true
-            ? { limit: usage.limit, renewsOn: renewalDay(usage.renewsAt, locale) }
+            ? {
+                // The count is named only when it is what paused processing.
+                limit: usage.used >= usage.limit ? usage.limit : null,
+                renewsOn: renewalDay(usage.renewsAt, locale),
+              }
             : undefined
         }
       />

@@ -43,7 +43,9 @@ test("at the spend ceiling, the sidebar and the job say processing is paused", a
   await expect(page.getByText(/^Processing is paused\./)).toBeVisible();
   await expect(page.getByText(/when you upgrade/)).toHaveCount(0);
   await page.goto(`/en/jobs/${job}`);
-  await expect(page.getByText(/reached this month's limit of 300 CVs/)).toBeVisible();
+  // Spending paused it with CVs left, so no CV count is named.
+  await expect(page.getByText("Processing is paused for this month")).toBeVisible();
+  await expect(page.getByText(/limit of 300 CVs/)).toHaveCount(0);
   await expect(page.getByText(/Everything you uploaded is still here/)).toBeVisible();
   await expectAccessible(page);
 });

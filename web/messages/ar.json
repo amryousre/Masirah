@@ -115,6 +115,7 @@
     "dropNow": "{count, plural, one {أفلت ملفًا واحدًا لرفعه} two {أفلت ملفين لرفعهما} few {أفلت {count} ملفات لرفعها} many {أفلت {count} ملفًا لرفعها} other {أفلت {count} ملف لرفعها}}",
     "destination": "ستُضاف إلى «{job}».",
     "limitReached": "توقفت المعالجة: بلغت حد {limit} سيرة هذا الشهر",
+    "paused": "توقفت المعالجة لهذا الشهر",
     "limitDetail": "كل ما رفعته متاح كما هو. يتجدد الحد في {date}.",
     "sizeKb": "{size} KB",
     "sizeMb": "{size} MB",
