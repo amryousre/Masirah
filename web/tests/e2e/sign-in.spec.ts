@@ -93,10 +93,12 @@ test("on a phone, a short page does not stretch the frame's bar", async ({ page 
   await signIn(page, member.email, member.password);
   await expect(page).toHaveURL(/\/ar\/jobs$/);
 
+  // The bar holds its sections, the usage meter and the user, whatever the page's length: it
+  // takes well under half the screen, and the page starts right below it.
   const bar = await page.getByRole("complementary").boundingBox();
   const heading = await page.getByRole("heading", { level: 1 }).boundingBox();
-  expect(bar?.height).toBeLessThan(260);
-  expect(heading?.y).toBeLessThan(320);
+  expect(bar?.height).toBeLessThan(780 / 2);
+  expect((heading?.y ?? Infinity) - ((bar?.y ?? 0) + (bar?.height ?? 0))).toBeLessThan(64);
 });
 
 test("a wrong password says so without saying which part was wrong", async ({ page }) => {

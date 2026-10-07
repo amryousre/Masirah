@@ -66,6 +66,7 @@
     "renews": "Renews on {date}.",
     "remaining": "{left, plural, =0 {No CVs left this month.} one {{left} CV left this month.} other {{left} CVs left this month.}} Processing continues.",
     "paused": "Processing is paused. {waiting, plural, =0 {No files are waiting} one {{waiting} file is waiting and will be processed} other {{waiting} files are waiting and will be processed}} when you upgrade or on {date}. Nothing was deleted or hidden.",
+    "pausedUntil": "Processing is paused. {waiting, plural, =0 {No files are waiting} one {{waiting} file is waiting and will be processed} other {{waiting} files are waiting and will be processed}} on {date}. Nothing was deleted or hidden.",
     "loading": "Loading usage…",
     "upgrade": "Upgrade plan",
     "viewUsage": "View usage"

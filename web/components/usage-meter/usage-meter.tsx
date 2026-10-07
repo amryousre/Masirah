@@ -16,6 +16,8 @@ type UsageMeterProps =
       renewsOn: string;
       /** Files waiting because the limit is reached. */
       waiting?: number;
+      /** Processing is halted though CVs are left: the spend ceiling was reached (FR-026). */
+      paused?: boolean;
       onUpgrade?: () => void;
       onViewUsage?: () => void;
     };
@@ -41,9 +43,9 @@ export function UsageMeter(props: UsageMeterProps) {
     );
   }
 
-  const { used, limit, renewsOn, waiting = 0, onUpgrade, onViewUsage } = props;
+  const { used, limit, renewsOn, waiting = 0, paused = false, onUpgrade, onViewUsage } = props;
   const share = limit > 0 ? used / limit : 1;
-  const state = share >= 1 ? "limit" : share >= WARN_AT ? "warning" : "normal";
+  const state = paused || share >= 1 ? "limit" : share >= WARN_AT ? "warning" : "normal";
 
   return (
     <div className={styles.meter} data-state={state}>
@@ -75,7 +77,7 @@ export function UsageMeter(props: UsageMeterProps) {
         <>
           <p className={styles.note}>
             <Icon name="pauseCircle" size={13} strokeWidth={2.25} />
-            {t("paused", { waiting, date: renewsOn })}
+            {t(onUpgrade === undefined ? "pausedUntil" : "paused", { waiting, date: renewsOn })}
           </p>
           {(onUpgrade ?? onViewUsage) && (
             <div className={styles.actions}>

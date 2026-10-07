@@ -461,3 +461,35 @@ export async function correctionsOf(fileId: string): Promise<Record<string, unkn
   if (error) throw new Error(error.message);
   return data.field_overrides as Record<string, unknown>;
 }
+
+/** A model call the organisation paid for this month, as the worker records one. */
+export async function addSpend(
+  account: Account,
+  kind: "extraction" | "scoring" | "summary",
+  cost: number,
+): Promise<void> {
+  if (account.organisationId === null) throw new Error("The account belongs to no organisation.");
+  const { error } = await admin().from("model_spend").insert({
+    organisation_id: account.organisationId,
+    cv_file_id: randomUUID(),
+    kind,
+    cost_egp: cost,
+  });
+  if (error) throw new Error(error.message);
+}
+
+/** The organisation's monthly limits, as the operator sets them. */
+export async function setLimits(
+  account: Account,
+  limits: { cvs?: number; ceilingEgp?: number },
+): Promise<void> {
+  if (account.organisationId === null) throw new Error("The account belongs to no organisation.");
+  const { error } = await admin()
+    .from("organisation")
+    .update({
+      ...(limits.cvs === undefined ? {} : { monthly_cv_limit: limits.cvs }),
+      ...(limits.ceilingEgp === undefined ? {} : { monthly_spend_ceiling_egp: limits.ceilingEgp }),
+    })
+    .eq("id", account.organisationId);
+  if (error) throw new Error(error.message);
+}

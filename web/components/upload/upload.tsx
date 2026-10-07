@@ -120,7 +120,7 @@ interface DropZoneProps {
   onFiles: (files: File[]) => void;
   max?: number;
   /** At the processing limit the zone takes nothing, and says when it renews. */
-  limitReached?: { limit: number; renewsOn: string };
+  limitReached?: { limit: number; renewsOn: string } | undefined;
 }
 
 export function DropZone({ job, onFiles, max = MAX_BATCH_FILES, limitReached }: DropZoneProps) {

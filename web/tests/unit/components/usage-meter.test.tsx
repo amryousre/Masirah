@@ -43,6 +43,22 @@ describe("UsageMeter", () => {
     expect(onUpgrade).toHaveBeenCalledTimes(1);
   });
 
+  it("without an upgrade to offer, says only when the files will be processed", () => {
+    renderIn("en", <UsageMeter used={300} limit={300} renewsOn="1 Nov" waiting={2} />);
+    expect(
+      screen.getByText(
+        "Processing is paused. 2 files are waiting and will be processed on 1 Nov. Nothing was deleted or hidden.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button")).toBeNull();
+  });
+
+  it("is paused when spending halted processing, with CVs still left", () => {
+    renderIn("ar", <UsageMeter used={40} limit={300} renewsOn="1 نوفمبر" waiting={1} paused />);
+    expect(screen.getByText(/توقفت المعالجة/)).toBeInTheDocument();
+    expect(screen.queryByText(/يتجدد في/)).toBeNull();
+  });
+
   it("says so while usage is loading", () => {
     renderIn("en", <UsageMeter loading />);
     expect(screen.getByText("Loading usage…")).toBeInTheDocument();
