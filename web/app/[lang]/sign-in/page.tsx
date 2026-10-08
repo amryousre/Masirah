@@ -7,7 +7,7 @@ import { AuthFrame, AuthHeading } from "@/components/auth-frame/auth-frame";
 import { SubmitButton } from "@/components/button/button";
 import { GoogleMark } from "@/components/google-mark/google-mark";
 import { Icon } from "@/components/icon/icon";
-import { redirect } from "@/i18n/navigation";
+import { Link, redirect } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 import { getAccess } from "@/lib/adapters/session";
 
@@ -52,6 +52,9 @@ export default async function SignInPage({ params, searchParams }: PageProps<"/[
       <p className={styles.divider}>{t("or")}</p>
       <PasswordForm action={signInWithPassword.bind(null, lang)} />
       <p className={styles.note}>{t("inviteOnly")}</p>
+      <Link href="/privacy" className={styles.privacy}>
+        {t("privacy")}
+      </Link>
     </AuthFrame>
   );
 }
