@@ -120,6 +120,20 @@ The corpus holds anonymised real CVs, synthetic CVs (`syn-*`) and captures:
 
 CI is `.github/workflows/ci.yml`. It runs exactly the checks above for web, pipeline and database. The database job starts Supabase.
 
+## Agent skills
+
+### Issue tracker
+
+Issues live in Jira project MAS (TWG CLI first, `atlassian` MCP as fallback), mirroring `tasks.md`; not GitHub Issues. See `Docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five default triage labels (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`), applied as Jira labels. See `Docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `CONTEXT.md` at the root and ADRs in `Docs/adr/`. See `Docs/agents/domain.md`.
+
 ## Working conventions
 
 - **Test first.** Write the test, watch it fail for the intended reason, then implement. Every extraction or scoring behaviour needs a test backed by a committed fixture.
