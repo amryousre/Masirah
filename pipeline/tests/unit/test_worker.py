@@ -19,18 +19,20 @@ from masirah_pipeline.domain.budget import Limits, next_month_start
 from masirah_pipeline.domain.budget import Usage as BudgetUsage
 from masirah_pipeline.domain.profile import Profile
 from masirah_pipeline.domain.review_reason import Review
-from masirah_pipeline.metering import MeteredModel
+from masirah_pipeline.metering import MeteredModel, MeteredOcr
 from masirah_pipeline.ports.cv_store import CvStoreUnavailableError, MissingCvError
 from masirah_pipeline.ports.document_text import UnreadableDocumentError
 from masirah_pipeline.ports.job_queue import ReceivedMessage
 from masirah_pipeline.ports.model_provider import (
     ModelIdentity,
+    ProviderUnavailableError,
     RateLimitedError,
     RefusedError,
     StructuredRequest,
     StructuredResponse,
     Usage,
 )
+from masirah_pipeline.ports.ocr_engine import OcrReading
 from masirah_pipeline.ports.queue_message import CV_PROCESSING
 from masirah_pipeline.ports.spend_ledger import Spend
 from masirah_pipeline.ports.worker_store import CachedProfile, CvFile, Extraction, StoredProfile
@@ -226,6 +228,28 @@ class FakeModel:
         )
 
 
+OCR_COST = Decimal("0.30")
+DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
+
+@dataclass
+class FakeOcr:
+    text: str = TEXT
+    error: Exception | None = None
+    reads: list[tuple[bytes, str]] = field(default_factory=list)
+
+    def read(self, content: bytes, media_type: str) -> OcrReading:
+        self.reads.append((content, media_type))
+        if self.error is not None:
+            raise self.error
+        return OcrReading(
+            self.text,
+            "vision_ocr",
+            ModelIdentity("anthropic", "claude-haiku-4-5", "ocr/1"),
+            OCR_COST,
+        )
+
+
 @dataclass
 class FakeScorer:
     requests: list[ScoringRequest] = field(default_factory=list)
@@ -245,6 +269,7 @@ class Setup:
     model: FakeModel = field(default_factory=FakeModel)
     scorer: FakeScorer = field(default_factory=FakeScorer)
     budget: FakeBudget = field(default_factory=FakeBudget)
+    ocr: FakeOcr | None = None
     text: str | Exception = TEXT
 
     def read_text(self, content: bytes) -> str:
@@ -262,6 +287,7 @@ class Setup:
             model=self.model,
             score=self.scorer,
             budget=self.budget,
+            ocr=None if self.ocr is None else MeteredOcr(self.ocr, self.budget),
             clock=lambda: NOW,
         )
 
@@ -386,6 +412,113 @@ class TestReviewWithoutExtraction:
         assert setup.store.status == "needs_review"
         assert setup.store.review == Review("no_text")
         assert setup.model.calls == 0
+
+
+class TestOcr:
+    """T076: a scan or a photograph is read by OCR when the worker has an engine (US2)."""
+
+    PHOTO = CvFile(FILE_ID, PATH, "image/jpeg", HASH, "queued", None)
+
+    def test_a_photograph_is_read_by_ocr_and_extracted(self, setup: Setup) -> None:
+        setup.ocr, setup.store.file = FakeOcr(), self.PHOTO
+        setup.files.content = b"\xff\xd8\xff a photo"
+        setup.text = AssertionError("a photograph has no text layer to read")
+        assert setup.handle() is Outcome.DONE
+        assert setup.ocr.reads == [(b"\xff\xd8\xff a photo", "image/jpeg")]
+        extraction = setup.store.extraction
+        assert extraction is not None
+        assert (extraction.status, extraction.source) == ("extracted", "vision_ocr")
+        assert extraction.profile["name"] == "منى عبد الله"
+
+    def test_a_pdf_without_a_text_layer_is_read_by_ocr(self, setup: Setup) -> None:
+        setup.ocr, setup.text = FakeOcr(), "  \n"
+        assert setup.handle() is Outcome.DONE
+        assert setup.ocr.reads == [(b"%PDF-1.7 a CV", "application/pdf")]
+        assert setup.store.extraction is not None
+        assert setup.store.extraction.source == "vision_ocr"
+
+    def test_a_scan_whose_only_text_is_a_watermark_is_read_by_ocr(self, setup: Setup) -> None:
+        setup.ocr, setup.text = FakeOcr(), "Scanned by CamScanner"
+        assert setup.handle() is Outcome.DONE
+        assert setup.ocr.reads == [(b"%PDF-1.7 a CV", "application/pdf")]
+        assert setup.store.extraction is not None
+        assert setup.store.extraction.source == "vision_ocr"
+
+    def test_a_file_type_ocr_cannot_read_is_not_fetched(self, setup: Setup) -> None:
+        setup.ocr = FakeOcr()
+        setup.store.file = CvFile(FILE_ID, PATH, "image/webp", HASH, "queued", None)
+        setup.files.error = AssertionError("the file should not be fetched")
+        assert setup.handle() is Outcome.DONE
+        assert setup.store.review == Review("no_text")
+
+    def test_a_pdf_with_a_text_layer_is_not_sent_to_ocr(self, setup: Setup) -> None:
+        # A CV's length of text: the shortest native one in the corpus has 487 letters.
+        setup.ocr, setup.text = FakeOcr(), TEXT * 3
+        setup.handle()
+        assert setup.ocr.reads == []
+        assert setup.store.extraction is not None
+        assert setup.store.extraction.source == "native_text"
+
+    def test_a_word_document_without_text_is_not_sent_to_ocr(self, setup: Setup) -> None:
+        setup.ocr, setup.text = FakeOcr(), ""
+        setup.store.file = CvFile(FILE_ID, PATH, DOCX, HASH, "queued", None)
+        setup.handle()
+        assert setup.ocr.reads == []
+        assert setup.store.review == Review("no_text")
+
+    def test_ocr_that_finds_nothing_sends_the_file_to_review(self, setup: Setup) -> None:
+        setup.ocr, setup.store.file = FakeOcr(text=" \n "), self.PHOTO
+        assert setup.handle() is Outcome.DONE
+        assert setup.store.review == Review("no_text")
+        assert setup.model.calls == 0
+
+    def test_an_unsupported_language_read_by_ocr_goes_to_review(self, setup: Setup) -> None:
+        french = "Je suis comptable avec dix ans d'expérience dans la gestion des comptes.\n" * 5
+        setup.ocr, setup.store.file = FakeOcr(text=french), self.PHOTO
+        setup.handle()
+        assert setup.store.review == Review("unsupported_language", "fr")
+        assert setup.model.calls == 0
+
+    def test_the_ocr_cost_is_part_of_the_extraction_cost(self, setup: Setup) -> None:
+        setup.ocr, setup.store.file = FakeOcr(), self.PHOTO
+        setup.handle()
+        [request] = setup.scorer.requests
+        assert request.extraction_cost_egp == COST + OCR_COST
+
+    def test_the_ocr_reading_is_charged_to_the_organisation(self, setup: Setup) -> None:
+        setup.ocr, setup.store.file = FakeOcr(), self.PHOTO
+        setup.handle()
+        assert (ORG, FILE_ID, "extraction", OCR_COST) in [
+            (spend.organisation_id, spend.cv_file_id, spend.kind, spend.cost_egp)
+            for spend in setup.budget.spent
+        ]
+
+    def test_ocr_that_finds_no_more_than_the_pdf_keeps_its_own_text(self, setup: Setup) -> None:
+        setup.ocr, setup.text = FakeOcr(text="Scanned"), TEXT
+        setup.handle()
+        assert setup.ocr.reads != []
+        assert setup.store.extraction is not None
+        assert setup.store.extraction.source == "native_text"
+
+    def test_a_transient_ocr_failure_leaves_the_message_to_retry(self, setup: Setup) -> None:
+        setup.store.file = self.PHOTO
+        setup.ocr = FakeOcr(error=ProviderUnavailableError("outage"))
+        assert setup.handle() is Outcome.LEFT
+        assert setup.store.failure is None
+
+    def test_a_refused_ocr_read_fails_the_file(self, setup: Setup) -> None:
+        setup.store.file = self.PHOTO
+        setup.ocr = FakeOcr(error=RefusedError("declined"))
+        assert setup.handle() is Outcome.ARCHIVED
+        assert setup.store.failure is not None
+        assert "declined" in setup.store.failure
+
+    def test_an_image_the_engine_cannot_open_fails_the_file(self, setup: Setup) -> None:
+        setup.store.file = self.PHOTO
+        setup.ocr = FakeOcr(error=UnreadableDocumentError("not an image"))
+        assert setup.handle() is Outcome.ARCHIVED
+        assert setup.store.failure is not None
+        assert "not an image" in setup.store.failure
 
 
 class TestScoring:

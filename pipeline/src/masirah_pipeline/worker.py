@@ -33,11 +33,12 @@ from masirah_pipeline.domain.confidence import confidence
 from masirah_pipeline.domain.profile import Profile, profile_from_output
 from masirah_pipeline.domain.review_reason import Review, after_extraction, before_extraction
 from masirah_pipeline.extraction import extract_profile
-from masirah_pipeline.metering import spending_for
+from masirah_pipeline.metering import MeteredOcr, spending_for
 from masirah_pipeline.ports.cv_store import CvStore, MissingCvError
 from masirah_pipeline.ports.document_text import DocumentReader, UnreadableDocumentError
 from masirah_pipeline.ports.job_queue import JobQueue, ReceivedMessage
 from masirah_pipeline.ports.model_provider import RefusedError, StructuredModel
+from masirah_pipeline.ports.ocr_engine import OCR_MEDIA_TYPES
 from masirah_pipeline.ports.queue_message import (
     CV_PROCESSING,
     CvProcessingMessage,
@@ -52,6 +53,7 @@ from masirah_pipeline.ports.worker_store import (
     CandidateDetails,
     CvFile,
     Extraction,
+    ExtractionSource,
     WorkerStore,
 )
 
@@ -63,6 +65,9 @@ MAX_ATTEMPTS = 5
 # message whose worker crashed comes back.
 VISIBILITY_SECONDS = 600
 BATCH_SIZE = 5
+# A PDF with fewer letters than this is taken for a scan: the shortest native CV in the corpus has
+# 487, while a scanning app's watermark has a few dozen.
+SCANNED_TEXT_LETTERS = 200
 # Statuses a file reaches once extraction is settled. A retry does not extract it again.
 SETTLED = frozenset({"extracted", "needs_review"})
 
@@ -95,6 +100,19 @@ def _silent() -> None:
     """No heartbeat, for a worker nobody monitors."""
 
 
+@dataclass(frozen=True)
+class _Read:
+    """A CV's text, how it was read, and what reading it cost."""
+
+    text: str
+    source: ExtractionSource
+    cost_egp: Decimal
+
+
+def _letters(text: str) -> int:
+    return sum(character.isalpha() for character in text)
+
+
 class _TerminalError(Exception):
     """The file cannot be processed, however often it is tried."""
 
@@ -112,6 +130,9 @@ class Worker:
     # Records that the worker is alive (T030): before each batch and after every message, so a
     # long batch still shows it working.
     beat: Callable[[], None] = _silent
+    # Reads scans and photographs (T076). Without one they go to the review queue unread. It is
+    # metered by type, so a paid engine cannot be given to the worker without its spend counted.
+    ocr: MeteredOcr | None = None
     clock: Callable[[], datetime] = lambda: datetime.now(UTC)
 
     def run_once(self) -> int:
@@ -203,22 +224,23 @@ class Worker:
         if cached is not None:
             self._reuse(message, cached)
             return
-        text = self._text(cv_file)
+        read = self._text(cv_file)
+        text = None if read is None else read.text
         waiting = before_extraction(text)
-        if waiting is not None or text is None:
+        if waiting is not None or read is None:
             self.store.mark_needs_review(organisation, file_id, waiting or Review("no_text"))
             return
         try:
-            extracted = extract_profile(self.model, text)
+            extracted = extract_profile(self.model, read.text)
         except RefusedError as error:
             raise _TerminalError(f"the model declined to read the CV: {error}") from error
-        score = Decimal(str(round(confidence(extracted.profile, text), 3)))
+        score = Decimal(str(round(confidence(extracted.profile, read.text), 3)))
         review = after_extraction(float(score))
         candidate_id = self.store.record_extraction(
             organisation,
             file_id,
             Extraction(
-                source="native_text",
+                source=read.source,
                 confidence=score,
                 profile=extracted.profile.as_dict(),
                 candidate=_candidate(extracted.profile),
@@ -226,7 +248,8 @@ class Worker:
             ),
         )
         if review is None:
-            self._score(message, candidate_id, extracted.profile, extracted.response.cost_egp)
+            cost = extracted.response.cost_egp + read.cost_egp
+            self._score(message, candidate_id, extracted.profile, cost)
 
     def _reuse(self, message: CvProcessingMessage, cached: CachedProfile) -> None:
         """The same bytes were extracted before: take that profile, at no model cost (AI-03)."""
@@ -247,19 +270,33 @@ class Worker:
         if review is None:
             self._score(message, candidate_id, profile, Decimal(0))
 
-    def _text(self, cv_file: CvFile) -> str | None:
-        """The CV's text, or None when it has none to read until OCR arrives (T076)."""
-        if cv_file.mime_type.startswith("image/"):
+    def _text(self, cv_file: CvFile) -> _Read | None:
+        """The CV's text and how it was read, or None when it has none: a photograph or a scan
+        with no OCR engine to read it, or a document nothing legible could be taken from.
+
+        A PDF is read by OCR when its own text is too thin to be a CV, as when a scanning app
+        stamps a watermark on page images, and the OCR text replaces it when it holds more."""
+        photograph = cv_file.mime_type.startswith("image/")
+        ocr = self.ocr if cv_file.mime_type in OCR_MEDIA_TYPES else None
+        if photograph and ocr is None:
             return None
         try:
             content = self.files.fetch(cv_file.storage_path)
         except MissingCvError as error:
             raise _TerminalError("the original file is missing from storage") from error
         try:
-            text = self.read_text(content)
+            native = "" if photograph else self.read_text(content)
+            if ocr is None or _letters(native) >= SCANNED_TEXT_LETTERS:
+                return _Read(native, "native_text", Decimal(0)) if native.strip() else None
+            reading = ocr.read(content, cv_file.mime_type)
         except UnreadableDocumentError as error:
             raise _TerminalError(f"the file cannot be read: {error}") from error
-        return text if text.strip() else None
+        except RefusedError as error:
+            raise _TerminalError(f"the model declined to read the scan: {error}") from error
+        if _letters(reading.text) > _letters(native):
+            return _Read(reading.text, reading.source, reading.cost_egp)
+        # The paid reading found no more than the PDF's own text, which is used instead.
+        return _Read(native, "native_text", reading.cost_egp) if native.strip() else None
 
     def _score(
         self, message: CvProcessingMessage, candidate_id: UUID, profile: Profile, cost: Decimal
