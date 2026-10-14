@@ -34,6 +34,7 @@
   font-size: var(--size-headline);
   font-weight: var(--weight-semibold);
   line-height: var(--leading-headline);
+  overflow-wrap: anywhere;
 }
 
 .meta {
@@ -219,8 +220,16 @@ a.step:hover {
 }
 
 @media (width < 48rem) {
+  /* On a phone the actions go under the name when both do not fit on one line (NFR-12). */
   .header {
+    flex-wrap: wrap;
+    align-items: flex-start;
     padding-inline: var(--space-4);
+  }
+
+  .heading {
+    flex: 1 1 12rem;
+    min-inline-size: 0;
   }
 
   .panes {

@@ -1,47 +1,18 @@
 import { expect, type Page, test } from "@playwright/test";
 
-import ar from "../../messages/ar.json" with { type: "json" };
-import en from "../../messages/en.json" with { type: "json" };
-import {
-  type Account,
-  addFileInReview,
-  addJob,
-  addRankedCandidate,
-  createAccount,
-} from "./support/accounts";
 import { expectAccessible, signIn, untilHydrated } from "./support/pages";
+import {
+  expectScreen,
+  LANGS,
+  MESSAGES,
+  PUBLIC_SCREENS,
+  seededScreens,
+  SIGNED_IN_SCREENS,
+} from "./support/screens";
 
 // The WCAG 2.1 Level AA audit (T103, NFR-11, SC-012): every recruiter-facing screen, in both
 // languages, with real data on it, passes axe's AA rules, contrast among them. axe does not test
 // placeholder text, so each placeholder is held to the same 4.5:1 here.
-
-const MESSAGES = { ar, en };
-
-let recruiter: Account | undefined;
-let jobId: string;
-let candidateId: string;
-let fileId: string;
-
-test.beforeAll(async () => {
-  recruiter = await createAccount("Audit Ltd");
-  jobId = await addJob(recruiter, { title: "Senior Accountant", location: "Cairo" });
-  candidateId = await addRankedCandidate(recruiter, jobId, {
-    name: "Mona Abdallah",
-    total: 82,
-    justification: "Eight years of audit work at a listed company, and fluent English.",
-    confidence: 0.94,
-  });
-  fileId = await addFileInReview(recruiter, {
-    fileName: "scan_0187.pdf",
-    jobId,
-    status: "needs_review",
-    reviewReason: "no_text",
-  });
-});
-
-test.afterAll(async () => {
-  await recruiter?.remove();
-});
 
 /**
  * Every placeholder that falls short of 4.5:1 against what is behind it, named by its field: an
@@ -117,68 +88,45 @@ async function faintPlaceholders(page: Page): Promise<string[]> {
   });
 }
 
-/** The screen asked for, not the not-found page a broken route would fall back to. */
-async function expectScreen(page: Page, lang: keyof typeof MESSAGES) {
-  await expect(page.locator("main")).toBeVisible();
-  await expect(page.getByRole("heading", { name: MESSAGES[lang].notFound.title })).toHaveCount(0);
-}
+test.describe("every screen", () => {
+  const data = seededScreens("Audit Ltd");
 
-const PUBLIC = [
-  ["sign-in", "/sign-in"],
-  ["no-access", "/sign-in/no-access"],
-  ["privacy", "/privacy"],
-] as const;
+  for (const lang of LANGS) {
+    test.describe(`in ${lang}`, () => {
+      for (const [name, route] of PUBLIC_SCREENS) {
+        test(`the ${name} screen meets WCAG 2.1 AA`, async ({ page }) => {
+          await page.goto(`/${lang}${route}`);
+          await expectScreen(page, lang);
+          await expectAccessible(page);
+          expect(await faintPlaceholders(page)).toEqual([]);
+        });
+      }
 
-const SIGNED_IN = [
-  ["jobs", () => "/jobs"],
-  ["new job", () => "/jobs/new"],
-  ["job", () => `/jobs/${jobId}`],
-  ["candidate", () => `/jobs/${jobId}/candidates/${candidateId}`],
-  ["correction", () => `/candidates/${candidateId}/edit`],
-  ["review queue", () => "/review"],
-  ["review queue's chosen file", () => `/review?file=${fileId}`],
-  ["settings", () => "/settings"],
-] as const;
+      for (const [name, route] of SIGNED_IN_SCREENS) {
+        test(`the ${name} screen meets WCAG 2.1 AA`, async ({ page }) => {
+          await signIn(page, data().account);
+          await page.goto(`/${lang}${route(data())}`);
+          await expectScreen(page, lang);
+          await expectAccessible(page);
+          expect(await faintPlaceholders(page)).toEqual([]);
+        });
+      }
 
-function account(): Account {
-  if (recruiter === undefined) throw new Error("The audit's account was not made.");
-  return recruiter;
-}
-
-for (const lang of ["ar", "en"] as const) {
-  test.describe(`in ${lang}`, () => {
-    for (const [name, route] of PUBLIC) {
-      test(`the ${name} screen meets WCAG 2.1 AA`, async ({ page }) => {
-        await page.goto(`/${lang}${route}`);
-        await expectScreen(page, lang);
+      test("the reject dialog meets WCAG 2.1 AA", async ({ page }) => {
+        const { account, jobId, candidateId } = data();
+        await signIn(page, account);
+        await page.goto(`/${lang}/jobs/${jobId}/candidates/${candidateId}`);
+        const reject = MESSAGES[lang].reject;
+        await untilHydrated(page, async () => {
+          await page.getByRole("button", { name: reject.open }).click();
+          await expect(page.getByRole("dialog")).toBeVisible({ timeout: 1_000 });
+        });
         await expectAccessible(page);
         expect(await faintPlaceholders(page)).toEqual([]);
       });
-    }
-
-    for (const [name, route] of SIGNED_IN) {
-      test(`the ${name} screen meets WCAG 2.1 AA`, async ({ page }) => {
-        await signIn(page, account());
-        await page.goto(`/${lang}${route()}`);
-        await expectScreen(page, lang);
-        await expectAccessible(page);
-        expect(await faintPlaceholders(page)).toEqual([]);
-      });
-    }
-
-    test("the reject dialog meets WCAG 2.1 AA", async ({ page }) => {
-      await signIn(page, account());
-      await page.goto(`/${lang}/jobs/${jobId}/candidates/${candidateId}`);
-      const reject = MESSAGES[lang].reject;
-      await untilHydrated(page, async () => {
-        await page.getByRole("button", { name: reject.open }).click();
-        await expect(page.getByRole("dialog")).toBeVisible({ timeout: 1_000 });
-      });
-      await expectAccessible(page);
-      expect(await faintPlaceholders(page)).toEqual([]);
     });
-  });
-}
+  }
+});
 
 test("the placeholder check finds the placeholders and catches a faint one", async ({ page }) => {
   await page.goto("/en/sign-in");
