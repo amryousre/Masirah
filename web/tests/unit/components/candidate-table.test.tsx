@@ -102,6 +102,31 @@ describe("CandidateTable", () => {
     ).toBeInTheDocument();
   });
 
+  it.each([
+    [
+      "locked",
+      "The file is protected by a password. Ask the candidate for a copy without a password.",
+    ],
+    ["damaged", "The file couldn’t be opened. Ask the candidate to send the CV again."],
+    [
+      "declined",
+      "This file couldn’t be read automatically. Read it yourself, or ask the candidate for the CV as a PDF or Word file.",
+    ],
+    [
+      "notProcessed",
+      "Something went wrong on our side while reading this file. Upload it again to try once more.",
+    ],
+  ] as const)("words a %s file by what went wrong and what to do", (failure, text) => {
+    renderIn(
+      "en",
+      <CandidateTable
+        rows={[{ kind: "failed", id: "f", fileName: "cv.pdf", failure }]}
+        onSelect={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(text)).toBeInTheDocument();
+  });
+
   it("marks where scores fall off, between the last strong candidate and the next", () => {
     renderIn(
       "en",

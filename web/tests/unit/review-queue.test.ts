@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
+
 import { describe, expect, it } from "vitest";
 
 import { failureKind, reviewItem, type ReviewRow } from "@/lib/domain/review-queue";
@@ -67,5 +70,26 @@ describe("failureKind", () => {
     );
     expect(failureKind("processing failed after 5 attempts")).toBe("notProcessed");
     expect(failureKind("the original file is missing from storage")).toBe("notProcessed");
+  });
+
+  it("tells a model's refusal from a fault of ours: uploading the same file again won't help", () => {
+    expect(failureKind("the model declined to read the CV: refused")).toBe("declined");
+    expect(failureKind("the model declined to read the scan: refused")).toBe("declined");
+  });
+
+  // The worker records its reasons as text. Until they are a structured column, the phrases matched
+  // above are held to the pipeline's source, so rewording one there fails here rather than quietly
+  // telling recruiters every failure is ours.
+  it.each([
+    ["adapters/native_text.py", "the PDF is password-protected"],
+    ["worker.py", 'f"the file cannot be read: {error}"'],
+    ["worker.py", 'f"the model declined to read the CV: {error}"'],
+    ["worker.py", 'f"the model declined to read the scan: {error}"'],
+  ])("the pipeline's %s still says %s", (file, phrase) => {
+    const source = readFileSync(
+      path.resolve(import.meta.dirname, "../../../pipeline/src/masirah_pipeline", file),
+      "utf8",
+    );
+    expect(source).toContain(phrase);
   });
 });
