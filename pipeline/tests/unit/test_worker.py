@@ -19,7 +19,7 @@ from masirah_pipeline.domain.budget import Limits, next_month_start
 from masirah_pipeline.domain.budget import Usage as BudgetUsage
 from masirah_pipeline.domain.profile import Profile
 from masirah_pipeline.domain.review_reason import Review
-from masirah_pipeline.metering import MeteredModel
+from masirah_pipeline.metering import MeteredModel, MeteredOcr
 from masirah_pipeline.ports.cv_store import CvStoreUnavailableError, MissingCvError
 from masirah_pipeline.ports.document_text import UnreadableDocumentError
 from masirah_pipeline.ports.job_queue import ReceivedMessage
@@ -287,7 +287,7 @@ class Setup:
             model=self.model,
             score=self.scorer,
             budget=self.budget,
-            ocr=self.ocr,
+            ocr=None if self.ocr is None else MeteredOcr(self.ocr, self.budget),
             clock=lambda: NOW,
         )
 
@@ -437,8 +437,23 @@ class TestOcr:
         assert setup.store.extraction is not None
         assert setup.store.extraction.source == "vision_ocr"
 
-    def test_a_pdf_with_a_text_layer_is_not_sent_to_ocr(self, setup: Setup) -> None:
+    def test_a_scan_whose_only_text_is_a_watermark_is_read_by_ocr(self, setup: Setup) -> None:
+        setup.ocr, setup.text = FakeOcr(), "Scanned by CamScanner"
+        assert setup.handle() is Outcome.DONE
+        assert setup.ocr.reads == [(b"%PDF-1.7 a CV", "application/pdf")]
+        assert setup.store.extraction is not None
+        assert setup.store.extraction.source == "vision_ocr"
+
+    def test_a_file_type_ocr_cannot_read_is_not_fetched(self, setup: Setup) -> None:
         setup.ocr = FakeOcr()
+        setup.store.file = CvFile(FILE_ID, PATH, "image/webp", HASH, "queued", None)
+        setup.files.error = AssertionError("the file should not be fetched")
+        assert setup.handle() is Outcome.DONE
+        assert setup.store.review == Review("no_text")
+
+    def test_a_pdf_with_a_text_layer_is_not_sent_to_ocr(self, setup: Setup) -> None:
+        # A CV's length of text: the shortest native one in the corpus has 487 letters.
+        setup.ocr, setup.text = FakeOcr(), TEXT * 3
         setup.handle()
         assert setup.ocr.reads == []
         assert setup.store.extraction is not None
@@ -469,6 +484,21 @@ class TestOcr:
         setup.handle()
         [request] = setup.scorer.requests
         assert request.extraction_cost_egp == COST + OCR_COST
+
+    def test_the_ocr_reading_is_charged_to_the_organisation(self, setup: Setup) -> None:
+        setup.ocr, setup.store.file = FakeOcr(), self.PHOTO
+        setup.handle()
+        assert (ORG, FILE_ID, "extraction", OCR_COST) in [
+            (spend.organisation_id, spend.cv_file_id, spend.kind, spend.cost_egp)
+            for spend in setup.budget.spent
+        ]
+
+    def test_ocr_that_finds_no_more_than_the_pdf_keeps_its_own_text(self, setup: Setup) -> None:
+        setup.ocr, setup.text = FakeOcr(text="Scanned"), TEXT
+        setup.handle()
+        assert setup.ocr.reads != []
+        assert setup.store.extraction is not None
+        assert setup.store.extraction.source == "native_text"
 
     def test_a_transient_ocr_failure_leaves_the_message_to_retry(self, setup: Setup) -> None:
         setup.store.file = self.PHOTO

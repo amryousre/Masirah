@@ -7,14 +7,16 @@ worker names the organisation and the CV the calls are for with spending_for, ar
 work; a call outside one has no one to charge and is refused rather than spent unrecorded.
 """
 
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
+from decimal import Decimal
 from typing import Protocol
 from uuid import UUID
 
 from masirah_pipeline.ports.model_provider import (
+    ModelIdentity,
     ModelProviderError,
     StructuredModel,
     StructuredRequest,
@@ -40,11 +42,29 @@ def spending_for(organisation_id: UUID, cv_file_id: UUID) -> Iterator[None]:
         _charged_to.reset(token)
 
 
-def _charged() -> tuple[UUID, UUID]:
+Record = Callable[[ModelIdentity | None, Decimal], None]
+
+
+@contextmanager
+def _charging(ledger: SpendRecorder, kind: SpendKind) -> Iterator[Record]:
+    """Charges the call made inside the block to the CV whose work it is part of: the caller
+    records what a usable answer cost, and a failure that was still paid for is recorded here."""
     charged = _charged_to.get()
     if charged is None:
-        raise RuntimeError("a model call with no organisation to charge it to")
-    return charged
+        raise RuntimeError("a paid call with no organisation to charge it to")
+    organisation, cv_file = charged
+
+    def record(identity: ModelIdentity | None, cost_egp: Decimal) -> None:
+        provider = identity.provider if identity else None
+        model = identity.model_id if identity else None
+        ledger.record(Spend(organisation, cv_file, kind, provider, model, cost_egp))
+
+    try:
+        yield record
+    except ModelProviderError as error:
+        if error.cost_egp > 0:
+            record(None, error.cost_egp)
+        raise
 
 
 @dataclass
@@ -54,25 +74,9 @@ class MeteredModel:
     ledger: SpendRecorder
 
     def complete(self, request: StructuredRequest) -> StructuredResponse:
-        organisation, cv_file = _charged()
-        try:
+        with _charging(self.ledger, self.kind) as record:
             response = self.inner.complete(request)
-        except ModelProviderError as error:
-            if error.cost_egp > 0:
-                self.ledger.record(
-                    Spend(organisation, cv_file, self.kind, None, None, error.cost_egp)
-                )
-            raise
-        self.ledger.record(
-            Spend(
-                organisation,
-                cv_file,
-                self.kind,
-                response.identity.provider,
-                response.identity.model_id,
-                response.cost_egp,
-            )
-        )
+            record(response.identity, response.cost_egp)
         return response
 
 
@@ -85,25 +89,8 @@ class MeteredOcr:
     ledger: SpendRecorder
 
     def read(self, content: bytes, media_type: str) -> OcrReading:
-        organisation, cv_file = _charged()
-        try:
+        with _charging(self.ledger, "extraction") as record:
             reading = self.inner.read(content, media_type)
-        except ModelProviderError as error:
-            if error.cost_egp > 0:
-                self.ledger.record(
-                    Spend(organisation, cv_file, "extraction", None, None, error.cost_egp)
-                )
-            raise
-        if reading.cost_egp > 0:
-            identity = reading.identity
-            self.ledger.record(
-                Spend(
-                    organisation,
-                    cv_file,
-                    "extraction",
-                    identity.provider if identity else None,
-                    identity.model_id if identity else None,
-                    reading.cost_egp,
-                )
-            )
+            if reading.cost_egp > 0:
+                record(reading.identity, reading.cost_egp)
         return reading
