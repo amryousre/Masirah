@@ -278,7 +278,11 @@ export default async function DesignSystem({ params }: PageProps<"/[lang]/design
         </Section>
 
         <Section title={t("switcher.title")} note={t("switcher.note")}>
-          <LanguageSwitch />
+          <div className={styles.stack}>
+            <LanguageSwitch />
+            <LanguageSwitch disabled />
+            <LanguageSwitch failed />
+          </div>
         </Section>
       </main>
     </>

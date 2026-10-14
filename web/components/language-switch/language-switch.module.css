@@ -15,15 +15,30 @@
     color var(--duration-fast) var(--ease);
 }
 
-.switch:hover {
+.switch:hover:not([aria-disabled]) {
   background: var(--color-fill-subtle);
   color: var(--color-text);
 }
 
-.switch:active {
+.switch:active:not([aria-disabled]) {
   background: var(--color-fill-pressed);
 }
 
 .pending {
   color: var(--color-text-tertiary);
+}
+
+/* Disabled: the name stays readable (5.06:1), so the language on offer is still known. */
+.switch[aria-disabled] {
+  color: var(--color-text-tertiary);
+  cursor: not-allowed;
+}
+
+.failed {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-error);
+  font-size: var(--size-caption);
+  line-height: var(--leading-caption);
 }

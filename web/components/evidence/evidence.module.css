@@ -129,6 +129,10 @@
   background: var(--color-fill-subtle);
 }
 
+.show:active {
+  background: var(--color-fill-pressed);
+}
+
 /* Quote marks follow the quote's own language, not the page's: a browser takes them from the
    surrounding text, so an English quote on an Arabic page would get Arabic marks facing outward. */
 .text {
