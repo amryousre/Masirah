@@ -193,6 +193,14 @@
     max-inline-size: none;
   }
 
+  /* A file name or a name with no spaces breaks wherever it must, rather than widening the page
+     (NFR-12): CV_Abdelrahman_Mohamed_..._Final_v3.pdf has nowhere else to break. */
+  .name,
+  .file {
+    min-inline-size: 0;
+    overflow-wrap: anywhere;
+  }
+
   .row > td:nth-child(n + 4) {
     display: inline-flex;
   }
