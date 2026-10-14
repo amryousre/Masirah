@@ -3,6 +3,8 @@
 // color function such as oklch() or rgb(), or a named color. `transparent` and `currentColor` are
 // not colors in this sense, and var(--token) is how every other file should say it.
 
+import motionTokens from "./motion-tokens.mjs";
+
 const COLOR_FUNCTIONS = new Set([
   "rgb", "rgba", "hsl", "hsla", "hwb", "lab", "lch", "oklab", "oklch", "color",
 ]); // prettier-ignore
@@ -61,7 +63,7 @@ const noRawColor = {
 
 const plugin = {
   meta: { name: "masirah" },
-  rules: { "no-raw-color": noRawColor },
+  rules: { "no-raw-color": noRawColor, "motion-tokens": motionTokens },
 };
 
 export default plugin;

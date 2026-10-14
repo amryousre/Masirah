@@ -13,6 +13,7 @@
 }
 
 .spinner {
+  /* eslint-disable-next-line masirah/motion-tokens -- a loading indicator turns until the work is done; reduced motion stops it below */
   animation: spin 800ms linear infinite;
 }
 

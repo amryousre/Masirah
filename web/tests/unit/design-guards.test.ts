@@ -93,3 +93,35 @@ describe("components and screens", () => {
     expect(await rulesBroken(tsx, code)).toEqual([]);
   });
 });
+
+// DESIGN.md motion and T108: every motion takes a duration token, which globals.css sets to zero
+// for reduced motion, so a module cannot move outside 150-250 ms or keep moving when asked not to.
+describe("motion", () => {
+  const css = "components/example.module.css";
+
+  it.each([
+    ["a written-out transition time", ".a { transition: color 400ms ease; }\n"],
+    ["a written-out animation time", ".a { animation: enter 1s ease; }\n"],
+    ["a transition delay", ".a { transition-delay: var(--duration-fast); }\n"],
+    [
+      "a delay in a shorthand",
+      ".a { transition: color var(--duration-fast) var(--ease) var(--duration-fast); }\n",
+    ],
+    ["a staggered animation", ".a { animation-delay: 200ms; }\n"],
+    ["an endless animation", ".a { animation: pulse var(--duration-base) var(--ease) infinite; }\n"],
+    ["a repeated animation", ".a { animation-iteration-count: 3; }\n"],
+    ["motion on a pseudo-element", ".a::after { transition: opacity 600ms; }\n"],
+  ])("rejects %s", async (_, code) => {
+    expect(await rulesBroken(css, code)).toContain("masirah/motion-tokens");
+  });
+
+  it("accepts motion that takes the duration tokens", async () => {
+    const code =
+      ".a { transition: color var(--duration-fast) var(--ease), border-color var(--duration-slow) var(--ease); animation: enter var(--duration-base) var(--ease); }\n";
+    expect(await rulesBroken(css, code)).toEqual([]);
+  });
+
+  it("accepts motion turned off", async () => {
+    expect(await rulesBroken(css, ".a { transition: none; animation: none 0s; }\n")).toEqual([]);
+  });
+});

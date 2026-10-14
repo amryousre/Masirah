@@ -131,6 +131,7 @@ export default defineConfig([
         },
       ],
       "masirah/no-raw-color": "error",
+      "masirah/motion-tokens": "error",
     },
   },
   {
