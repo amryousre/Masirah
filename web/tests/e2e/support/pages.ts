@@ -19,7 +19,13 @@ export async function expectAccessible(page: Page) {
   const { violations } = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
     .analyze();
-  expect(violations.map((violation) => violation.id)).toEqual([]);
+  // Each failing rule with the elements it failed on, so a report says where to look.
+  expect(
+    violations.map(
+      (violation) =>
+        `${violation.id}: ${violation.nodes.map((node) => node.target.join(" ")).join(", ")}`,
+    ),
+  ).toEqual([]);
 }
 
 /**

@@ -246,7 +246,7 @@ Every table below carries `organisation_id` and has row level security enabled w
 
 **Purpose**: The budgets, the accessibility gate, and the copy. Several of these are constitutional requirements rather than improvements.
 
-- [ ] T103 [P] WCAG 2.1 Level AA audit across every recruiter-facing screen, recorded in `web/tests/e2e/accessibility.spec.ts`. Body text at 4.5:1 minimum against its background, placeholders included (NFR-11, SC-012)
+- [X] T103 [P] WCAG 2.1 Level AA audit across every recruiter-facing screen, recorded in `web/tests/e2e/accessibility.spec.ts`. Body text at 4.5:1 minimum against its background, placeholders included (NFR-11, SC-012)
 - [ ] T104 [P] Confirm every screen is usable from 360 pixels of width in `web/tests/e2e/responsive.spec.ts`, with no horizontal body scroll (NFR-12)
 - [ ] T105 [P] Assert the performance budgets by test in `web/tests/e2e/performance.spec.ts` and `pipeline/tests/accuracy/test_throughput.py`: a single CV within 30 seconds at p95, a batch of 100 within 10 minutes, the candidate list within 2 seconds for accounts holding up to 50,000 candidates (NFR-01, NFR-02, NFR-03)
 - [ ] T106 [P] Assert the cost budget in `pipeline/tests/accuracy/test_cost.py`: processing cost at or below 2.5 EGP per CV, measured from recorded `cost_egp` rather than estimated (NFR-13, SC-010)
