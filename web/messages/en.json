@@ -6,7 +6,8 @@
   },
   "language": {
     "other": "العربية",
-    "switching": "Switching…"
+    "switching": "Switching…",
+    "failed": "Couldn't change the language. The page is still in English."
   },
   "status": {
     "document": {

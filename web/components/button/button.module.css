@@ -49,9 +49,12 @@
   color: var(--color-text-on-primary);
 }
 
-.primary:hover:not(:disabled, [data-loading]),
-.primary:active:not(:disabled, [data-loading]) {
+.primary:hover:not(:disabled, [data-loading]) {
   background: var(--color-primary-hover);
+}
+
+.primary:active:not(:disabled, [data-loading]) {
+  background: var(--color-primary-pressed);
 }
 
 .secondary {
@@ -81,9 +84,12 @@
   color: var(--color-error);
 }
 
-.destructive:hover:not(:disabled, [data-loading]),
-.destructive:active:not(:disabled, [data-loading]) {
+.destructive:hover:not(:disabled, [data-loading]) {
   background: var(--color-error-bg);
+}
+
+.destructive:active:not(:disabled, [data-loading]) {
+  background: var(--color-error-bg-pressed);
 }
 
 .destructiveConfirm {
@@ -91,9 +97,12 @@
   color: var(--color-text-on-primary);
 }
 
-.destructiveConfirm:hover:not(:disabled, [data-loading]),
-.destructiveConfirm:active:not(:disabled, [data-loading]) {
+.destructiveConfirm:hover:not(:disabled, [data-loading]) {
   background: var(--color-error-strong);
+}
+
+.destructiveConfirm:active:not(:disabled, [data-loading]) {
+  background: var(--color-error-pressed);
 }
 
 .button:disabled {

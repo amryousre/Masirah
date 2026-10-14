@@ -46,6 +46,7 @@
   --color-ink: var(--grey-900);
   --color-primary: var(--amber-600);
   --color-primary-hover: var(--amber-700);
+  --color-primary-pressed: var(--amber-800); /* pressed, a step past hover */
   --color-link: var(--amber-700);
   --color-selected: var(--amber-100);
   --color-selected-hover: var(--amber-50);
@@ -55,7 +56,9 @@
   --color-focus: var(--amber-600); /* 4.60:1 on grey-50, 4.28:1 on grey-100 */
   --color-error: oklch(0.52 0.18 27); /* 6.04:1 */
   --color-error-strong: oklch(0.45 0.16 27); /* hover on the one filled red */
+  --color-error-pressed: oklch(0.39 0.14 27); /* pressed on the one filled red */
   --color-error-bg: oklch(0.97 0.014 27);
+  --color-error-bg-pressed: oklch(0.93 0.03 27); /* a destructive outline button, pressed */
   --color-warning: oklch(0.5 0.1 90); /* 6.02:1 */
   --color-warning-bg: oklch(0.97 0.025 90);
   --color-success: oklch(0.5 0.11 150); /* 5.70:1 */

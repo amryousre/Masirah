@@ -85,3 +85,7 @@
 .dismiss:hover {
   background: var(--color-fill-subtle);
 }
+
+.dismiss:active {
+  background: var(--color-fill-pressed);
+}

@@ -39,4 +39,28 @@ describe("LanguageSwitch", () => {
     expect(link).toHaveAttribute("href", "/ar/jobs/42");
     expect(screen.getByText("العربية")).toHaveAttribute("lang", "ar");
   });
+
+  // T107: the seven states. Hover, focus and active are styles; disabled, loading and error are
+  // states the component renders.
+  it("disabled, still names the other language but leads nowhere", () => {
+    renderIn("ar", <LanguageSwitch disabled />);
+    expect(screen.queryByRole("link")).toBeNull();
+    const control = screen.getByText("English").closest("[aria-disabled]");
+    expect(control).toHaveAttribute("aria-disabled", "true");
+  });
+
+  it("after a failed switch, says the page stayed in its language and can be tried again", () => {
+    renderIn("ar", <LanguageSwitch failed />);
+    expect(screen.getByRole("link", { name: /English/ })).toHaveAttribute("href", "/en/jobs/42");
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "تعذّر تغيير اللغة. ما زالت الصفحة بالعربية.",
+    );
+  });
+
+  it("says so in English on an English page", () => {
+    renderIn("en", <LanguageSwitch failed />);
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Couldn't change the language. The page is still in English.",
+    );
+  });
 });

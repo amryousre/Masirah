@@ -6,7 +6,8 @@
   },
   "language": {
     "other": "English",
-    "switching": "جارٍ التبديل…"
+    "switching": "جارٍ التبديل…",
+    "failed": "تعذّر تغيير اللغة. ما زالت الصفحة بالعربية."
   },
   "status": {
     "document": {
