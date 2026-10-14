@@ -85,6 +85,37 @@ jobs:
           enable-cache: true
           cache-dependency-glob: pipeline/uv.lock
       - run: uv sync --locked
+      # The Tesseract fallback (T078) is tested against the real engine, with the same Arabic and
+      # English models as the worker uses (tessdata_best), not the distribution's faster ones. They
+      # are pinned to one commit and checked by hash, so the tests' inputs cannot change under them.
+      - name: Install Tesseract
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq tesseract-ocr
+      - name: Cache the Tesseract models
+        id: tessdata
+        uses: actions/cache@v6
+        with:
+          path: ~/tessdata
+          key: tessdata-best-e12c65a915945e4c28e237a9b52bc4a8f39a0cec
+      - name: Fetch the Tesseract models
+        if: steps.tessdata.outputs.cache-hit != 'true'
+        working-directory: ${{ runner.temp }}
+        run: |
+          base=https://github.com/tesseract-ocr/tessdata_best/raw/e12c65a915945e4c28e237a9b52bc4a8f39a0cec
+          mkdir -p ~/tessdata
+          for language in ara eng osd; do
+            curl -sSfL --retry 3 -o ~/tessdata/$language.traineddata "$base/$language.traineddata"
+          done
+      - name: Check the Tesseract models
+        run: |
+          cd ~/tessdata
+          printf '%s  %s\n' \
+            ab9d157d8e38ca00e7e39c7d5363a5239e053f5b0dbdb3167dde9d8124335896 ara.traineddata \
+            8280aed0782fe27257a68ea10fe7ef324ca0f8d85bd2fd145d1c2b560bcb66ba eng.traineddata \
+            9cf5d576fcc47564f11265841e5ca839001e7e6f38ff7f7aacf46d15a96b00ff osd.traineddata \
+            | sha256sum --check --strict
+          echo "MASIRAH_TESSDATA_DIR=$HOME/tessdata" >> "$GITHUB_ENV"
       - name: Format
         run: uv run ruff format --check
       - name: Lint

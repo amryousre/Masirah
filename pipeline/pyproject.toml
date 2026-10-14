@@ -9,6 +9,7 @@ dependencies = [
     "openai>=3.24.0",
     "pdfminer-six>=20260107",
     "psycopg[binary]>=3.3.6",
+    "pypdfium2>=5.14.0",
     "python-docx>=1.2",
     "tzdata>=2026.5",
 ]
@@ -52,6 +53,11 @@ files = ["src", "tests", "tools"]
 # mode reports every call. Treating it as untyped here beats scattering ignores through callers.
 module = ["pymupdf", "pymupdf.*"]
 follow_imports = "skip"
+
+[[tool.mypy.overrides]]
+# pypdfium2 ships no type information; the Tesseract adapter is its only user.
+module = ["pypdfium2", "pypdfium2.*"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 # Plain `pytest` runs the unit suite. The accuracy suite is a release gate and

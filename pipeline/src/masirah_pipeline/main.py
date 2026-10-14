@@ -9,6 +9,10 @@ its settings from the environment and refuses to start with one missing:
 - MASIRAH_CHEAP_MODEL, MASIRAH_STRONG_MODEL, MASIRAH_EGP_PER_USD and a provider key per tier, as
   adapters/provider_registry.py reads them.
 
+Scans and photographs are read by the OCR engine MASIRAH_OCR names (T078): "tesseract", with
+MASIRAH_TESSERACT_CMD and MASIRAH_TESSDATA_DIR where they are not the defaults. Without it they go
+to the review queue unread.
+
 Each worker records a heartbeat under MASIRAH_WORKER_NAME, or the host's name, which /api/health
 reads (T030).
 
@@ -37,8 +41,12 @@ from masirah_pipeline.adapters.provider_registry import ConfigurationError, mode
 from masirah_pipeline.adapters.score_repository import PostgresScoreRepository
 from masirah_pipeline.adapters.supabase_queue import SupabaseQueue
 from masirah_pipeline.adapters.supabase_storage import SupabaseStorage
+from masirah_pipeline.adapters.tesseract_ocr import LANGUAGE_DATA, Runner, TesseractOcr
+from masirah_pipeline.adapters.tesseract_ocr import run as run_process
 from masirah_pipeline.jobs.purge import purge_due
-from masirah_pipeline.metering import MeteredModel
+from masirah_pipeline.metering import MeteredModel, MeteredOcr
+from masirah_pipeline.ports.document_text import UnreadableDocumentError
+from masirah_pipeline.ports.model_provider import ModelProviderError
 from masirah_pipeline.scoring_step import ApplicationScorer
 from masirah_pipeline.worker import Worker
 
@@ -124,6 +132,33 @@ def Purging(  # noqa: N802 - reads as the wrapper it returns
     return Every(run_once, sweep, PURGE_SECONDS, "candidates purged", clock=clock)
 
 
+def ocr_for(environment: Mapping[str, str], run: Runner = run_process) -> TesseractOcr | None:
+    """The OCR engine MASIRAH_OCR names, checked to run with all the language data its readings
+    use, or None for none. A worker that cannot read a scan refuses to start rather than failing
+    every scan it is given."""
+    engine = environment.get("MASIRAH_OCR", "").strip()
+    if not engine:
+        return None
+    if engine != "tesseract":
+        raise ConfigurationError(f"MASIRAH_OCR names no engine this worker has: {engine!r}")
+    ocr = TesseractOcr(
+        command=environment.get("MASIRAH_TESSERACT_CMD", "").strip() or "tesseract",
+        tessdata=environment.get("MASIRAH_TESSDATA_DIR", "").strip() or None,
+        run=run,
+    )
+    try:
+        available = ocr.available_languages()
+    except (ModelProviderError, UnreadableDocumentError) as error:
+        raise ConfigurationError(f"Tesseract is not usable: {error}") from error
+    missing = [language for language in LANGUAGE_DATA if language not in available]
+    if missing:
+        raise ConfigurationError(
+            f"Tesseract has no {', '.join(missing)} language data (.traineddata); "
+            "Arabic, English and orientation data are all needed"
+        )
+    return ocr
+
+
 def poll(run_once: Callable[[], int], stop: threading.Event, wait: Callable[[float], bool]) -> None:
     """Run batches until stopped, waiting only when a batch found nothing to do."""
     while not stop.is_set():
@@ -135,6 +170,7 @@ def main(environment: Mapping[str, str] = os.environ) -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     settings = settings_from(environment)
     cheap, strong = model_for("cheap", environment), model_for("strong", environment)
+    ocr = ocr_for(environment)
     stop = threading.Event()
     signal.signal(signal.SIGTERM, lambda *_: stop.set())
     # Autocommit: each store operation opens its own transaction, and a read's visibility
@@ -157,6 +193,7 @@ def main(environment: Mapping[str, str] = os.environ) -> None:
             ),
             budget=ledger,
             beat=PostgresHeartbeat(connection, worker_name(environment)),
+            ocr=None if ocr is None else MeteredOcr(ocr, ledger),
         )
         log.info("worker started")
 
