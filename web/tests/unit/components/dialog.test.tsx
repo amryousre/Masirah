@@ -27,7 +27,7 @@ describe("Dialog", () => {
       </Dialog>,
     );
     expect(screen.getByRole("dialog", { name: "تجاهل التعديلات على الوظيفة؟" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "إغلاق" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "إغلاق النافذة" })).toBeInTheDocument();
   });
 
   it("closes on Escape", () => {
@@ -50,7 +50,7 @@ describe("Dialog", () => {
         <p>Body</p>
       </Dialog>,
     );
-    await userEvent.click(screen.getByRole("button", { name: "Close" }));
+    await userEvent.click(screen.getByRole("button", { name: "Close dialog" }));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 

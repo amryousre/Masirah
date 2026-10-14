@@ -53,7 +53,7 @@ const rows: CandidateRow[] = [
     decision: { kind: "rejected", by: "Nourhan" },
   },
   { kind: "processing", id: "f1", fileName: "Ahmed_Samir_CV.docx" },
-  { kind: "failed", id: "f2", fileName: "scan_0231.jpg", reason: "the image is blurred" },
+  { kind: "failed", id: "f2", fileName: "scan_0231.jpg", failure: "damaged" },
 ];
 
 describe("CandidateTable", () => {
@@ -95,7 +95,36 @@ describe("CandidateTable", () => {
     expect(screen.getByRole("rowgroup", { name: "لم تُرتَّب بعد" })).toBeInTheDocument();
     expect(screen.getByText("Ahmed_Samir_CV.docx")).toBeInTheDocument();
     expect(screen.getByText("قيد المعالجة")).toBeInTheDocument();
-    expect(screen.getByText("تعذّرت القراءة: the image is blurred")).toBeInTheDocument();
+    // The reason is in the reader's language and says what to do (T109), never the worker's own
+    // English.
+    expect(
+      screen.getByText("تعذّر فتح الملف. اطلب من المرشح إرسال السيرة مرة أخرى."),
+    ).toBeInTheDocument();
+  });
+
+  it.each([
+    [
+      "locked",
+      "The file is protected by a password. Ask the candidate for a copy without a password.",
+    ],
+    ["damaged", "The file couldn’t be opened. Ask the candidate to send the CV again."],
+    [
+      "declined",
+      "This file couldn’t be read automatically. Read it yourself, or ask the candidate for the CV as a PDF or Word file.",
+    ],
+    [
+      "notProcessed",
+      "Something went wrong on our side while reading this file. Upload it again to try once more.",
+    ],
+  ] as const)("words a %s file by what went wrong and what to do", (failure, text) => {
+    renderIn(
+      "en",
+      <CandidateTable
+        rows={[{ kind: "failed", id: "f", fileName: "cv.pdf", failure }]}
+        onSelect={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(text)).toBeInTheDocument();
   });
 
   it("marks where scores fall off, between the last strong candidate and the next", () => {

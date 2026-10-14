@@ -63,3 +63,72 @@ describe("translation files", () => {
     expect(dashed.map(([key]) => key)).toEqual([]);
   });
 });
+
+// The product's voice (design-brief.md section 8, PRODUCT.md): specific rather than aphoristic. It
+// names what happened and why; it never congratulates the user, never celebrates a finished batch,
+// and never calls the output intelligent.
+describe("the voice", () => {
+  const all = [...arabic, ...english];
+
+  it("never exclaims", () => {
+    expect(all.filter(([, text]) => /[!¡]/.test(text)).map(([key]) => key)).toEqual([]);
+  });
+
+  // Arabic words are matched whole, after their attached prefixes: "ذكي" (smart) and "الذكي" are
+  // praise, but "ذكي" also sits inside "تذكير" (reminder), which is not.
+  const englishPraise =
+    /\b(congratulations|congrats|great job|well done|awesome|amazing|hooray|smart|intelligent|magic(al)?)\b/i;
+  const arabicPraise = new Set([
+    "مبروك",
+    "تهانينا",
+    "أحسنت",
+    "رائع",
+    "رائعة",
+    "مذهل",
+    "مذهلة",
+    "ذكي",
+    "ذكية",
+    "سحري",
+    "سحرية",
+  ]);
+  const prefixes = /^(?:وال|بال|فال|لل|ال|و|ف|ب|ل)/;
+  const praises = (text: string) =>
+    englishPraise.test(text) ||
+    text
+      .split(/[^\p{L}]+/u)
+      .some((word) => arabicPraise.has(word) || arabicPraise.has(word.replace(prefixes, "")));
+
+  it("never congratulates, celebrates or calls the output clever", () => {
+    expect(all.filter(([, text]) => praises(text)).map(([key]) => key)).toEqual([]);
+  });
+
+  it("tells praise from an ordinary word that contains it", () => {
+    expect(praises("إرسال تذكير للمرشح")).toBe(false);
+    expect(praises("ترتيب ذكي للمرشحين")).toBe(true);
+    expect(praises("بالترتيب الذكي")).toBe(true);
+    expect(praises("a smart ranking")).toBe(true);
+  });
+
+  // Every action is labelled with a verb and its object, so a control says what it acts on
+  // (DESIGN.md section 7). A bare verb such as "Remove" or "Close" does not.
+  it.each([
+    "dialog.close",
+    "upload.remove",
+    "upload.cancel",
+    "upload.hide",
+    "upload.review",
+    "upload.replace",
+    "upload.ignore",
+    "upload.openProfile",
+    "toast.dismiss",
+    "job.addCvs",
+    "job.clearFilters",
+    "reject.keep",
+    "correct.cancel",
+  ])("labels %s with a verb and its object in both languages", (key) => {
+    for (const messages of [arabic, english]) {
+      const label = messages.get(key) ?? "";
+      expect(label.trim().split(/\s+/).length, `${key}: "${label}"`).toBeGreaterThanOrEqual(2);
+    }
+  });
+});

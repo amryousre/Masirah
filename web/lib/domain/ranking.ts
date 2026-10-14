@@ -1,6 +1,8 @@
 // A job's ranked list (T063): scored candidates in order, then everything not ranked yet. Every
 // file submitted for the job appears somewhere, with what is happening to it (SC-006).
 
+import { type FailureKind, failureKind } from "./review-queue";
+
 /** Below this a profile went to review (pipeline domain/confidence.py THRESHOLD). */
 export const REVIEW_BELOW = 0.8;
 const HIGH_FROM = 0.9;
@@ -57,7 +59,8 @@ export type RankingEntry =
     }
   | { kind: "processing"; id: string; label: string | null }
   | { kind: "review"; id: string; label: string }
-  | { kind: "failed"; id: string; label: string; reason: string | null }
+  /** Why it failed, as the review queue words it: a password, a damaged file, or our side. */
+  | { kind: "failed"; id: string; label: string; failure: FailureKind }
   /** A candidate whose personal data was deleted: the application and its decision remain. */
   | { kind: "removed"; id: string };
 
@@ -121,7 +124,14 @@ export function rankJob(
       case "needs_review":
         return [{ kind: "review", id: file.id, label: file.fileName }];
       case "failed":
-        return [{ kind: "failed", id: file.id, label: file.fileName, reason: file.failureReason }];
+        return [
+          {
+            kind: "failed",
+            id: file.id,
+            label: file.fileName,
+            failure: failureKind(file.failureReason ?? ""),
+          },
+        ];
       case "extracted":
         return file.candidateId !== null && applied.has(file.candidateId)
           ? []

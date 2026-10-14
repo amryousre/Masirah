@@ -19,7 +19,7 @@ const items: UploadItem[] = [
     id: "3",
     fileName: "CV_final_v3.pdf",
     bytes: 1.1 * 1024 * 1024,
-    status: { kind: "failed", reason: "the file is password-protected" },
+    status: { kind: "failed", reason: "Couldn’t upload. Check your connection and try again." },
   },
   {
     id: "4",
@@ -38,7 +38,10 @@ describe("UploadList", () => {
     expect(screen.getByText("240 KB")).toBeInTheDocument();
     expect(screen.getByText("1.2 MB")).toBeInTheDocument();
     expect(screen.getByText("Uploading · 64%")).toBeInTheDocument();
-    expect(screen.getByText("Couldn't read: the file is password-protected")).toBeInTheDocument();
+    // The reason is the whole sentence: a file that was refused or never sent was not "read".
+    expect(
+      screen.getByText("Couldn’t upload. Check your connection and try again."),
+    ).toBeInTheDocument();
     expect(
       screen.getByText("Unsupported language (German). The file is kept and not scored."),
     ).toBeInTheDocument();

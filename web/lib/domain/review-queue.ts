@@ -6,8 +6,9 @@
  * - unsupportedLanguage: written in a language version 1.0 does not read. A person reads it, or
  *   asks for an Arabic or English CV.
  * - lowConfidence: read, but too little of what was read is in the file to rank it on.
- * - locked, damaged, notProcessed: the file failed, because of a password, because it is not a
- *   readable document, or for a reason on our side.
+ * - locked, damaged, declined, notProcessed: the file failed, because of a password, because it
+ *   is not a readable document, because the reading model would not read it, or for a reason on
+ *   our side. Only the last is helped by uploading the same file again.
  * - needsLook: waiting from before reasons were recorded (migration 0023).
  */
 
@@ -17,6 +18,7 @@ export type ReviewKind =
   | "lowConfidence"
   | "locked"
   | "damaged"
+  | "declined"
   | "notProcessed"
   | "needsLook";
 
@@ -62,11 +64,15 @@ const waiting: Record<NonNullable<ReviewRow["reviewReason"]>, ReviewKind> = {
 /**
  * Why a file failed, from the reason the worker recorded (pipeline worker.py). An unreadable file
  * is reported as "the file cannot be read: …", and a password-protected PDF names itself so
- * (adapters/native_text.py); anything else went wrong on our side, not in the file.
+ * (adapters/native_text.py), and a model that would not read it says it declined; anything else
+ * went wrong on our side, not in the file.
  */
-export function failureKind(reason: string): "locked" | "damaged" | "notProcessed" {
+export type FailureKind = "locked" | "damaged" | "declined" | "notProcessed";
+
+export function failureKind(reason: string): FailureKind {
   if (reason.includes("password-protected")) return "locked";
   if (reason.startsWith("the file cannot be read")) return "damaged";
+  if (reason.startsWith("the model declined to read")) return "declined";
   return "notProcessed";
 }
 
