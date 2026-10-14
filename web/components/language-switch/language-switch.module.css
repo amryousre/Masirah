@@ -15,13 +15,6 @@
     color var(--duration-fast) var(--ease);
 }
 
-.wrap {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2);
-}
-
 .switch:hover:not([aria-disabled]) {
   background: var(--color-fill-subtle);
   color: var(--color-text);
@@ -35,9 +28,9 @@
   color: var(--color-text-tertiary);
 }
 
-/* Disabled: the name stays readable, so the language on offer is still known (DESIGN.md). */
+/* Disabled: the name stays readable (5.06:1), so the language on offer is still known. */
 .switch[aria-disabled] {
-  color: var(--color-disabled);
+  color: var(--color-text-tertiary);
   cursor: not-allowed;
 }
 

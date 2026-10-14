@@ -45,6 +45,11 @@ async function looksOf(page: Page, target: Locator): Promise<Looks> {
   // Released away from the element, so the press is cancelled rather than a click.
   await page.mouse.move(0, 0);
   await page.mouse.up();
+  // A native select opens its options on the press; close them before measuring focus. Only a
+  // select: Escape would close a dialog the target sits in.
+  if (await target.evaluate((node) => node.tagName === "SELECT")) {
+    await page.keyboard.press("Escape");
+  }
   await target.focus();
   await page.keyboard.press("Shift");
   await page.waitForTimeout(SETTLE);
@@ -104,8 +109,31 @@ test.describe("on the design page", () => {
     const live = section.getByRole("link", { name: /العربية/ }).first();
     expectDistinct("language switch", await looksOf(page, live));
     await expect(section.locator("[aria-disabled='true']")).toContainText("العربية");
-    await expect(section.getByRole("alert")).toHaveText(
-      "Couldn't change the language. The page is still in English.",
-    );
+    // The specimen shows the failure without announcing it, as if one had just happened.
+    await expect(
+      section.getByText("Couldn't change the language. The page is still in English."),
+    ).toBeVisible();
+    await expect(section.getByRole("alert")).toHaveCount(0);
+  });
+
+  test("the filled red confirm has hover, active and focus states", async ({ page }) => {
+    await page.getByRole("button", { name: "Reject candidate…" }).last().click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByRole("combobox").selectOption({ index: 1 });
+    const confirm = dialog.getByRole("button", { name: "Reject candidate", exact: true });
+    await expect(confirm).toBeEnabled();
+    expectDistinct("destructive confirm", await looksOf(page, confirm));
+  });
+
+  test("the quote's show-in-document control has hover, active and focus states", async ({
+    page,
+  }) => {
+    const show = page.getByRole("button", { name: "Show in document" }).first();
+    expectDistinct("show in document", await looksOf(page, show));
+  });
+
+  test("a toast's dismiss has hover, active and focus states", async ({ page }) => {
+    const dismiss = page.getByRole("button", { name: "Dismiss notification" }).first();
+    expectDistinct("dismiss", await looksOf(page, dismiss));
   });
 });
