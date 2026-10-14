@@ -43,6 +43,7 @@ One repository with three parts and no monorepo tooling.
 - It uses pdfminer.six, not PyMuPDF, because PyMuPDF is AGPL. PyMuPDF and Pillow are dev-only, for the corpus tools under `pipeline/tools/`.
 - `reading_order.py` reads multi-column pages column by column.
 - `visual_order.py` repairs Arabic that Chromium-made PDFs store in visual order.
+- Scans and photographs go to an OCR engine (`ports/ocr_engine.py`). `tesseract_ocr.py` is the fallback: Tesseract with Arabic data, which must be installed where the worker runs (`MASIRAH_OCR=tesseract`). It renders scanned PDF pages with pypdfium2 (BSD/Apache), never PyMuPDF.
 
 **Model calls** go through a provider port with Anthropic and OpenAI adapters (decision Q5).
 

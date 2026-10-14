@@ -13,6 +13,7 @@ from collections.abc import Callable
 import pytest
 
 from masirah_pipeline.adapters.provider_registry import ConfigurationError
+from masirah_pipeline.adapters.tesseract_ocr import Runner
 from masirah_pipeline.main import (
     IDLE_SECONDS,
     PURGE_SECONDS,
@@ -20,6 +21,7 @@ from masirah_pipeline.main import (
     REQUIRED,
     Purging,
     Reconciling,
+    ocr_for,
     poll,
     settings_from,
     worker_name,
@@ -148,3 +150,48 @@ class TestPurging:
         both = Purging(Reconciling(step("batch", 1), step("requeue", 0)), step("purge", 0))
         assert both() == 1
         assert calls == ["purge", "requeue", "batch"]
+
+
+class TestOcrSetting:
+    """MASIRAH_OCR picks the engine that reads scans and photographs (T078). The worker checks it
+    can run before taking any work, so a missing install fails at start, not on the first scan."""
+
+    @staticmethod
+    def tesseract(
+        languages: tuple[str, ...] = ("ara", "eng", "osd"), missing: bool = False
+    ) -> Runner:
+        def run(args: list[str], stdin: bytes, timeout: float) -> tuple[int, bytes, bytes]:
+            if missing:
+                raise FileNotFoundError(args[0])
+            assert "--list-langs" in args
+            listing = "\n".join(["List of available languages:", *languages])
+            return 0, listing.encode(), b""
+
+        return run
+
+    def test_without_the_setting_there_is_no_ocr(self) -> None:
+        assert ocr_for({}, run=self.tesseract()) is None
+
+    def test_tesseract_is_configured_with_its_command_and_data(self) -> None:
+        engine = ocr_for(
+            {
+                "MASIRAH_OCR": "tesseract",
+                "MASIRAH_TESSERACT_CMD": "/usr/bin/tesseract",
+                "MASIRAH_TESSDATA_DIR": "/usr/share/tessdata",
+            },
+            run=self.tesseract(),
+        )
+        assert engine is not None
+        assert (engine.command, engine.tessdata) == ("/usr/bin/tesseract", "/usr/share/tessdata")
+
+    def test_a_tesseract_that_is_not_installed_stops_the_worker(self) -> None:
+        with pytest.raises(ConfigurationError, match="not installed"):
+            ocr_for({"MASIRAH_OCR": "tesseract"}, run=self.tesseract(missing=True))
+
+    def test_a_tesseract_without_arabic_stops_the_worker(self) -> None:
+        with pytest.raises(ConfigurationError, match="Arabic"):
+            ocr_for({"MASIRAH_OCR": "tesseract"}, run=self.tesseract(languages=("eng", "osd")))
+
+    def test_an_unknown_engine_stops_the_worker(self) -> None:
+        with pytest.raises(ConfigurationError, match="MASIRAH_OCR"):
+            ocr_for({"MASIRAH_OCR": "magic"}, run=self.tesseract())

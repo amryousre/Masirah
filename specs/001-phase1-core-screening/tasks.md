@@ -178,7 +178,7 @@ Every table below carries `organisation_id` and has row level security enabled w
 
 - [X] T076 [US2] Define the `OcrEngine` port in `pipeline/src/masirah_pipeline/ports/ocr_engine.py`
 - [ ] T077 [P] [US2] Vision-model OCR adapter in `pipeline/src/masirah_pipeline/adapters/vision_ocr.py` as the primary path, since Tesseract is weak on Arabic and weaker still on photographs of printed pages
-- [ ] T078 [P] [US2] Tesseract fallback adapter in `pipeline/src/masirah_pipeline/adapters/tesseract_ocr.py` with Arabic language data
+- [X] T078 [P] [US2] Tesseract fallback adapter in `pipeline/src/masirah_pipeline/adapters/tesseract_ocr.py` with Arabic language data
 - [X] T079 [US2] Confidence threshold routing in `pipeline/src/masirah_pipeline/domain/confidence.py` setting `cv_file.status` to `needs_review` when confidence falls below threshold, never discarding (FR-011). Brought forward into T054, because `parsed_profile.confidence` is required: confidence is the share of a profile's values the CV's text contains, so an invented value lowers it
 - [X] T080 [US2] Distinguish an unsupported language from a low-confidence parse in `pipeline/src/masirah_pipeline/domain/review_reason.py`. The two need different user actions, so the review queue holds two visibly distinct kinds of item
 - [X] T081 [US2] Review queue page at `web/app/[lang]/review/page.tsx` showing each item with its original attached and a stated reason. Copy must let a non-technical user tell a badly scanned document from an unsupported language in plain words

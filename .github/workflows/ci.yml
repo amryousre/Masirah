@@ -85,6 +85,18 @@ jobs:
           enable-cache: true
           cache-dependency-glob: pipeline/uv.lock
       - run: uv sync --locked
+      # The Tesseract fallback (T078) is tested against the real engine, with the same Arabic and
+      # English models as the worker uses (tessdata_best), not the distribution's faster ones.
+      - name: Install Tesseract
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq tesseract-ocr
+          TESSDATA_BEST=https://github.com/tesseract-ocr/tessdata_best/raw/main
+          mkdir -p "$RUNNER_TEMP/tessdata"
+          for language in ara eng osd; do
+            curl -sSfL -o "$RUNNER_TEMP/tessdata/$language.traineddata" "$TESSDATA_BEST/$language.traineddata"
+          done
+          echo "MASIRAH_TESSDATA_DIR=$RUNNER_TEMP/tessdata" >> "$GITHUB_ENV"
       - name: Format
         run: uv run ruff format --check
       - name: Lint
