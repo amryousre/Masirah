@@ -4,15 +4,18 @@ Tesseract runs on the worker's own machine, in Arabic and English, so a reading 
 nothing leaves the machine. It is weaker than the vision model (T077) on Arabic and on photographs
 of printed pages, which is why it is the fallback rather than the primary path.
 
-A photograph goes to Tesseract as it is. A scanned PDF is rendered page by page at 300 dpi with
-PDFium (pypdfium2, BSD and Apache licensed, unlike PyMuPDF), each page passed as a greyscale PGM
-image, so no imaging library is needed at run time. Tesseract is a separate program: its command
-and the directory holding its Arabic data are settings (MASIRAH_TESSERACT_CMD,
-MASIRAH_TESSDATA_DIR), and it must be installed wherever the worker runs.
+A photograph goes to Tesseract as it is. A scanned PDF is rendered one page at a time at 300 dpi
+with PDFium (pypdfium2, BSD and Apache licensed, unlike PyMuPDF), each page passed as a greyscale
+PGM image, so no imaging library is needed at run time. Tesseract finds each page's orientation
+itself (page segmentation mode 1, with its osd data), so a phone photo stored on its side is read
+upright. Tesseract is a separate program: its command and the directory holding its language data
+are settings (MASIRAH_TESSERACT_CMD, MASIRAH_TESSDATA_DIR), and it must be installed wherever the
+worker runs.
 """
 
 import subprocess
-from collections.abc import Callable
+import time
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from decimal import Decimal
 
@@ -26,10 +29,16 @@ from masirah_pipeline.ports.ocr_engine import OcrReading
 Runner = Callable[[list[str], bytes, float], tuple[int, bytes, bytes]]
 
 IMAGE_TYPES = frozenset({"image/jpeg", "image/png"})
+# Arabic and English, and the orientation data page segmentation mode 1 needs.
+LANGUAGE_DATA = ("ara", "eng", "osd")
 # Scanned pages are rendered at the resolution Tesseract is tuned for.
 DPI = 300
-# A CV is a few pages; past this a file is not one, and reading it would hold the worker.
-MAX_PAGES = 12
+# A CV says who the candidate is and what they have done in its first pages; reading further would
+# only hold the worker. The native reader stops at its own limit for the same reason.
+MAX_PAGES = 8
+# All of one document's pages share this many seconds, so a long scan cannot hold the worker past
+# the queue's visibility timeout.
+DOCUMENT_SECONDS = 180.0
 # The direction marks and isolates Tesseract puts around Latin runs in Arabic text.
 DIRECTION_MARKS = dict.fromkeys(map(ord, "‎‏؜‪‫‬‭‮⁦⁧⁨⁩"))
 
@@ -39,16 +48,15 @@ def run(args: list[str], stdin: bytes, timeout: float) -> tuple[int, bytes, byte
     return done.returncode, done.stdout, done.stderr
 
 
-def pdf_page_images(content: bytes) -> list[bytes]:
-    """Each page of a PDF as a greyscale PGM image, in order."""
+def pdf_page_images(content: bytes) -> Iterator[bytes]:
+    """The first MAX_PAGES pages of a PDF as greyscale PGM images, in order, one at a time."""
     try:
         document = pdfium.PdfDocument(content)
     except pdfium.PdfiumError as error:
         raise UnreadableDocumentError(f"the PDF cannot be opened: {error}") from error
     try:
-        if len(document) > MAX_PAGES:
-            raise UnreadableDocumentError(f"the PDF has {len(document)} pages, more than a CV")
-        return [_pgm(document[index]) for index in range(len(document))]
+        for index in range(min(len(document), MAX_PAGES)):
+            yield _pgm(document[index])
     finally:
         document.close()
 
@@ -65,39 +73,60 @@ def _pgm(page: pdfium.PdfPage) -> bytes:
 @dataclass
 class TesseractOcr:
     command: str = "tesseract"
-    # Where ara.traineddata and eng.traineddata are, or None for Tesseract's own default.
+    # Where the .traineddata files are, or None for Tesseract's own default.
     tessdata: str | None = None
     languages: str = "ara+eng"
-    timeout_seconds: float = 120
+    document_seconds: float = DOCUMENT_SECONDS
     run: Runner = field(default=run, repr=False)
-    render: Callable[[bytes], list[bytes]] = field(default=pdf_page_images, repr=False)
+    render: Callable[[bytes], Iterator[bytes]] = field(default=pdf_page_images, repr=False)
+    clock: Callable[[], float] = field(default=time.monotonic, repr=False)
 
     def read(self, content: bytes, media_type: str) -> OcrReading:
         if media_type in IMAGE_TYPES:
-            pages = [content]
+            pages: Iterator[bytes] = iter([content])
         elif media_type == "application/pdf":
             pages = self.render(content)
         else:
             raise UnreadableDocumentError(f"Tesseract cannot read {media_type}")
-        if not pages:
+        deadline = self.clock() + self.document_seconds
+        texts = [self._page(page, deadline).strip() for page in pages]
+        if not texts:
             raise UnreadableDocumentError("the PDF has no pages")
-        text = "\n\n".join(self._page(page).strip() for page in pages)
-        return OcrReading(text.translate(DIRECTION_MARKS), "tesseract_ocr", None, Decimal(0))
+        text = "\n\n".join(texts).translate(DIRECTION_MARKS)
+        return OcrReading(text, "tesseract_ocr", None, Decimal(0))
 
-    def _page(self, image: bytes) -> str:
-        args = [self.command, "stdin", "stdout", "-l", self.languages]
-        if self.tessdata is not None:
-            args += ["--tessdata-dir", self.tessdata]
-        try:
-            code, output, errors = self.run(args, image, self.timeout_seconds)
-        except subprocess.TimeoutExpired as error:
-            raise TimedOutError(f"Tesseract took over {self.timeout_seconds:g}s") from error
-        except FileNotFoundError as error:
-            raise ProviderUnavailableError(
-                f"Tesseract is not installed at {self.command}"
-            ) from error
-        if code != 0:
-            reason = errors.decode("utf-8", "replace").strip().splitlines()
-            raise UnreadableDocumentError(reason[-1] if reason else f"Tesseract exited with {code}")
+    def available_languages(self) -> set[str]:
+        """The language data this Tesseract can load, run exactly as a reading runs it."""
+        output = self._run([*self._base(), "--list-langs"], b"", 30)
+        # A header line, then one language per line.
+        lines = output.decode("utf-8", "replace").splitlines()[1:]
+        return {line.strip() for line in lines if line.strip()}
+
+    def _base(self) -> list[str]:
+        return [self.command] + (["--tessdata-dir", self.tessdata] if self.tessdata else [])
+
+    def _page(self, image: bytes, deadline: float) -> str:
+        left = deadline - self.clock()
+        if left <= 0:
+            raise TimedOutError(f"Tesseract took over {self.document_seconds:g}s for the document")
+        args = [*self._base(), "stdin", "stdout", "-l", self.languages, "--psm", "1"]
         # Tesseract ends its lines as the platform does; a profile's text uses plain line breaks.
-        return output.decode("utf-8", "replace").replace("\r\n", "\n")
+        return self._run(args, image, left).decode("utf-8", "replace").replace("\r\n", "\n")
+
+    def _run(self, args: list[str], stdin: bytes, timeout: float) -> bytes:
+        try:
+            code, output, errors = self.run(args, stdin, timeout)
+        except subprocess.TimeoutExpired as error:
+            raise TimedOutError(f"Tesseract took over {timeout:g}s") from error
+        except OSError as error:
+            raise ProviderUnavailableError(
+                f"Tesseract cannot run at {self.command}: {error}"
+            ) from error
+        if code == 0:
+            return output
+        reason = (errors.decode("utf-8", "replace").strip().splitlines() or [""])[-1]
+        # Killed, or unable to load its own data: the install is at fault, not the file, and the
+        # same file may read on a later attempt.
+        if code < 0 or "Failed loading language" in reason or "Error opening data file" in reason:
+            raise ProviderUnavailableError(reason or f"Tesseract exited with {code}")
+        raise UnreadableDocumentError(reason or f"Tesseract exited with {code}")

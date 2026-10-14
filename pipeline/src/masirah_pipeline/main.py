@@ -41,10 +41,12 @@ from masirah_pipeline.adapters.provider_registry import ConfigurationError, mode
 from masirah_pipeline.adapters.score_repository import PostgresScoreRepository
 from masirah_pipeline.adapters.supabase_queue import SupabaseQueue
 from masirah_pipeline.adapters.supabase_storage import SupabaseStorage
-from masirah_pipeline.adapters.tesseract_ocr import Runner, TesseractOcr
+from masirah_pipeline.adapters.tesseract_ocr import LANGUAGE_DATA, Runner, TesseractOcr
 from masirah_pipeline.adapters.tesseract_ocr import run as run_process
 from masirah_pipeline.jobs.purge import purge_due
 from masirah_pipeline.metering import MeteredModel, MeteredOcr
+from masirah_pipeline.ports.document_text import UnreadableDocumentError
+from masirah_pipeline.ports.model_provider import ModelProviderError
 from masirah_pipeline.scoring_step import ApplicationScorer
 from masirah_pipeline.worker import Worker
 
@@ -131,25 +133,29 @@ def Purging(  # noqa: N802 - reads as the wrapper it returns
 
 
 def ocr_for(environment: Mapping[str, str], run: Runner = run_process) -> TesseractOcr | None:
-    """The OCR engine MASIRAH_OCR names, checked to run and to read Arabic, or None for none."""
+    """The OCR engine MASIRAH_OCR names, checked to run with all the language data its readings
+    use, or None for none. A worker that cannot read a scan refuses to start rather than failing
+    every scan it is given."""
     engine = environment.get("MASIRAH_OCR", "").strip()
     if not engine:
         return None
     if engine != "tesseract":
         raise ConfigurationError(f"MASIRAH_OCR names no engine this worker has: {engine!r}")
-    tessdata = environment.get("MASIRAH_TESSDATA_DIR", "").strip() or None
     ocr = TesseractOcr(
         command=environment.get("MASIRAH_TESSERACT_CMD", "").strip() or "tesseract",
-        tessdata=tessdata,
+        tessdata=environment.get("MASIRAH_TESSDATA_DIR", "").strip() or None,
         run=run,
     )
-    args = [ocr.command, "--list-langs"] + (["--tessdata-dir", tessdata] if tessdata else [])
     try:
-        _, output, _ = run(args, b"", 30)
-    except FileNotFoundError as error:
-        raise ConfigurationError(f"Tesseract is not installed at {ocr.command}") from error
-    if "ara" not in output.decode("utf-8", "replace").split():
-        raise ConfigurationError("Tesseract has no Arabic data (ara.traineddata)")
+        available = ocr.available_languages()
+    except (ModelProviderError, UnreadableDocumentError) as error:
+        raise ConfigurationError(f"Tesseract is not usable: {error}") from error
+    missing = [language for language in LANGUAGE_DATA if language not in available]
+    if missing:
+        raise ConfigurationError(
+            f"Tesseract has no {', '.join(missing)} language data (.traineddata); "
+            "Arabic, English and orientation data are all needed"
+        )
     return ocr
 
 
