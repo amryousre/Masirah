@@ -83,14 +83,26 @@ describe("the ranking", () => {
         file({ id: "q", fileName: "queued.pdf", status: "queued" }),
         file({ id: "x", fileName: "reading.pdf", status: "extracting" }),
         file({ id: "r", fileName: "doubtful.pdf", status: "needs_review" }),
-        file({ id: "f", fileName: "locked.pdf", status: "failed", failureReason: "encrypted" }),
+        file({
+          id: "f",
+          fileName: "locked.pdf",
+          status: "failed",
+          failureReason: "the file cannot be read: the PDF is password-protected",
+        }),
+        file({
+          id: "g",
+          fileName: "gone.pdf",
+          status: "failed",
+          failureReason: "processing failed",
+        }),
       ],
     );
     expect(entries).toEqual([
       { kind: "processing", id: "q", label: "queued.pdf" },
       { kind: "processing", id: "x", label: "reading.pdf" },
       { kind: "review", id: "r", label: "doubtful.pdf" },
-      { kind: "failed", id: "f", label: "locked.pdf", reason: "encrypted" },
+      { kind: "failed", id: "f", label: "locked.pdf", failure: "locked" },
+      { kind: "failed", id: "g", label: "gone.pdf", failure: "notProcessed" },
     ]);
   });
 

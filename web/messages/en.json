@@ -42,7 +42,7 @@
     "removeSkill": "Remove {skill}"
   },
   "dialog": {
-    "close": "Close"
+    "close": "Close dialog"
   },
   "toast": {
     "region": "Notifications",
@@ -106,9 +106,9 @@
     "status": "Status",
     "notRanked": "Not ranked yet",
     "lowConfidence": "Low confidence · review",
-    "readFailed": "Couldn't read: {reason}",
     "dropOff": "{gap, plural, one {Scores drop {gap} point below here} other {Scores drop {gap} points below here}}",
-    "removed": "Personal data deleted"
+    "removed": "Personal data deleted",
+    "failed": "{reason} {action}"
   },
   "upload": {
     "drop": "Drag up to {max} files here, or choose files",
@@ -128,13 +128,13 @@
     "failed": "Couldn't read: {reason}",
     "unsupported": "Unsupported language ({language}). The file is kept and not scored.",
     "summary": "{total, plural, one {{total} file} other {{total} files}} · {parsed} parsed · {review} need review · {failed} failed · {unsupported} unsupported language · {working} in progress",
-    "remove": "Remove",
-    "cancel": "Cancel",
-    "hide": "Hide",
+    "remove": "Remove file",
+    "cancel": "Cancel upload",
+    "hide": "Hide from list",
     "openProfile": "Open profile",
-    "review": "Review",
+    "review": "Review file",
     "replace": "Replace file",
-    "ignore": "Ignore",
+    "ignore": "Ignore file",
     "tooMany": "{extra, plural, one {{extra} file wasn't added} other {{extra} files weren't added}}: you can upload up to {max} at a time."
   },
   "reject": {
@@ -349,8 +349,7 @@
       "name5": "Hana Adel",
       "reason5": "The CV shows no front-end experience",
       "tarek": "Tarek",
-      "nourhan": "Nourhan",
-      "blurred": "the image is blurred. Upload a clearer one."
+      "nourhan": "Nourhan"
     },
     "upload": {
       "title": "Upload",
@@ -434,7 +433,6 @@
     "experience": "{years, plural, one {{years}+ year} other {{years}+ years}}",
     "addCvs": "Add CVs",
     "unnamed": "Unnamed candidate",
-    "failedUnknown": "the file could not be read",
     "noCandidates": "No CVs yet. Drop files above: each appears here as it is read, then takes its place in the ranking.",
     "uploadFailed": "Couldn't upload. Check your connection and try again.",
     "rejected": {
@@ -600,8 +598,8 @@
     "kind": {
       "unreadable": {
         "short": "No text could be read from this file.",
-        "detail": "It looks like a scan or a photo. Masirah doesn’t read those yet, so the CV was kept but not ranked.",
-        "action": "Ask the candidate for a PDF or Word file, then upload it to the job."
+        "detail": "It looks like a scan or a photo that isn’t clear enough to read, so the CV was kept but not ranked.",
+        "action": "Ask the candidate for a PDF or Word file, or a clearer photo, then upload it to the job."
       },
       "unsupportedLanguage": {
         "short": "Written in {language}, which Masirah doesn’t read.",

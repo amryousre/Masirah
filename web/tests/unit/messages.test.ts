@@ -63,3 +63,42 @@ describe("translation files", () => {
     expect(dashed.map(([key]) => key)).toEqual([]);
   });
 });
+
+// The product's voice (design-brief.md section 8, PRODUCT.md): specific rather than aphoristic. It
+// names what happened and why; it never congratulates the user, never celebrates a finished batch,
+// and never calls the output intelligent.
+describe("the voice", () => {
+  const all = [...arabic, ...english];
+
+  it("never exclaims", () => {
+    expect(all.filter(([, text]) => /[!¡]/.test(text)).map(([key]) => key)).toEqual([]);
+  });
+
+  it("never congratulates, celebrates or calls the output clever", () => {
+    const praise =
+      /\b(congratulations|congrats|great job|well done|awesome|amazing|hooray|smart|intelligent|magic(al)?)\b|مبروك|تهانينا|أحسنت|رائع|مذهل|ذكي|ذكية|سحري/i;
+    expect(all.filter(([, text]) => praise.test(text)).map(([key]) => key)).toEqual([]);
+  });
+
+  // Every action is labelled with a verb and its object, so a control says what it acts on
+  // (DESIGN.md section 7). A bare verb such as "Remove" or "Close" does not.
+  it.each([
+    "dialog.close",
+    "upload.remove",
+    "upload.cancel",
+    "upload.hide",
+    "upload.review",
+    "upload.replace",
+    "upload.ignore",
+    "upload.openProfile",
+    "toast.dismiss",
+    "job.addCvs",
+    "job.clearFilters",
+    "reject.keep",
+  ])("labels %s with a verb and its object in both languages", (key) => {
+    for (const messages of [arabic, english]) {
+      const label = messages.get(key) ?? "";
+      expect(label.trim().split(/\s+/).length, `${key}: "${label}"`).toBeGreaterThanOrEqual(2);
+    }
+  });
+});

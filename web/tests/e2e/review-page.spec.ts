@@ -117,7 +117,9 @@ test("a scan and a CV in another language never read alike", async ({ page }) =>
   await signIn(page, recruiter);
   await page.goto(`/en/review?file=${scan}`);
   const detail = page.getByRole("region", { name: "scan_0187.pdf" });
-  await expect(detail).toContainText("It looks like a scan or a photo.");
+  await expect(detail).toContainText(
+    "It looks like a scan or a photo that isn’t clear enough to read",
+  );
   await expect(detail).toContainText("Needs review");
   await expect(detail).not.toContainText("Unsupported language");
 });

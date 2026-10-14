@@ -98,7 +98,7 @@ export function JobScreen({
           kind: "failed",
           id: entry.id,
           fileName: entry.label,
-          reason: entry.reason ?? t("failedUnknown"),
+          failure: entry.failure,
         };
       case "removed":
         return { kind: "removed", id: entry.id };

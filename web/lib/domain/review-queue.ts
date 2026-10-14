@@ -64,7 +64,9 @@ const waiting: Record<NonNullable<ReviewRow["reviewReason"]>, ReviewKind> = {
  * is reported as "the file cannot be read: …", and a password-protected PDF names itself so
  * (adapters/native_text.py); anything else went wrong on our side, not in the file.
  */
-export function failureKind(reason: string): "locked" | "damaged" | "notProcessed" {
+export type FailureKind = "locked" | "damaged" | "notProcessed";
+
+export function failureKind(reason: string): FailureKind {
   if (reason.includes("password-protected")) return "locked";
   if (reason.startsWith("the file cannot be read")) return "damaged";
   return "notProcessed";

@@ -53,7 +53,7 @@ const rows: CandidateRow[] = [
     decision: { kind: "rejected", by: "Nourhan" },
   },
   { kind: "processing", id: "f1", fileName: "Ahmed_Samir_CV.docx" },
-  { kind: "failed", id: "f2", fileName: "scan_0231.jpg", reason: "the image is blurred" },
+  { kind: "failed", id: "f2", fileName: "scan_0231.jpg", failure: "damaged" },
 ];
 
 describe("CandidateTable", () => {
@@ -95,7 +95,11 @@ describe("CandidateTable", () => {
     expect(screen.getByRole("rowgroup", { name: "لم تُرتَّب بعد" })).toBeInTheDocument();
     expect(screen.getByText("Ahmed_Samir_CV.docx")).toBeInTheDocument();
     expect(screen.getByText("قيد المعالجة")).toBeInTheDocument();
-    expect(screen.getByText("تعذّرت القراءة: the image is blurred")).toBeInTheDocument();
+    // The reason is in the reader's language and says what to do (T109), never the worker's own
+    // English.
+    expect(
+      screen.getByText("تعذّر فتح الملف. اطلب من المرشح إرسال السيرة مرة أخرى."),
+    ).toBeInTheDocument();
   });
 
   it("marks where scores fall off, between the last strong candidate and the next", () => {

@@ -116,7 +116,7 @@ export function CandidatesDemo() {
       decision: { kind: "rejected", by: t("nourhan") },
     },
     { kind: "processing", id: "f1", fileName: "Ahmed_Samir_CV.docx" },
-    { kind: "failed", id: "f2", fileName: "scan_0231.jpg", reason: t("blurred") },
+    { kind: "failed", id: "f2", fileName: "scan_0231.jpg", failure: "damaged" },
   ];
   return <CandidateTable rows={rows} selectedId={selected} onSelect={setSelected} />;
 }

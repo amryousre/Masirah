@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { Fragment, useId } from "react";
 
 import { Link } from "@/i18n/navigation";
+import type { FailureKind } from "@/lib/domain/review-queue";
 
 import { cx } from "../cx";
 import { Icon } from "../icon/icon";
@@ -36,7 +37,7 @@ export type CandidateRow =
   | { kind: "processing"; id: string; fileName: string }
   /** Read, but too doubtful to rank until someone checks it (FR-011). */
   | { kind: "review"; id: string; fileName: string }
-  | { kind: "failed"; id: string; fileName: string; reason: string }
+  | { kind: "failed"; id: string; fileName: string; failure: FailureKind }
   /** A candidate whose personal data was deleted; their application and decision remain. */
   | { kind: "removed"; id: string };
 
@@ -67,6 +68,7 @@ export function CandidateTable({
   sortedBy = "score",
 }: CandidateTableProps) {
   const t = useTranslations("candidates");
+  const review = useTranslations("review.kind");
   const unrankedId = useId();
   const ranked = rows.filter((row): row is RankedRow => row.kind === "ranked");
   const unranked = rows.filter((row) => row.kind !== "ranked");
@@ -197,7 +199,11 @@ export function CandidateTable({
                   ) : (
                     <span className={styles.failed}>
                       <Icon name="xCircle" size={14} />
-                      {t("readFailed", { reason: row.reason })}
+                      {/* What went wrong and what to do, in the reader's language (T109). */}
+                      {t("failed", {
+                        reason: review(`${row.failure}.short`),
+                        action: review(`${row.failure}.action`),
+                      })}
                     </span>
                   )}
                 </td>
