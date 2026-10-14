@@ -57,12 +57,11 @@ const motionTokens = {
             }
           }
           const times = item.filter((part) => isTime(part) || isDurationToken(part));
-          const delayed =
-            property.endsWith("-delay")
-              ? times.some((part) => !(isTime(part) && Number(part.value) === 0))
-              : property === "transition" || property === "animation"
-                ? times.length > 1
-                : false;
+          const delayed = property.endsWith("-delay")
+            ? times.some((part) => !(isTime(part) && Number(part.value) === 0))
+            : property === "transition" || property === "animation"
+              ? times.length > 1
+              : false;
           if (delayed) report("delay");
           const repeats =
             property === "animation-iteration-count" || property === "animation"

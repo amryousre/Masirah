@@ -108,7 +108,10 @@ describe("motion", () => {
       ".a { transition: color var(--duration-fast) var(--ease) var(--duration-fast); }\n",
     ],
     ["a staggered animation", ".a { animation-delay: 200ms; }\n"],
-    ["an endless animation", ".a { animation: pulse var(--duration-base) var(--ease) infinite; }\n"],
+    [
+      "an endless animation",
+      ".a { animation: pulse var(--duration-base) var(--ease) infinite; }\n",
+    ],
     ["a repeated animation", ".a { animation-iteration-count: 3; }\n"],
     ["motion on a pseudo-element", ".a::after { transition: opacity 600ms; }\n"],
   ])("rejects %s", async (_, code) => {
