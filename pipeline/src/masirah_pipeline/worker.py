@@ -38,6 +38,7 @@ from masirah_pipeline.ports.cv_store import CvStore, MissingCvError
 from masirah_pipeline.ports.document_text import DocumentReader, UnreadableDocumentError
 from masirah_pipeline.ports.job_queue import JobQueue, ReceivedMessage
 from masirah_pipeline.ports.model_provider import RefusedError, StructuredModel
+from masirah_pipeline.ports.ocr_engine import OCR_MEDIA_TYPES, OcrEngine
 from masirah_pipeline.ports.queue_message import (
     CV_PROCESSING,
     CvProcessingMessage,
@@ -52,6 +53,7 @@ from masirah_pipeline.ports.worker_store import (
     CandidateDetails,
     CvFile,
     Extraction,
+    ExtractionSource,
     WorkerStore,
 )
 
@@ -95,6 +97,15 @@ def _silent() -> None:
     """No heartbeat, for a worker nobody monitors."""
 
 
+@dataclass(frozen=True)
+class _Read:
+    """A CV's text, how it was read, and what reading it cost."""
+
+    text: str
+    source: ExtractionSource
+    cost_egp: Decimal
+
+
 class _TerminalError(Exception):
     """The file cannot be processed, however often it is tried."""
 
@@ -112,6 +123,8 @@ class Worker:
     # Records that the worker is alive (T030): before each batch and after every message, so a
     # long batch still shows it working.
     beat: Callable[[], None] = _silent
+    # Reads scans and photographs (T076). Without one they go to the review queue unread.
+    ocr: OcrEngine | None = None
     clock: Callable[[], datetime] = lambda: datetime.now(UTC)
 
     def run_once(self) -> int:
@@ -203,22 +216,23 @@ class Worker:
         if cached is not None:
             self._reuse(message, cached)
             return
-        text = self._text(cv_file)
+        read = self._text(cv_file)
+        text = None if read is None else read.text
         waiting = before_extraction(text)
-        if waiting is not None or text is None:
+        if waiting is not None or read is None:
             self.store.mark_needs_review(organisation, file_id, waiting or Review("no_text"))
             return
         try:
-            extracted = extract_profile(self.model, text)
+            extracted = extract_profile(self.model, read.text)
         except RefusedError as error:
             raise _TerminalError(f"the model declined to read the CV: {error}") from error
-        score = Decimal(str(round(confidence(extracted.profile, text), 3)))
+        score = Decimal(str(round(confidence(extracted.profile, read.text), 3)))
         review = after_extraction(float(score))
         candidate_id = self.store.record_extraction(
             organisation,
             file_id,
             Extraction(
-                source="native_text",
+                source=read.source,
                 confidence=score,
                 profile=extracted.profile.as_dict(),
                 candidate=_candidate(extracted.profile),
@@ -226,7 +240,8 @@ class Worker:
             ),
         )
         if review is None:
-            self._score(message, candidate_id, extracted.profile, extracted.response.cost_egp)
+            cost = extracted.response.cost_egp + read.cost_egp
+            self._score(message, candidate_id, extracted.profile, cost)
 
     def _reuse(self, message: CvProcessingMessage, cached: CachedProfile) -> None:
         """The same bytes were extracted before: take that profile, at no model cost (AI-03)."""
@@ -247,19 +262,31 @@ class Worker:
         if review is None:
             self._score(message, candidate_id, profile, Decimal(0))
 
-    def _text(self, cv_file: CvFile) -> str | None:
-        """The CV's text, or None when it has none to read until OCR arrives (T076)."""
-        if cv_file.mime_type.startswith("image/"):
+    def _text(self, cv_file: CvFile) -> _Read | None:
+        """The CV's text and how it was read, or None when it has none: a photograph or a scan
+        with no OCR engine to read it, or a document nothing legible could be taken from."""
+        photograph = cv_file.mime_type.startswith("image/")
+        if photograph and self.ocr is None:
             return None
         try:
             content = self.files.fetch(cv_file.storage_path)
         except MissingCvError as error:
             raise _TerminalError("the original file is missing from storage") from error
         try:
-            text = self.read_text(content)
+            if not photograph:
+                text = self.read_text(content)
+                if text.strip():
+                    return _Read(text, "native_text", Decimal(0))
+            if self.ocr is None or cv_file.mime_type not in OCR_MEDIA_TYPES:
+                return None
+            reading = self.ocr.read(content, cv_file.mime_type)
         except UnreadableDocumentError as error:
             raise _TerminalError(f"the file cannot be read: {error}") from error
-        return text if text.strip() else None
+        except RefusedError as error:
+            raise _TerminalError(f"the model declined to read the scan: {error}") from error
+        if not reading.text.strip():
+            return None
+        return _Read(reading.text, reading.source, reading.cost_egp)
 
     def _score(
         self, message: CvProcessingMessage, candidate_id: UUID, profile: Profile, cost: Decimal

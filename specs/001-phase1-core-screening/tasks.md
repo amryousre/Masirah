@@ -176,7 +176,7 @@ Every table below carries `organisation_id` and has row level security enabled w
 
 ### Implementation for User Story 2
 
-- [ ] T076 [US2] Define the `OcrEngine` port in `pipeline/src/masirah_pipeline/ports/ocr_engine.py`
+- [X] T076 [US2] Define the `OcrEngine` port in `pipeline/src/masirah_pipeline/ports/ocr_engine.py`
 - [ ] T077 [P] [US2] Vision-model OCR adapter in `pipeline/src/masirah_pipeline/adapters/vision_ocr.py` as the primary path, since Tesseract is weak on Arabic and weaker still on photographs of printed pages
 - [ ] T078 [P] [US2] Tesseract fallback adapter in `pipeline/src/masirah_pipeline/adapters/tesseract_ocr.py` with Arabic language data
 - [X] T079 [US2] Confidence threshold routing in `pipeline/src/masirah_pipeline/domain/confidence.py` setting `cv_file.status` to `needs_review` when confidence falls below threshold, never discarding (FR-011). Brought forward into T054, because `parsed_profile.confidence` is required: confidence is the share of a profile's values the CV's text contains, so an invented value lowers it
@@ -210,7 +210,7 @@ Every table below carries `organisation_id` and has row level security enabled w
 - [X] T091 [US3] Advisory presentation in `web/components/advisory-notice.tsx`: a standing line making clear the score is advisory and the decision is the user's, present without nagging. No screen may present a score as a decision. Shown at the foot of the candidate's reasons, under the decision, in plain text
 - [X] T092 [US3] Rejection control placement and confirmation in `web/components/reject-candidate.tsx`. **No reject control appears in a row hover position where it can be hit by accident.** The confirmation states the consequence rather than asking "are you sure". This is a legal requirement carrying discrimination-claim exposure, not a preference. It lives only in the candidate's decision section; the list rows carry no decision control. The confirmation says the decider is recorded and the candidate stays listed as rejected, and offers no candidate notice, since none can be sent yet
 - [X] T093 [US3] Per-organisation processing limits and a hard monthly spend ceiling in `pipeline/src/masirah_pipeline/domain/budget.py`, halting processing for that organisation rather than continuing to accrue cost (AI-06)
-- [ ] T094 [US3] Document the contractual no-training position for each provider in `pipeline/src/masirah_pipeline/adapters/README.md`, checked before a provider is enabled rather than at runtime, and state it to candidates in the privacy policy (AI-09)
+- [X] T094 [US3] Document the contractual no-training position for each provider in `pipeline/src/masirah_pipeline/adapters/README.md`, checked before a provider is enabled rather than at runtime, and state it to candidates in the privacy policy (AI-09)
 
 **Checkpoint**: the bias suite passes and rejection without a human actor is unrepresentable in both the schema and the interface.
 

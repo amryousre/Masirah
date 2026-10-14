@@ -11,7 +11,7 @@ from decimal import Decimal
 
 import pytest
 
-from masirah_pipeline.metering import MeteredModel, spending_for
+from masirah_pipeline.metering import MeteredModel, MeteredOcr, spending_for
 from masirah_pipeline.ports.model_provider import (
     MalformedOutputError,
     ModelIdentity,
@@ -21,6 +21,7 @@ from masirah_pipeline.ports.model_provider import (
     StructuredResponse,
     Usage,
 )
+from masirah_pipeline.ports.ocr_engine import OcrReading
 from masirah_pipeline.ports.spend_ledger import Spend
 
 ORG, FILE = uuid.uuid4(), uuid.uuid4()
@@ -107,3 +108,48 @@ def test_the_work_it_is_charged_to_ends_with_its_block() -> None:
         pass
     with pytest.raises(RuntimeError):
         model.complete(REQUEST)
+
+
+@dataclass
+class Ocr:
+    reading: OcrReading = field(
+        default_factory=lambda: OcrReading(
+            "CV text", "vision_ocr", ModelIdentity("openai", "model-v", "ocr/1"), Decimal("0.25")
+        )
+    )
+    error: Exception | None = None
+
+    def read(self, content: bytes, media_type: str) -> OcrReading:
+        if self.error is not None:
+            raise self.error
+        return self.reading
+
+
+def test_a_paid_ocr_reading_is_recorded_as_extraction() -> None:
+    ledger = Ledger()
+    with spending_for(ORG, FILE):
+        MeteredOcr(Ocr(), ledger).read(b"image", "image/png")
+    assert ledger.spent == [Spend(ORG, FILE, "extraction", "openai", "model-v", Decimal("0.25"))]
+
+
+def test_a_reading_that_cost_nothing_is_not_recorded() -> None:
+    ledger = Ledger()
+    free = OcrReading("CV text", "tesseract_ocr", None, Decimal(0))
+    with spending_for(ORG, FILE):
+        MeteredOcr(Ocr(free), ledger).read(b"image", "image/png")
+    assert ledger.spent == []
+
+
+def test_a_paid_ocr_failure_is_recorded_and_still_raised() -> None:
+    ledger = Ledger()
+    engine = Ocr(error=RefusedError("declined", cost_egp=Decimal("0.05")))
+    with spending_for(ORG, FILE), pytest.raises(RefusedError):
+        MeteredOcr(engine, ledger).read(b"image", "image/png")
+    assert ledger.spent == [Spend(ORG, FILE, "extraction", None, None, Decimal("0.05"))]
+
+
+def test_an_ocr_reading_outside_a_cvs_work_is_refused() -> None:
+    ledger = Ledger()
+    with pytest.raises(RuntimeError, match="no organisation"):
+        MeteredOcr(Ocr(), ledger).read(b"image", "image/png")
+    assert ledger.spent == []

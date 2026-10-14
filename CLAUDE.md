@@ -137,11 +137,10 @@ Single-context: `CONTEXT.md` at the root and ADRs in `Docs/adr/`. See `Docs/agen
 ## Working conventions
 
 - **Test first.** Write the test, watch it fail for the intended reason, then implement. Every extraction or scoring behaviour needs a test backed by a committed fixture.
-- **Never push to `main`.** Work on a branch, open a PR and let CodeRabbit review it. Fix or answer every comment, including outside-diff and nitpick findings in the review body. Merge only when all of these hold:
-  - CI is green;
-  - CodeRabbit's check succeeds on the head;
-  - every thread is resolved, and every reply has a CodeRabbit answer;
-  - CodeRabbit has been quiet for about two minutes.
+- **Never push to `main`.** Work on a branch and open a PR. CodeRabbit is on its free plan, which posts only a summary, so its passing check is not a review. Instead, run the `/code-review` skill on the PR and fix every finding it reports, or say on the PR why one is declined. Merge only when all of these hold:
+  - CI is green on the head;
+  - the `/code-review` findings are fixed or answered;
+  - every review thread is resolved.
 - **Push credentials.** Git's credential manager may hold a GitHub account that can't see the repo. Push with `git -c credential.helper= -c 'credential.helper=!gh auth git-credential' push` and give `gh` the repo owner's token if needed.
 - **Supabase cloud.** Never `config push` the repo's `supabase/config.toml` to the hosted project. Change hosted Auth settings through a scoped config in a scratch directory, after a `config diff`.
 - **Line endings.** `.gitattributes` forces LF. On Windows, Python's `write_text` writes CRLF, so pass `newline="\n"` when a script writes repo files.
