@@ -81,3 +81,36 @@ test.describe("a signed-in member", () => {
     await expect(page).toHaveURL(/\/ar\/jobs$/);
   });
 });
+
+// The one motion on the page (DESIGN.md: 150 to 250 ms): the selection slides to the chosen row.
+async function selectionTransform(page: import("@playwright/test").Page): Promise<string> {
+  return page
+    .locator('[data-flip-id="selection"]')
+    .evaluate((node) => getComputedStyle(node).transform);
+}
+
+test("the selection slides to the chosen row, and settles", async ({ page }) => {
+  await page.goto("/en");
+  const demo = page.getByRole("region", { name: "An example ranking" });
+  await untilHydrated(page, async () => {
+    await demo.getByRole("button", { name: /Karim Hamdy/ }).click();
+    await expect(demo.getByRole("heading", { name: "Why fifth" })).toBeVisible({ timeout: 1_000 });
+  });
+  await page.waitForTimeout(400);
+  await demo.getByRole("button", { name: /Mona El-Sherif/ }).click();
+  expect(await selectionTransform(page)).not.toBe("none");
+  await expect
+    .poll(() => selectionTransform(page), { timeout: 1_000 })
+    .toMatch(/^(none|matrix\(1, 0, 0, 1, 0, 0\))$/);
+});
+
+test("with reduced motion the selection just moves", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/en");
+  const demo = page.getByRole("region", { name: "An example ranking" });
+  await untilHydrated(page, async () => {
+    await demo.getByRole("button", { name: /Mona El-Sherif/ }).click();
+    await expect(demo.getByRole("heading", { name: "Why first" })).toBeVisible({ timeout: 1_000 });
+  });
+  expect(await selectionTransform(page)).toBe("none");
+});

@@ -197,6 +197,7 @@ def test_unfiltered_view_returns_only_own_rows(
 # exactly that in its own file. A function added here needs the same before it joins the list.
 DEFINER_FUNCTIONS_MEMBERS_CAN_CALL = {
     "enqueue_cv_processing": "test_enqueue_cv.py",
+    "join_waitlist": "test_waitlist.py (insert only, into a list no API role can read)",
     "correct_profile": "test_field_overrides.py",
     "record_decision": "test_decisions.py",
     "request_candidate_deletion": "test_deletion.py",

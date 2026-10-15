@@ -13,6 +13,12 @@ from tests.database import Cursor, act_as, seed_tenant
 pytestmark = pytest.mark.database
 
 
+@pytest.fixture(autouse=True)
+def empty_list(cur: Cursor) -> None:
+    """Each test starts from an empty list; the transaction is rolled back after it."""
+    cur.execute("delete from private.waitlist")
+
+
 def join(cur: Cursor, email: str, locale: str = "ar") -> None:
     act_as(cur, None)
     cur.execute("select public.join_waitlist(%s, %s)", (email, locale))
@@ -50,6 +56,32 @@ def test_what_is_not_a_request_is_refused(cur: Cursor, email: str, locale: str) 
     act_as(cur, None)
     with pytest.raises(psycopg.errors.InvalidParameterValue):
         cur.execute("select public.join_waitlist(%s, %s)", (email, locale))
+
+
+def test_someone_signed_in_without_an_organisation_can_join(cur: Cursor) -> None:
+    """Signed in with Google but not invited: the people most likely to want an account."""
+    tenant = seed_tenant(cur, "alpha")
+    act_as(cur, tenant.user_id)
+    cur.execute("select public.join_waitlist(%s, %s)", ("someone@new-co.com", "en"))
+    cur.execute("reset role")
+    assert ("someone@new-co.com", "en") in waiting(cur)
+
+
+def test_a_flood_is_refused_once_an_hour_holds_a_hundred(cur: Cursor) -> None:
+    cur.execute(
+        "insert into private.waitlist (email, locale)"
+        " select 'flood' || n || '@spam.example', 'en' from generate_series(1, 100) n"
+    )
+    act_as(cur, None)
+    with pytest.raises(psycopg.errors.ConfigurationLimitExceeded):
+        cur.execute("select public.join_waitlist(%s, %s)", ("real@delta-soft.com", "ar"))
+
+
+def test_the_operator_reads_the_list_with_the_service_role(cur: Cursor) -> None:
+    join(cur, "nourhan@delta-soft.com")
+    cur.execute("set local role service_role")
+    cur.execute("select email from private.waitlist")
+    assert cur.fetchall() == [("nourhan@delta-soft.com",)]
 
 
 @pytest.mark.parametrize("role", ["anon", "authenticated"])

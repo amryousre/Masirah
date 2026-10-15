@@ -15,5 +15,9 @@ export async function joinWaitlist(
   const { error } = await supabase.rpc("join_waitlist", { email, locale });
   if (error === null) return "joined";
   // 22023 is the database refusing what the page let through: say so as the page would.
-  return error.code === "22023" ? "invalid" : "unavailable";
+  if (error.code === "22023") return "invalid";
+  // Anything else is ours: an outage, the hourly limit (53400), or a grant gone wrong. The visitor
+  // is told to try later; the log says which.
+  console.error("join_waitlist failed", error.code, error.message);
+  return "unavailable";
 }

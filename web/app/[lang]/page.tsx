@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, unstable_rethrow } from "next/navigation";
 import { hasLocale } from "next-intl";
 import { getTranslations } from "next-intl/server";
 
@@ -21,6 +21,22 @@ export async function generateMetadata({ params }: PageProps<"/[lang]">): Promis
   return { title: { absolute: t("title") } };
 }
 
+/**
+ * Whether the visitor is a member, who goes to their jobs instead. A public page must still render
+ * when the session can't be read, so a failed lookup shows the page rather than an error.
+ */
+async function isMember(): Promise<boolean> {
+  try {
+    return (await getAccess()).kind === "member";
+  } catch (error) {
+    // Next.js signals with errors too (this page reads cookies, so it renders per request); those
+    // go on, and only a failed lookup is caught.
+    unstable_rethrow(error);
+    console.error("the landing page could not read the session; showing it to a visitor", error);
+    return false;
+  }
+}
+
 const TODAY = ["forty", "late", "trust"] as const;
 const STEPS = ["create", "add", "read", "decide"] as const;
 const ADVICE = ["evidence", "excluded", "nothingLost", "unsure"] as const;
@@ -31,7 +47,7 @@ const ADVICE = ["evidence", "excluded", "nothingLost", "unsure"] as const;
 export default async function LandingPage({ params }: PageProps<"/[lang]">) {
   const { lang } = await params;
   if (!hasLocale(routing.locales, lang)) notFound();
-  if ((await getAccess()).kind === "member") redirect({ href: "/jobs", locale: lang });
+  if (await isMember()) redirect({ href: "/jobs", locale: lang });
 
   const t = await getTranslations({ locale: lang, namespace: "landing" });
   const join = joinTheWaitlist.bind(null, lang);
@@ -112,7 +128,7 @@ export default async function LandingPage({ params }: PageProps<"/[lang]">) {
           <h2 id="landing-closing" className={styles.sectionTitle}>
             {t("closing.title")}
           </h2>
-          <WaitlistForm action={join} />
+          <WaitlistForm action={join} labelledBy="landing-closing" />
         </section>
       </main>
 

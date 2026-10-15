@@ -21,6 +21,7 @@ type RowKey = (typeof ROWS)[number]["key"];
 
 // The motion tokens' slowest step (globals.css), so the demo keeps to DESIGN.md's 150 to 250 ms.
 const SLIDE_SECONDS = 0.2;
+const SELECTION = '[data-flip-id="selection"]';
 
 /**
  * The ranking as it appears in the product, with illustrative names: choosing a row shows why it
@@ -39,7 +40,13 @@ export function RankingDemo() {
       const state = before.current;
       before.current = null;
       if (state === null) return;
-      Flip.from(state, { duration: SLIDE_SECONDS, ease: "power3.out" });
+      // The selection is a new element in another row; Flip matches it to the old one by its
+      // flip id, so it is named as the target.
+      Flip.from(state, {
+        targets: root.current?.querySelector(SELECTION) ?? [],
+        duration: SLIDE_SECONDS,
+        ease: "power3.out",
+      });
     },
     { scope: root, dependencies: [selected] },
   );
@@ -49,7 +56,8 @@ export function RankingDemo() {
   const choose = (key: RowKey) => {
     if (key === selected) return;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    before.current = reduced ? null : Flip.getState('[data-flip-id="selection"]');
+    const current = root.current?.querySelector(SELECTION) ?? null;
+    before.current = reduced || current === null ? null : Flip.getState(current);
     setSelected(key);
   };
 
