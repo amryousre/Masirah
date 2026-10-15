@@ -1,4 +1,5 @@
-"""The parse failure figures, read through worker.parse_outcomes (migration 0028, T031)."""
+"""The parse failure figures and the alert claim, through worker.parse_outcomes and
+worker.claim_alert (migration 0028, T031)."""
 
 from typing import Any
 
@@ -20,3 +21,14 @@ class PostgresParseOutcomes:
             return ParseOutcomes(settled=0, failed=0, organisations=0)
         settled, failed, organisations = row
         return ParseOutcomes(settled=settled, failed=failed, organisations=organisations)
+
+
+class PostgresAlertClaim:
+    def __init__(self, connection: psycopg.Connection[Any]) -> None:
+        self._connection = connection
+
+    def __call__(self, kind: str, quiet_seconds: int) -> bool:
+        row = self._connection.execute(
+            "select worker.claim_alert(%s, %s)", (kind, quiet_seconds)
+        ).fetchone()
+        return bool(row and row[0])

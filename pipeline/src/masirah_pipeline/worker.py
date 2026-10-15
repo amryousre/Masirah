@@ -56,6 +56,7 @@ from masirah_pipeline.ports.worker_store import (
     ExtractionSource,
     WorkerStore,
 )
+from masirah_pipeline.work_context import working_on
 
 log = logging.getLogger("masirah.worker")
 
@@ -166,6 +167,12 @@ class Worker:
                 queue,
             )
             return Outcome.LEFT
+        with working_on(message.organisation_id, message.cv_file_id):
+            return self._handle(queue, received, message)
+
+    def _handle(
+        self, queue: str, received: ReceivedMessage, message: CvProcessingMessage
+    ) -> Outcome:
         try:
             if received.read_count > MAX_ATTEMPTS:
                 raise _TerminalError(f"processing failed after {MAX_ATTEMPTS} attempts")

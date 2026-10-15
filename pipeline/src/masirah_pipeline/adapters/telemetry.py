@@ -18,16 +18,20 @@ from typing import Any
 
 import sentry_sdk
 
-from masirah_pipeline.metering import charged_to
+from masirah_pipeline.work_context import current_work
 
 Event = dict[str, Any]
 
+# The HTTP client logs every request with its full URL at INFO. The Slack webhook's URL is its
+# credential, so those records must never be made: not on stdout, and not as Sentry breadcrumbs.
+QUIETED = ("httpx2", "httpcore2")
+
 
 def _tenant() -> dict[str, str]:
-    charge = charged_to()
-    if charge is None:
+    work = current_work()
+    if work is None:
         return {}
-    organisation_id, cv_file_id = charge
+    organisation_id, cv_file_id = work
     return {"organisation_id": str(organisation_id), "cv_file_id": str(cv_file_id)}
 
 
@@ -66,6 +70,8 @@ def configure(
     handler = logging.StreamHandler()
     handler.setFormatter(JsonFormatter())
     logging.basicConfig(level=logging.INFO, handlers=[handler], force=True)
+    for name in QUIETED:
+        logging.getLogger(name).setLevel(logging.WARNING)
     dsn = environment.get("SENTRY_DSN", "").strip()
     if not dsn:
         return False

@@ -110,6 +110,8 @@ describe("sentryOptions", () => {
   it("names the environment, production by default", () => {
     vi.stubEnv("NEXT_PUBLIC_SENTRY_DSN", "https://key@o1.ingest.de.sentry.io/2");
     expect(sentryOptions().environment).toBe("production");
+    vi.stubEnv("NEXT_PUBLIC_SENTRY_ENVIRONMENT", " ");
+    expect(sentryOptions().environment).toBe("production");
     vi.stubEnv("NEXT_PUBLIC_SENTRY_ENVIRONMENT", "preview");
     expect(sentryOptions().environment).toBe("preview");
   });

@@ -18,7 +18,12 @@ from masirah_pipeline.domain.parse_failures import (
     ParseOutcomes,
     alert_for,
 )
-from masirah_pipeline.jobs.parse_failures import WINDOW_SECONDS, check_parse_failures
+from masirah_pipeline.jobs.parse_failures import (
+    KIND,
+    QUIET_SECONDS,
+    WINDOW_SECONDS,
+    check_parse_failures,
+)
 
 WEBHOOK = "https://hooks.slack.com/services/T000/B000/secret-part"
 
@@ -50,6 +55,14 @@ def test_one_organisation_is_named_in_the_singular() -> None:
     assert "1 organisation)" in alert
 
 
+def granted(kind: str, quiet_seconds: int) -> bool:
+    return True
+
+
+def refused(kind: str, quiet_seconds: int) -> bool:
+    return False
+
+
 class Recorded:
     def __init__(self) -> None:
         self.sent: list[str] = []
@@ -65,10 +78,17 @@ def test_an_alert_is_logged_as_an_error_and_sent(caplog: pytest.LogCaptureFixtur
         windows.append(window_seconds)
         return ParseOutcomes(settled=40, failed=10, organisations=3)
 
+    claims: list[tuple[str, int]] = []
+
+    def claim(kind: str, quiet_seconds: int) -> bool:
+        claims.append((kind, quiet_seconds))
+        return True
+
     alerts = Recorded()
     with caplog.at_level(logging.ERROR):
-        assert check_parse_failures(read, alerts) == 1
+        assert check_parse_failures(read, claim, alerts) == 1
     assert windows == [WINDOW_SECONDS]
+    assert claims == [(KIND, QUIET_SECONDS)]
     assert len(alerts.sent) == 1
     assert alerts.sent[0] in caplog.text
 
@@ -76,15 +96,24 @@ def test_an_alert_is_logged_as_an_error_and_sent(caplog: pytest.LogCaptureFixtur
 def test_a_healthy_hour_sends_nothing(caplog: pytest.LogCaptureFixture) -> None:
     alerts = Recorded()
     with caplog.at_level(logging.ERROR):
-        assert check_parse_failures(lambda _: ParseOutcomes(50, 0, 0), alerts) == 0
+        assert check_parse_failures(lambda _: ParseOutcomes(50, 0, 0), granted, alerts) == 0
     assert alerts.sent == []
     assert caplog.records == []
 
 
 def test_without_slack_the_alert_is_still_logged(caplog: pytest.LogCaptureFixture) -> None:
     with caplog.at_level(logging.ERROR):
-        assert check_parse_failures(lambda _: ParseOutcomes(40, 10, 1), None) == 1
+        assert check_parse_failures(lambda _: ParseOutcomes(40, 10, 1), granted, None) == 1
     assert "parse failure rate" in caplog.text
+
+
+def test_another_worker_has_already_alerted(caplog: pytest.LogCaptureFixture) -> None:
+    """The claim went to another worker, or to this one before a restart, within the hour."""
+    alerts = Recorded()
+    with caplog.at_level(logging.ERROR):
+        assert check_parse_failures(lambda _: ParseOutcomes(40, 10, 1), refused, alerts) == 0
+    assert alerts.sent == []
+    assert caplog.records == []
 
 
 def client_answering(status: int, seen: list[httpx2.Request]) -> httpx2.Client:

@@ -37,7 +37,10 @@ import psycopg
 
 from masirah_pipeline.adapters.heartbeat import PostgresHeartbeat
 from masirah_pipeline.adapters.native_text import read_native_text
-from masirah_pipeline.adapters.postgres_parse_outcomes import PostgresParseOutcomes
+from masirah_pipeline.adapters.postgres_parse_outcomes import (
+    PostgresAlertClaim,
+    PostgresParseOutcomes,
+)
 from masirah_pipeline.adapters.postgres_purge_store import PostgresPurgeStore
 from masirah_pipeline.adapters.postgres_spend_ledger import PostgresSpendLedger
 from masirah_pipeline.adapters.postgres_worker_store import PostgresWorkerStore
@@ -231,8 +234,9 @@ def main(environment: Mapping[str, str] = os.environ) -> None:
 
         with contextlib.suppress(KeyboardInterrupt):
             purge_store = PostgresPurgeStore(connection)
-            outcomes, alerts = PostgresParseOutcomes(connection), alerts_for(environment)
+            outcomes, claim = PostgresParseOutcomes(connection), PostgresAlertClaim(connection)
+            alerts = alerts_for(environment)
             batch = Reconciling(worker.run_once, requeue_stranded)
-            batch = Watching(batch, lambda: check_parse_failures(outcomes, alerts))
+            batch = Watching(batch, lambda: check_parse_failures(outcomes, claim, alerts))
             poll(Purging(batch, lambda: purge_due(purge_store, storage)), stop, stop.wait)
         log.info("worker stopped")

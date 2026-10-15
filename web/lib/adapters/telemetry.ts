@@ -53,7 +53,7 @@ export function sentryOptions(): BrowserOptions {
   return {
     dsn,
     enabled: dsn !== "",
-    environment: process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT ?? "production",
+    environment: process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT?.trim() || "production",
     // Every category of collected data is on by default; scrubEvent is the second line.
     dataCollection: {
       userInfo: false,

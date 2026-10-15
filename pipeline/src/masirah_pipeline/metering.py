@@ -42,12 +42,6 @@ def spending_for(organisation_id: UUID, cv_file_id: UUID) -> Iterator[None]:
         _charged_to.reset(token)
 
 
-def charged_to() -> tuple[UUID, UUID] | None:
-    """The organisation and CV the current work is for, if any: what logs and error reports are
-    tagged with (T031)."""
-    return _charged_to.get()
-
-
 Record = Callable[[ModelIdentity | None, Decimal], None]
 
 

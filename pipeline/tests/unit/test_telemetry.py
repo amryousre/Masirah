@@ -16,7 +16,7 @@ from typing import Any
 import pytest
 
 from masirah_pipeline.adapters.telemetry import JsonFormatter, configure, scrub
-from masirah_pipeline.metering import spending_for
+from masirah_pipeline.work_context import working_on
 
 ORGANISATION = uuid.UUID("11111111-1111-4111-8111-111111111111")
 CV_FILE = uuid.UUID("22222222-2222-4222-8222-222222222222")
@@ -29,6 +29,8 @@ def root_logging_restored() -> Iterator[None]:
     yield
     root.handlers[:] = handlers
     root.setLevel(level)
+    for name in ("httpx2", "httpcore2"):
+        logging.getLogger(name).setLevel(logging.NOTSET)
 
 
 def line_for(message: str, *args: object, exc: bool = False) -> dict[str, Any]:
@@ -60,7 +62,7 @@ def test_arabic_stays_readable() -> None:
 
 
 def test_the_tenant_being_processed_is_on_every_line() -> None:
-    with spending_for(ORGANISATION, CV_FILE):
+    with working_on(ORGANISATION, CV_FILE):
         line = line_for("calling the model")
     assert line["organisation_id"] == str(ORGANISATION)
     assert line["cv_file_id"] == str(CV_FILE)
@@ -78,6 +80,14 @@ def test_without_a_dsn_logs_are_structured_and_nothing_is_sent() -> None:
     root = logging.getLogger()
     assert any(isinstance(handler.formatter, JsonFormatter) for handler in root.handlers)
     assert root.level == logging.INFO
+
+
+@pytest.mark.parametrize("name", ["httpx2", "httpcore2.http11"])
+def test_the_http_client_never_logs_a_request_url(name: str) -> None:
+    """Its INFO lines name the full URL, and the Slack webhook's URL is a credential."""
+    configure({}, init=lambda **options: None)
+    assert not logging.getLogger(name).isEnabledFor(logging.INFO)
+    assert logging.getLogger(name).isEnabledFor(logging.WARNING)
 
 
 def test_with_a_dsn_sentry_starts_without_personal_data() -> None:
@@ -138,7 +148,7 @@ def test_scrub_removes_what_could_carry_a_candidates_words() -> None:
 
 
 def test_scrub_tags_the_tenant_being_processed() -> None:
-    with spending_for(ORGANISATION, CV_FILE):
+    with working_on(ORGANISATION, CV_FILE):
         event = scrub({"message": "x"}, {})
     assert event is not None
     assert event["tags"]["organisation_id"] == str(ORGANISATION)

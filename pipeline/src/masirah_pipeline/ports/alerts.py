@@ -15,3 +15,10 @@ class ParseOutcomeSource(Protocol):
     """The CV files settled within the past `window_seconds`, across every organisation."""
 
     def __call__(self, window_seconds: int) -> ParseOutcomes: ...
+
+
+class AlertClaim(Protocol):
+    """Whether this worker may send an alert of `kind` now: true for the first to ask in each
+    quiet period of `quiet_seconds`, across every worker."""
+
+    def __call__(self, kind: str, quiet_seconds: int) -> bool: ...

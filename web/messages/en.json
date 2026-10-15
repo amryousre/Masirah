@@ -53,6 +53,11 @@
     "body": "The link may have changed or the page was removed. Nothing in your account was deleted.",
     "back": "Go to the start"
   },
+  "pageError": {
+    "title": "This page couldn't load",
+    "body": "Something went wrong on our side, and we have been told about it. Loading the page again often works.",
+    "retry": "Load the page again"
+  },
   "frame": {
     "navigation": "Main navigation",
     "jobs": "Jobs",
