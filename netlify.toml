@@ -12,6 +12,12 @@
   command = "npm run build"
   publish = ".next"
 
+# Named, not left to detection: this site began as a static holding page, and on its first web build
+# detection did not apply the adapter. Without it .next would be served as static files, with no
+# server, no proxy.ts and server chunks in public.
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
 [[headers]]
   for = "/*"
   [headers.values]
