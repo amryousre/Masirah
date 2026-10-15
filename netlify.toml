@@ -1,17 +1,20 @@
-# Netlify builds this repository on every push to main and publishes the directory named here.
-# Without this file it published the repository root, which put every tracked file on the public
-# domain. Until the web app has pages, only the holding page is published. T032 replaces this with
-# the build for web/ and deletes holding-page/.
+# Netlify builds this repository on every push to main and publishes the web app (T032). Only web/
+# is built and published: before this file existed, Netlify served the repository root, which put
+# every tracked file on the public domain, so the publish directory stays explicit.
+#
+# The web app reads three settings, all public, which live in the Netlify project's environment
+# rather than here: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY and SITE_URL. It
+# holds no secret: the worker, which does, runs elsewhere. Security headers are set by the app in
+# next.config.ts, so they reach server-rendered pages and hold on any host.
 [build]
-  publish = "holding-page"
+  base = "web"
   # Explicit, so a build command set in the Netlify dashboard cannot run instead.
-  command = "echo 'No build: publishing the holding page until T032'"
+  command = "npm run build"
+  publish = ".next"
 
-[[headers]]
-  for = "/*"
-  [headers.values]
-    Content-Security-Policy = "default-src 'none'; style-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
-    X-Content-Type-Options = "nosniff"
-    Referrer-Policy = "no-referrer"
-    # Nothing is launched yet, so nothing should be indexed.
-    X-Robots-Tag = "noindex"
+# Netlify's Next.js adapter, named rather than left to detection: this site began as a static holding
+# page, and on its first web build detection did not apply the adapter. Without it .next would be
+# served as static files, with no server, no proxy.ts and server chunks in public. Its version is
+# pinned in web/package.json.
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
