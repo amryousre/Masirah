@@ -213,3 +213,21 @@ def test_every_definer_function_a_member_can_call_is_accounted_for(cur: Cursor) 
         " order by p.proname"
     )
     assert {row[0] for row in cur.fetchall()} == set(DEFINER_FUNCTIONS_MEMBERS_CAN_CALL)
+
+
+# The same for visitors who are not signed in: each function they can call runs as its owner and
+# so is held to tests of what it lets a stranger do, in its own file.
+DEFINER_FUNCTIONS_VISITORS_CAN_CALL = {
+    "join_waitlist": "test_waitlist.py (insert only, into a list no API role can read)",
+    "service_health": "test_service_health.py (no tenant data: counts and ages only)",
+}
+
+
+def test_every_definer_function_a_visitor_can_call_is_accounted_for(cur: Cursor) -> None:
+    cur.execute(
+        "select p.proname from pg_proc p join pg_namespace n on n.oid = p.pronamespace"
+        " where n.nspname = 'public' and p.prosecdef"
+        " and has_function_privilege('anon', p.oid, 'execute')"
+        " order by p.proname"
+    )
+    assert {row[0] for row in cur.fetchall()} == set(DEFINER_FUNCTIONS_VISITORS_CAN_CALL)

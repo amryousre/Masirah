@@ -1,0 +1,528 @@
+/* The landing page, in the website register (DESIGN.md section 7): the product's white page, type
+   and single amber call to action, with fluid display type and wider spacing. Separation is a
+   hairline or a tonal band, never a card. */
+
+.page {
+  --gutter: clamp(var(--space-4), 5vi, var(--space-16));
+  --wide: 76rem;
+
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-block-size: 100dvb;
+  background: var(--color-canvas);
+  color: var(--color-text);
+}
+
+.hidden {
+  position: absolute;
+  overflow: hidden;
+  inline-size: 1px;
+  block-size: 1px;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* The bar */
+
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  min-block-size: 64px;
+  padding-inline: var(--gutter);
+  border-block-end: var(--border-divider);
+}
+
+.home {
+  border-radius: var(--radius-md);
+  text-decoration: none;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.navLink,
+.signIn {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: var(--control-height);
+  padding-inline: var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: var(--size-body-sm);
+  font-weight: var(--weight-medium);
+  text-decoration: none;
+  transition:
+    background-color var(--duration-fast) var(--ease),
+    border-color var(--duration-fast) var(--ease),
+    color var(--duration-fast) var(--ease);
+}
+
+.navLink {
+  color: var(--color-text-secondary);
+}
+
+.navLink:hover {
+  background: var(--color-fill-subtle);
+  color: var(--color-text);
+}
+
+.navLink:active {
+  background: var(--color-fill-pressed);
+}
+
+.signIn {
+  border: var(--border-control);
+  color: var(--color-text);
+}
+
+.signIn:hover {
+  background: var(--color-fill-hover);
+}
+
+.signIn:active {
+  background: var(--color-fill-pressed);
+}
+
+/* The hero */
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(var(--space-8), 5vi, var(--space-16));
+  align-items: start;
+  max-inline-size: var(--wide);
+  margin-inline: auto;
+  padding-block: clamp(var(--space-10), 8vi, 6rem);
+  padding-inline: var(--gutter);
+}
+
+.pitch {
+  display: grid;
+  gap: var(--space-6);
+  align-content: start;
+}
+
+.headline {
+  font-size: clamp(2rem, 1.2rem + 2.6vi, 3.5rem);
+  font-weight: var(--weight-semibold);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.lede {
+  max-inline-size: 34rem;
+  color: var(--color-text-secondary);
+  font-size: clamp(var(--size-body), 0.9rem + 0.35vi, var(--size-title));
+  line-height: var(--leading-body);
+  text-wrap: pretty;
+}
+
+/* The waitlist form */
+
+.waitlist {
+  display: grid;
+  gap: var(--space-2);
+  max-inline-size: 32rem;
+}
+
+.invite {
+  font-size: var(--size-body-sm);
+  font-weight: var(--weight-medium);
+}
+
+.row {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.input {
+  flex: 1;
+  min-inline-size: 0;
+  min-block-size: var(--control-height);
+  padding-inline: var(--space-3);
+  border: var(--border-control);
+  border-radius: var(--radius-md);
+  background: var(--color-canvas);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: var(--size-body-sm);
+  transition: border-color var(--duration-fast) var(--ease);
+}
+
+.input::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.input:hover {
+  border-color: var(--color-control-border-hover);
+}
+
+.input:focus-visible {
+  border-color: var(--color-focus);
+  outline-offset: 0;
+}
+
+.input[aria-invalid] {
+  border-color: var(--color-error);
+}
+
+.fine {
+  color: var(--color-text-tertiary);
+  font-size: var(--size-caption);
+  line-height: var(--leading-caption);
+}
+
+.refused,
+.joined {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--size-caption);
+  line-height: var(--leading-caption);
+}
+
+.refused {
+  color: var(--color-error);
+}
+
+.joined {
+  min-block-size: var(--control-height);
+  color: var(--color-success);
+  font-size: var(--size-body-sm);
+  font-weight: var(--weight-medium);
+}
+
+/* The example ranking */
+
+.demoWrap {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.demo {
+  overflow: hidden;
+  border: var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--color-canvas);
+}
+
+.demoHead {
+  display: grid;
+  gap: var(--space-0_5);
+  padding: var(--space-4);
+  border-block-end: var(--border-divider);
+}
+
+.demoJob {
+  font-size: var(--size-body-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.demoCounts,
+.demoCaption,
+.demoSource {
+  color: var(--color-text-secondary);
+  font-size: var(--size-caption);
+  line-height: var(--leading-caption);
+}
+
+.demoRows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.demoRow {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1.5rem minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: center;
+  inline-size: 100%;
+  padding-block: var(--space-3);
+  padding-inline: var(--space-4);
+  border: none;
+  border-block-end: var(--border-divider);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease);
+}
+
+.demoRow:hover:not([aria-pressed="true"]) {
+  background: var(--color-fill-hover);
+}
+
+.demoRow:active:not([aria-pressed="true"]) {
+  background: var(--color-fill-pressed);
+}
+
+.demoRow:focus-visible {
+  outline-offset: -2px;
+}
+
+/* The one amber in the list, which slides to the chosen row. */
+.selection {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border: 1px solid var(--color-selected-edge);
+  background: var(--color-selected);
+  pointer-events: none;
+}
+
+.demoRank,
+.demoWho,
+.demoScore {
+  position: relative;
+  z-index: 1;
+}
+
+.demoRank {
+  color: var(--color-text-tertiary);
+  font-size: var(--size-body-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.demoWho {
+  display: grid;
+  gap: var(--space-0_5);
+  min-inline-size: 0;
+}
+
+.demoName {
+  font-size: var(--size-body-sm);
+  font-weight: var(--weight-medium);
+}
+
+.demoReason {
+  overflow: hidden;
+  color: var(--color-text-secondary);
+  font-size: var(--size-caption);
+  line-height: var(--leading-caption);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.demoScore {
+  font-size: var(--size-label);
+  font-variant-numeric: tabular-nums;
+}
+
+.demoWhy {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-fill-subtle);
+}
+
+.demoWhyTitle {
+  font-size: var(--size-body-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.demoClaim {
+  font-size: var(--size-body-sm);
+  line-height: var(--leading-body-sm);
+  text-wrap: pretty;
+}
+
+.demoQuote {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--color-selected-edge);
+  border-radius: var(--radius-md);
+  background: var(--color-selected-hover);
+  color: var(--color-text-on-selected);
+  font-size: var(--size-body-sm);
+  line-height: var(--leading-body-sm);
+}
+
+/* The marks follow the quote's own language, English, not the page's: on an Arabic page the
+   browser would otherwise draw them for Arabic and reverse them. */
+.demoQuote blockquote {
+  margin: 0;
+  quotes: "“" "”";
+  text-align: start;
+  unicode-bidi: isolate;
+}
+
+.demoQuote blockquote::before {
+  content: open-quote;
+}
+
+.demoQuote blockquote::after {
+  content: close-quote;
+}
+
+/* The sections below the hero */
+
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: clamp(var(--space-8), 5vi, var(--space-16));
+  max-inline-size: var(--wide);
+  margin-inline: auto;
+  padding-block: clamp(var(--space-12), 7vi, 6rem);
+  padding-inline: var(--gutter);
+  border-block-start: var(--border-divider);
+}
+
+.sectionTitle {
+  font-size: clamp(var(--size-title), 1rem + 1.2vi, 2rem);
+  font-weight: var(--weight-semibold);
+  line-height: 1.3;
+  text-wrap: balance;
+}
+
+.today,
+.advice,
+.steps {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.today {
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: var(--space-8);
+}
+
+.advice {
+  gap: 0;
+}
+
+.point {
+  display: grid;
+  gap: var(--space-2);
+  padding-block: var(--space-4);
+  border-block-start: 1px solid var(--color-text);
+}
+
+.advice .point {
+  border-block-start: none;
+  border-block-end: var(--border-divider);
+}
+
+.pointTitle {
+  font-size: var(--size-body);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-title);
+}
+
+.pointBody {
+  max-inline-size: var(--measure);
+  color: var(--color-text-secondary);
+  font-size: var(--size-body-sm);
+  line-height: var(--leading-body-sm);
+  text-wrap: pretty;
+}
+
+/* The steps, on a tonal band */
+
+.band {
+  border-block: var(--border-divider);
+  background: var(--color-fill-subtle);
+}
+
+.bandInner {
+  display: grid;
+  gap: var(--space-10);
+  max-inline-size: var(--wide);
+  margin-inline: auto;
+  padding-block: clamp(var(--space-12), 7vi, 6rem);
+  padding-inline: var(--gutter);
+}
+
+.bandInner .sectionTitle {
+  max-inline-size: 30rem;
+}
+
+.steps {
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: var(--space-8);
+  counter-reset: step;
+}
+
+.step {
+  display: grid;
+  gap: var(--space-2);
+  align-content: start;
+  counter-increment: step;
+}
+
+.step::before {
+  color: var(--color-text-tertiary);
+  font-size: var(--size-body-sm);
+  font-variant-numeric: tabular-nums;
+  content: counter(step);
+}
+
+/* The closing call to action, and the footer */
+
+.closing {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
+  max-inline-size: var(--wide);
+  margin-inline: auto;
+  padding-block: clamp(var(--space-12), 6vi, 5rem);
+  padding-inline: var(--gutter);
+  border-block-start: var(--border-divider);
+}
+
+.closing .waitlist {
+  flex: 1 1 22rem;
+  max-inline-size: 30rem;
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+  padding-block: var(--space-6);
+  padding-inline: var(--gutter);
+  border-block-start: var(--border-divider);
+  color: var(--color-text-secondary);
+  font-size: var(--size-caption);
+}
+
+.footerLink {
+  color: var(--color-text-secondary);
+  text-underline-offset: 3px;
+}
+
+.footerLink:hover {
+  color: var(--color-text);
+}
+
+/* A phone: one column, the example after the pitch. */
+@media (width < 56rem) {
+  .hero,
+  .split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (width < 30rem) {
+  .row {
+    flex-direction: column;
+  }
+
+  .navLink {
+    display: none;
+  }
+}
