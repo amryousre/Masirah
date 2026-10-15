@@ -197,6 +197,7 @@ def test_unfiltered_view_returns_only_own_rows(
 # exactly that in its own file. A function added here needs the same before it joins the list.
 DEFINER_FUNCTIONS_MEMBERS_CAN_CALL = {
     "enqueue_cv_processing": "test_enqueue_cv.py",
+    "join_waitlist": "test_waitlist.py (insert only, into a list no API role can read)",
     "correct_profile": "test_field_overrides.py",
     "record_decision": "test_decisions.py",
     "request_candidate_deletion": "test_deletion.py",
@@ -213,3 +214,21 @@ def test_every_definer_function_a_member_can_call_is_accounted_for(cur: Cursor) 
         " order by p.proname"
     )
     assert {row[0] for row in cur.fetchall()} == set(DEFINER_FUNCTIONS_MEMBERS_CAN_CALL)
+
+
+# The same for visitors who are not signed in: each function they can call runs as its owner and
+# so is held to tests of what it lets a stranger do, in its own file.
+DEFINER_FUNCTIONS_VISITORS_CAN_CALL = {
+    "join_waitlist": "test_waitlist.py (insert only, into a list no API role can read)",
+    "service_health": "test_service_health.py (no tenant data: counts and ages only)",
+}
+
+
+def test_every_definer_function_a_visitor_can_call_is_accounted_for(cur: Cursor) -> None:
+    cur.execute(
+        "select p.proname from pg_proc p join pg_namespace n on n.oid = p.pronamespace"
+        " where n.nspname = 'public' and p.prosecdef"
+        " and has_function_privilege('anon', p.oid, 'execute')"
+        " order by p.proname"
+    )
+    assert {row[0] for row in cur.fetchall()} == set(DEFINER_FUNCTIONS_VISITORS_CAN_CALL)

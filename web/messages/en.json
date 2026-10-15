@@ -728,6 +728,137 @@
     "rights": {
       "title": "Your rights",
       "body": "To see, correct or delete your data, contact the employer you applied to. Once they record your request to delete it, Masirah deletes your personal data, normally within the hour. If a fault delays it, the deletion is retried until it completes. A record that a decision was made stays, without your personal data."
+    },
+    "waitlist": {
+      "title": "The waitlist",
+      "body": "A company that joins the waitlist on masirah.online gives a work email and nothing else. It is kept privately, used only to tell that company once when its account opens, and never shared or used for marketing. To have it removed, reply to that email."
+    }
+  },
+  "landing": {
+    "title": "Masirah · CV screening in Arabic and English",
+    "nav": {
+      "signIn": "Sign in",
+      "how": "How it works"
+    },
+    "hero": {
+      "title": "300 CVs, and your manager is waiting for the shortlist.",
+      "lede": "Masirah ranks every CV against the job and writes each candidate a reason that quotes their CV. You don’t stop at the fortieth CV, and the strong applicant who sent theirs on the last day isn’t lost."
+    },
+    "waitlist": {
+      "name": "Join the waitlist",
+      "invite": "Join the waitlist. We open accounts for companies in turn.",
+      "email": "Work email",
+      "placeholder": "nourhan@company.com",
+      "submit": "Join the waitlist",
+      "submitting": "Sending…",
+      "fine": "One email when your account opens. No marketing.",
+      "joined": "You’re on the list. We’ll email you once, when your account opens.",
+      "invalid": "Enter a valid work email, such as nourhan@company.com.",
+      "unavailable": "The list can’t be reached right now. Try again in a minute."
+    },
+    "demo": {
+      "name": "An example ranking",
+      "job": "Senior Accountant · Giza",
+      "counts": "112 CVs · 109 ranked · 3 need review",
+      "caption": "The ranking as it appears in the product. Choose any row to see its reason. The names and CVs here are illustrations.",
+      "fromCv": "From the CV, p. {page}",
+      "rows": {
+        "1": {
+          "name": "Mona El-Sherif",
+          "reason": "Eight years of accounting at EY Egypt, and a CMA",
+          "why": "Why first",
+          "claim": "Eight years of audit and accounting at EY Egypt, with a CMA, cover everything the job asks for.",
+          "quote": "Senior Auditor · EY Egypt · 2016 – 2024. CMA, Institute of Management Accountants, 2021."
+        },
+        "2": {
+          "name": "Ahmed Roshdy",
+          "reason": "Head of accounts at a food company; five years on SAP",
+          "why": "Why second",
+          "claim": "He heads the accounts of a food company and has worked on SAP for five years, the system the job uses.",
+          "quote": "Head of Accounts · Juhayna Food Industries · 2019 – present. SAP FI/CO end user since 2019."
+        },
+        "3": {
+          "name": "Mohamed Abdallah",
+          "reason": "Covers month-end close and tax; Oracle rather than SAP",
+          "why": "Why third",
+          "claim": "He runs the month-end close and VAT returns, which matches the job’s most important requirements.",
+          "quote": "Accountant · Orascom Construction · 2018 – 2024. Owned month-end close and monthly VAT filings on Oracle EBS."
+        },
+        "4": {
+          "name": "Sara Nabil",
+          "reason": "Sent her CV on the last day: strong internal audit experience",
+          "why": "Why fourth",
+          "claim": "Strong internal audit experience, less of the month-end close the job needs. Her CV arrived on the last day and was ranked like every other.",
+          "quote": "Internal Auditor · Banque Misr · 2020 – present. Led quarterly internal audits of the treasury function."
+        },
+        "5": {
+          "name": "Karim Hamdy",
+          "reason": "Six years, mostly in accounts payable",
+          "why": "Why fifth",
+          "claim": "Six years of experience, mostly in accounts payable; his CV mentions no month-end close or tax returns.",
+          "quote": "Accounts Payable Accountant · Edita Food Industries · 2018 – present."
+        }
+      }
+    },
+    "today": {
+      "title": "What happens today with every job",
+      "forty": {
+        "title": "You stop at the fortieth CV",
+        "body": "Opening CVs one at a time takes the day. After a while you start skimming, and then you stop."
+      },
+      "late": {
+        "title": "Late applicants go unread",
+        "body": "CVs that arrive after interviews start stay in the inbox and on WhatsApp, even when they’re the strongest."
+      },
+      "trust": {
+        "title": "The manager doesn’t trust the list",
+        "body": "They ask to see every CV themselves, because the list doesn’t say why each name was chosen."
+      }
+    },
+    "how": {
+      "title": "From scattered files to a ranked list, with the reason beside every name",
+      "create": {
+        "title": "Create the job",
+        "body": "The title, the required skills and the minimum experience, then how much each part weighs in the ranking."
+      },
+      "add": {
+        "title": "Add the CVs",
+        "body": "PDF, Word or photos of printed CVs, in Arabic or English. Processing carries on while you work on something else."
+      },
+      "read": {
+        "title": "Read the ranking and its reasons",
+        "body": "Every reason quotes the line of the CV it relied on."
+      },
+      "decide": {
+        "title": "You decide",
+        "body": "Shortlisting or rejecting is a human decision, recorded under the name of whoever made it."
+      }
+    },
+    "advice": {
+      "title": "The score is advice. The decision is yours.",
+      "evidence": {
+        "title": "Every score has evidence",
+        "body": "Six components with clear weights, and for each one the line it came from. When the CV says nothing, we say so."
+      },
+      "excluded": {
+        "title": "What we never score on",
+        "body": "Name, gender, age, photo, nationality and marital status."
+      },
+      "nothingLost": {
+        "title": "No file is lost",
+        "body": "Every CV appears: ranked, processing, needing review, or failed with its reason."
+      },
+      "unsure": {
+        "title": "When we’re not sure",
+        "body": "We show the confidence and send unclear cases to the review queue rather than guess."
+      }
+    },
+    "closing": {
+      "title": "We’re opening accounts gradually to companies in Egypt"
+    },
+    "footer": {
+      "copyright": "© 2026 Masirah · Cairo",
+      "privacy": "Privacy"
     }
   }
 }

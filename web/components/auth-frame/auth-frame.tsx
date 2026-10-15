@@ -1,12 +1,12 @@
-import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 
 import { LanguageSwitch } from "../language-switch/language-switch";
+import { Logo } from "../logo/logo";
 import styles from "./auth-frame.module.css";
 
 /**
- * The frame around the screens before the product: sign-in and its outcomes. The product's name
- * at the reading start, the language switch at the end, and one narrow column of content. A page
+ * The frame around the screens before the product: sign-in and its outcomes. The logo at the
+ * reading start, the language switch at the end, and one narrow column of content. A page
  * of text to read, such as the privacy page, takes a reading-width column instead.
  */
 export function AuthFrame({
@@ -16,11 +16,10 @@ export function AuthFrame({
   children: ReactNode;
   width?: "narrow" | "reading";
 }) {
-  const product = useTranslations("meta")("product");
   return (
     <div className={styles.frame}>
       <header className={styles.header}>
-        <span className={styles.product}>{product}</span>
+        <Logo />
         <LanguageSwitch />
       </header>
       <main className={styles.main}>

@@ -1,0 +1,26 @@
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text);
+}
+
+.mark {
+  inline-size: 1.5rem;
+  block-size: 1.375rem;
+  flex-shrink: 0;
+}
+
+.legs {
+  color: var(--amber-400);
+}
+
+.tick {
+  color: var(--amber-700);
+}
+
+.name {
+  font-size: var(--size-title);
+  font-weight: var(--weight-semibold);
+  line-height: 1;
+}

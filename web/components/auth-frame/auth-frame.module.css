@@ -16,12 +16,6 @@
   padding-inline: var(--space-8);
 }
 
-.product {
-  color: var(--color-text);
-  font-size: var(--size-body);
-  font-weight: var(--weight-semibold);
-}
-
 .main {
   display: grid;
   justify-items: center;

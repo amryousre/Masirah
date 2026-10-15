@@ -17,7 +17,7 @@ export async function generateMetadata({
   return { title: t("title") };
 }
 
-const SECTIONS = ["who", "what", "use", "ai", "where", "retention", "rights"] as const;
+const SECTIONS = ["who", "what", "use", "ai", "where", "retention", "rights", "waitlist"] as const;
 
 // The privacy page for candidates (T094, AI-09): what happens to a CV an employer screens with
 // Masirah, including that the model providers do not train on it. Public, so a candidate can read

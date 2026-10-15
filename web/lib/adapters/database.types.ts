@@ -717,6 +717,10 @@ export type Database = {
         Args: { cv_file_id: string; locale: string }
         Returns: number
       }
+      join_waitlist: {
+        Args: { email: string; locale: string }
+        Returns: undefined
+      }
       organisation_usage: {
         Args: never
         Returns: {

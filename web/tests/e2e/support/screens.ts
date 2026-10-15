@@ -70,6 +70,7 @@ export function seededScreens(organisation: string): () => Seeded {
 }
 
 export const PUBLIC_SCREENS = [
+  ["landing", ""],
   ["sign-in", "/sign-in"],
   ["no-access", "/sign-in/no-access"],
   ["privacy", "/privacy"],

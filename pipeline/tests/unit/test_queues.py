@@ -34,7 +34,7 @@ def test_both_contract_queues_exist(cur: Cursor) -> None:
 def test_the_server_sends_reads_and_deletes(cur: Cursor, queue: str) -> None:
     cur.execute("set local role service_role")
     msg_id = send(cur, queue, {"probe": queue})
-    cur.execute("select msg_id, message from pgmq_public.read(%s, 30, 10)", (queue,))
+    cur.execute("select msg_id, message from pgmq_public.read(%s, 30, 1000)", (queue,))
     assert (msg_id, {"probe": queue}) in cur.fetchall()
     cur.execute("select pgmq_public.delete(%s, %s)", (queue, msg_id))
     assert cur.fetchone() == (True,)
@@ -45,7 +45,7 @@ def test_an_undeleted_message_returns_for_retry(cur: Cursor) -> None:
     msg_id = send(cur, "cv_processing", {"probe": "retry"})
     read_counts = []
     for _ in range(2):
-        cur.execute("select msg_id, read_ct from pgmq_public.read('cv_processing', 0, 10)")
+        cur.execute("select msg_id, read_ct from pgmq_public.read('cv_processing', 0, 1000)")
         read_counts += [read_ct for mid, read_ct in cur.fetchall() if mid == msg_id]
     assert read_counts == [1, 2]
 

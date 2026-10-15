@@ -69,7 +69,7 @@ where the accent's rarity is what gives it meaning. Contrast ratios are against 
 | `amber-100` | `0.95 0.032 65` | 1.16 | Selected row fill (`--color-selected`) |
 | `amber-200` | `0.9 0.068 65` | 1.36 | Selected row, pressed |
 | `amber-300` | `0.84 0.116 65` | 1.67 | Selected row edge |
-| `amber-400` | `0.774 0.174 65.1` | 2.13 | Unassigned since the mark moved to yellow on black (see The mark). Never text |
+| `amber-400` | `0.774 0.174 65.1` | 2.13 | Identity anchor: the M of the logo (`components/logo`). Never text, never alone |
 | `amber-500` | `0.66 0.148 65` | 3.23 | Unassigned. Not a focus ring: 2.96:1 on `grey-50` and 2.76:1 on `grey-100` fall under 3:1 |
 | `amber-600` | `0.55 0.122 65` | 5.01 | Primary button, and the focus ring on every fill: 4.60:1 on `grey-50`, 4.28:1 on `grey-100` (`--color-primary`, `--color-focus`) |
 | `amber-700` | `0.47 0.106 65` | 7.02 | Primary hover, links |
@@ -84,10 +84,11 @@ carries the name, since مسيرة means journey.
 5.01:1, and that is the interactive primary.
 
 **The mark.** The M-tick from the Masirah logo: an M whose tick rises out of its valley past the
-right leg, for a shortlist. Since 15 October 2026 it is yellow `#ffc72c` on black `#0b0b0b`, at the
-owner's request, and it lives in `web/app/[lang]/icon.svg`. A black gap sets the tick apart from the
+right leg, for a shortlist. In the logo (`web/components/logo`) the M is `amber-400` and the tick
+`amber-700`, beside the product's name. The favicon is the same mark in yellow `#ffc72c` on black
+`#0b0b0b`, at the owner's request, in `web/app/[lang]/icon.svg`. A black gap sets the tick apart from the
 legs, as the full-colour logo does by shade, and a faint `#3d3d3d` edge keeps the tile visible on
-dark browser chrome. The yellow belongs to the mark alone: it never appears in the interface, so it
+dark browser chrome. The yellow belongs to the favicon alone: it never appears in the interface, so it
 can't be mistaken for the warning hue nearby.
 
 ### Neutral: greys at chroma 0
