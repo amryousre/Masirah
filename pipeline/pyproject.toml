@@ -11,6 +11,7 @@ dependencies = [
     "psycopg[binary]>=3.3.6",
     "pypdfium2>=5.14.0",
     "python-docx>=1.2",
+    "sentry-sdk>=2.70",
     "tzdata>=2026.5",
 ]
 
@@ -103,6 +104,7 @@ forbidden_modules = [
   "httpx2",
   "requests",
   "psycopg",
+  "sentry_sdk",
   # Dynamic imports are invisible to this contract, so domain code may not make them.
   "importlib",
 ]

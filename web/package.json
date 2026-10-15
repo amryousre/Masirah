@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@gsap/react": "2.1.2",
+    "@sentry/nextjs": "11.6.0",
     "@supabase/ssr": "0.12.7",
     "@supabase/supabase-js": "2.117.2",
     "gsap": "3.15.0",

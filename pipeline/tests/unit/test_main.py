@@ -14,14 +14,18 @@ from collections.abc import Callable
 import pytest
 
 from masirah_pipeline.adapters.provider_registry import ConfigurationError
+from masirah_pipeline.adapters.slack_webhook import SlackWebhook
 from masirah_pipeline.adapters.tesseract_ocr import Runner
 from masirah_pipeline.main import (
     IDLE_SECONDS,
+    PARSE_CHECK_SECONDS,
     PURGE_SECONDS,
     RECONCILE_SECONDS,
     REQUIRED,
     Purging,
     Reconciling,
+    Watching,
+    alerts_for,
     ocr_for,
     poll,
     settings_from,
@@ -213,3 +217,37 @@ class TestOcrSetting:
     def test_an_unknown_engine_stops_the_worker(self) -> None:
         with pytest.raises(ConfigurationError, match="MASIRAH_OCR"):
             ocr_for({"MASIRAH_OCR": "magic"}, run=self.tesseract())
+
+
+class TestWatching:
+    """Every hour the worker checks the parse failure rate (NFR-14, T031)."""
+
+    def test_it_checks_at_start_and_then_once_an_hour(self) -> None:
+        now = [0.0]
+        checks: list[float] = []
+
+        def check() -> int:
+            checks.append(now[0])
+            return 0
+
+        watching = Watching(lambda: 1, check, clock=lambda: now[0])
+        for moment in (0.0, 60.0, PARSE_CHECK_SECONDS - 1, PARSE_CHECK_SECONDS):
+            now[0] = moment
+            assert watching() == 1
+        assert checks == [0.0, PARSE_CHECK_SECONDS]
+
+    def test_a_failed_check_never_stops_the_work(self) -> None:
+        def broken() -> int:
+            raise RuntimeError("Slack unreachable")
+
+        assert Watching(lambda: 2, broken, clock=lambda: 0.0)() == 2
+
+
+def test_slack_is_used_when_its_webhook_is_set() -> None:
+    url = " https://hooks.slack.com/services/T0/B0/x "
+    assert isinstance(alerts_for({"MASIRAH_SLACK_WEBHOOK_URL": url}), SlackWebhook)
+
+
+@pytest.mark.parametrize("environment", [{}, {"MASIRAH_SLACK_WEBHOOK_URL": "  "}])
+def test_without_a_webhook_alerts_are_only_logged(environment: dict[str, str]) -> None:
+    assert alerts_for(environment) is None
