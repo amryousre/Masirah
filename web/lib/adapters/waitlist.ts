@@ -1,6 +1,7 @@
 import type { Locale } from "@/i18n/routing";
 
 import type { SupabaseClient } from "./supabase";
+import { logEvent, reportError } from "./telemetry";
 
 /**
  * Adds a work email to the landing page's waitlist through public.join_waitlist (migration 0027),
@@ -16,8 +17,13 @@ export async function joinWaitlist(
   if (error === null) return "joined";
   // 22023 is the database refusing what the page let through: say so as the page would.
   if (error.code === "22023") return "invalid";
-  // Anything else is ours: an outage, the hourly limit (53400), or a grant gone wrong. The visitor
-  // is told to try later; the log says which.
-  console.error("join_waitlist failed", error.code, error.message);
+  // The hourly limit (53400) is the waitlist holding off a flood, as designed: logged, not
+  // reported, or the flood would spend Sentry's quota and real errors would be dropped.
+  if (error.code === "53400") {
+    logEvent("warn", "join_waitlist at its hourly limit", { code: error.code });
+    return "unavailable";
+  }
+  // Anything else is ours: an outage or a grant gone wrong. The visitor is told to try later.
+  reportError("join_waitlist failed", { code: error.code, message: error.message });
   return "unavailable";
 }

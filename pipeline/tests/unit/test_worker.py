@@ -36,6 +36,7 @@ from masirah_pipeline.ports.ocr_engine import OcrReading
 from masirah_pipeline.ports.queue_message import CV_PROCESSING
 from masirah_pipeline.ports.spend_ledger import Spend
 from masirah_pipeline.ports.worker_store import CachedProfile, CvFile, Extraction, StoredProfile
+from masirah_pipeline.work_context import current_work
 from masirah_pipeline.worker import MAX_ATTEMPTS, Outcome, ScoringRequest, Worker
 
 ORG = uuid.uuid4()
@@ -567,6 +568,27 @@ class TestRetries:
         with caplog.at_level(logging.ERROR):
             assert setup.handle() is Outcome.LEFT
         assert "a bug" in caplog.text
+
+    def test_failure_lines_name_the_tenant(self, setup: Setup) -> None:
+        """T031: a retry's and a terminal failure's log lines carry the organisation and file, so
+        one tenant's failures can be found."""
+        seen: list[tuple[uuid.UUID, uuid.UUID] | None] = []
+
+        class Seeing(logging.Handler):
+            def emit(self, record: logging.LogRecord) -> None:
+                seen.append(current_work())
+
+        handler = Seeing(level=logging.ERROR)
+        logging.getLogger("masirah.worker").addHandler(handler)
+        try:
+            setup.text = RuntimeError("a bug")
+            setup.handle()
+            setup.handle(read_count=MAX_ATTEMPTS + 1)
+        finally:
+            logging.getLogger("masirah.worker").removeHandler(handler)
+        assert len(seen) == 2
+        assert all(work == (ORG, FILE_ID) for work in seen)
+        assert current_work() is None
 
     def test_a_retry_after_the_profile_was_recorded_does_not_extract_again(
         self, setup: Setup

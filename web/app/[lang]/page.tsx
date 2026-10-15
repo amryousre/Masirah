@@ -8,6 +8,7 @@ import { Logo } from "@/components/logo/logo";
 import { Link, redirect } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 import { getAccess } from "@/lib/adapters/session";
+import { reportError } from "@/lib/adapters/telemetry";
 
 import { joinTheWaitlist } from "./_landing/actions";
 import styles from "./_landing/landing.module.css";
@@ -32,7 +33,7 @@ async function isMember(): Promise<boolean> {
     // Next.js signals with errors too (this page reads cookies, so it renders per request); those
     // go on, and only a failed lookup is caught.
     unstable_rethrow(error);
-    console.error("the landing page could not read the session; showing it to a visitor", error);
+    reportError("the landing page could not read the session; showing it to a visitor", {}, error);
     return false;
   }
 }

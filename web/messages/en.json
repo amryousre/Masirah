@@ -53,6 +53,11 @@
     "body": "The link may have changed or the page was removed. Nothing in your account was deleted.",
     "back": "Go to the start"
   },
+  "pageError": {
+    "title": "This page couldn't load",
+    "body": "Something went wrong on our side, and we have been told about it. Loading the page again often works.",
+    "retry": "Load the page again"
+  },
   "frame": {
     "navigation": "Main navigation",
     "jobs": "Jobs",
@@ -699,7 +704,7 @@
   "privacyPolicy": {
     "title": "Privacy for candidates",
     "lede": "How your CV is handled when an employer uses Masirah to screen job applications.",
-    "updated": "Last updated 7 October 2026",
+    "updated": "Last updated 15 October 2026",
     "who": {
       "title": "Who is responsible",
       "body": "The employer you applied to decides how your CV is used and is responsible for it. Masirah is the tool they use, and handles your CV only on their instructions."
@@ -719,7 +724,7 @@
     },
     "where": {
       "title": "Where it is kept",
-      "body": "In private storage in Frankfurt, Germany. In Masirah, only people at the employer you applied to can see it."
+      "body": "In private storage in Frankfurt, Germany. In Masirah, only people at the employer you applied to can see it. Reports of errors in Masirah go to Sentry, also in Frankfurt, and never include what your CV says."
     },
     "retention": {
       "title": "How long it is kept",

@@ -16,6 +16,9 @@ to the review queue unread.
 Each worker records a heartbeat under MASIRAH_WORKER_NAME, or the host's name, which /api/health
 reads (T030).
 
+Logs are JSON lines, and errors go to Sentry when SENTRY_DSN is set (T031). Every hour the worker
+checks the parse failure rate (NFR-14) and posts to Slack when MASIRAH_SLACK_WEBHOOK_URL is set.
+
 The loop polls again at once while messages arrive and waits IDLE_SECONDS when the queue is
 empty. SIGTERM, which a host sends before stopping a process, ends it between batches.
 """
@@ -34,15 +37,22 @@ import psycopg
 
 from masirah_pipeline.adapters.heartbeat import PostgresHeartbeat
 from masirah_pipeline.adapters.native_text import read_native_text
+from masirah_pipeline.adapters.postgres_parse_outcomes import (
+    PostgresAlertClaim,
+    PostgresParseOutcomes,
+)
 from masirah_pipeline.adapters.postgres_purge_store import PostgresPurgeStore
 from masirah_pipeline.adapters.postgres_spend_ledger import PostgresSpendLedger
 from masirah_pipeline.adapters.postgres_worker_store import PostgresWorkerStore
 from masirah_pipeline.adapters.provider_registry import ConfigurationError, model_for
 from masirah_pipeline.adapters.score_repository import PostgresScoreRepository
+from masirah_pipeline.adapters.slack_webhook import SlackWebhook
 from masirah_pipeline.adapters.supabase_queue import SupabaseQueue
 from masirah_pipeline.adapters.supabase_storage import SupabaseStorage
+from masirah_pipeline.adapters.telemetry import configure as configure_telemetry
 from masirah_pipeline.adapters.tesseract_ocr import LANGUAGE_DATA, Runner, TesseractOcr
 from masirah_pipeline.adapters.tesseract_ocr import run as run_process
+from masirah_pipeline.jobs.parse_failures import check_parse_failures
 from masirah_pipeline.jobs.purge import purge_due
 from masirah_pipeline.metering import MeteredModel, MeteredOcr
 from masirah_pipeline.ports.document_text import UnreadableDocumentError
@@ -57,6 +67,7 @@ IDLE_SECONDS = 5.0
 # How often stranded files are queued again, and how old a queued file must be to count as one.
 RECONCILE_SECONDS = 5 * 60.0
 PURGE_SECONDS = 60 * 60.0
+PARSE_CHECK_SECONDS = 60 * 60.0
 STRANDED_AFTER_SECONDS = 10 * 60
 
 
@@ -132,6 +143,24 @@ def Purging(  # noqa: N802 - reads as the wrapper it returns
     return Every(run_once, sweep, PURGE_SECONDS, "candidates purged", clock=clock)
 
 
+def Watching(  # noqa: N802 - reads as the wrapper it returns
+    run_once: Callable[[], int],
+    check: Callable[[], int],
+    *,
+    clock: Callable[[], float] = time.monotonic,
+) -> Every:
+    """Checks the past hour's parse failure rate once per PARSE_CHECK_SECONDS (NFR-14), so a
+    sustained fault alerts once an hour rather than on every batch."""
+    return Every(run_once, check, PARSE_CHECK_SECONDS, "parse failure alerts raised", clock=clock)
+
+
+def alerts_for(environment: Mapping[str, str]) -> SlackWebhook | None:
+    """Slack through MASIRAH_SLACK_WEBHOOK_URL, or None: the alert is then only logged, which
+    error tracking still picks up."""
+    url = environment.get("MASIRAH_SLACK_WEBHOOK_URL", "").strip()
+    return SlackWebhook(url) if url else None
+
+
 def ocr_for(environment: Mapping[str, str], run: Runner = run_process) -> TesseractOcr | None:
     """The OCR engine MASIRAH_OCR names, checked to run with all the language data its readings
     use, or None for none. A worker that cannot read a scan refuses to start rather than failing
@@ -167,7 +196,7 @@ def poll(run_once: Callable[[], int], stop: threading.Event, wait: Callable[[flo
 
 
 def main(environment: Mapping[str, str] = os.environ) -> None:
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    configure_telemetry(environment)
     settings = settings_from(environment)
     cheap, strong = model_for("cheap", environment), model_for("strong", environment)
     ocr = ocr_for(environment)
@@ -205,6 +234,9 @@ def main(environment: Mapping[str, str] = os.environ) -> None:
 
         with contextlib.suppress(KeyboardInterrupt):
             purge_store = PostgresPurgeStore(connection)
+            outcomes, claim = PostgresParseOutcomes(connection), PostgresAlertClaim(connection)
+            alerts = alerts_for(environment)
             batch = Reconciling(worker.run_once, requeue_stranded)
+            batch = Watching(batch, lambda: check_parse_failures(outcomes, claim, alerts))
             poll(Purging(batch, lambda: purge_due(purge_store, storage)), stop, stop.wait)
         log.info("worker stopped")

@@ -125,6 +125,7 @@ describe("the voice", () => {
     "job.clearFilters",
     "reject.keep",
     "correct.cancel",
+    "pageError.retry",
   ])("labels %s with a verb and its object in both languages", (key) => {
     for (const messages of [arabic, english]) {
       const label = messages.get(key) ?? "";
