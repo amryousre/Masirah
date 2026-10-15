@@ -1,31 +1,20 @@
-# Netlify builds this repository on every push to main and publishes the web app (T032). Netlify's
-# Next.js adapter is applied automatically to a Next.js build. Only web/ is built and published:
-# before this file existed, Netlify served the repository root, which put every tracked file on the
-# public domain, so the publish directory stays explicit.
+# Netlify builds this repository on every push to main and publishes the web app (T032). Only web/
+# is built and published: before this file existed, Netlify served the repository root, which put
+# every tracked file on the public domain, so the publish directory stays explicit.
 #
 # The web app reads three settings, all public, which live in the Netlify project's environment
 # rather than here: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY and SITE_URL. It
-# holds no secret: the worker, which does, runs elsewhere.
+# holds no secret: the worker, which does, runs elsewhere. Security headers are set by the app in
+# next.config.ts, so they reach server-rendered pages and hold on any host.
 [build]
   base = "web"
   # Explicit, so a build command set in the Netlify dashboard cannot run instead.
   command = "npm run build"
   publish = ".next"
 
-# Named, not left to detection: this site began as a static holding page, and on its first web build
-# detection did not apply the adapter. Without it .next would be served as static files, with no
-# server, no proxy.ts and server chunks in public.
+# Netlify's Next.js adapter, named rather than left to detection: this site began as a static holding
+# page, and on its first web build detection did not apply the adapter. Without it .next would be
+# served as static files, with no server, no proxy.ts and server chunks in public. Its version is
+# pinned in web/package.json.
 [[plugins]]
   package = "@netlify/plugin-nextjs"
-
-[[headers]]
-  for = "/*"
-  [headers.values]
-    # No other site may frame the app, so a recruiter's click cannot be hijacked.
-    Content-Security-Policy = "frame-ancestors 'none'; base-uri 'self'; object-src 'none'"
-    X-Frame-Options = "DENY"
-    X-Content-Type-Options = "nosniff"
-    Referrer-Policy = "strict-origin-when-cross-origin"
-    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
-    # Access is by invitation and nothing is launched publicly yet, so nothing should be indexed.
-    X-Robots-Tag = "noindex"
