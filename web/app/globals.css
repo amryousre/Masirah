@@ -22,7 +22,9 @@
   --amber-100: oklch(0.95 0.032 65);
   --amber-200: oklch(0.9 0.068 65);
   --amber-300: oklch(0.84 0.116 65);
-  --amber-400: oklch(0.774 0.174 65.1); /* unassigned: the mark is yellow on black (DESIGN.md section 3) */
+  --amber-400: oklch(
+    0.774 0.174 65.1
+  ); /* unassigned: the mark is yellow on black (DESIGN.md section 3) */
   --amber-500: oklch(0.66 0.148 65); /* unassigned: under 3:1 on grey fills */
   --amber-600: oklch(0.55 0.122 65); /* white on it 5.01:1 */
   --amber-700: oklch(0.47 0.106 65); /* 7.02:1 */
