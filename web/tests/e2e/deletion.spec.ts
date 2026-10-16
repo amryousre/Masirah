@@ -65,7 +65,20 @@ test("a member asks for a candidate's data to be removed, after being told what 
   await expect(dialog).toContainText("deleted within the hour");
   await expect(dialog).toContainText("recorded under your name");
   await expectAccessible(page);
+  // The request, then the page's refresh from the server: under a full parallel run each can take
+  // seconds, so the test waits for both answers rather than for a fixed time.
+  const deleted = page.waitForResponse(
+    (response) =>
+      response.request().method() === "DELETE" &&
+      response.url().endsWith(`/api/candidates/${yasmin}`),
+  );
+  const refreshed = page.waitForResponse(
+    (response) =>
+      response.request().headers()["rsc"] === "1" && response.request().method() === "GET",
+  );
   await dialog.getByRole("button", { name: "Delete data permanently" }).click();
+  expect((await deleted).ok()).toBe(true);
+  await refreshed;
 
   await expect(page.getByText(/^Deletion requested/)).toBeVisible();
   await expect(page.getByRole("button", { name: "Delete candidate data…" })).toHaveCount(0);
