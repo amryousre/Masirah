@@ -4,7 +4,13 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   resolve: {
-    alias: { "@": fileURLToPath(new URL(".", import.meta.url)) },
+    alias: {
+      "@": fileURLToPath(new URL(".", import.meta.url)),
+      // The Word preview runs only in the browser, where mammoth takes an ArrayBuffer; the Node
+      // build vitest would pick takes a Buffer. The prebuilt browser bundle has the same source
+      // and API; the Next.js bundle itself is exercised by the Playwright suite.
+      mammoth: "mammoth/mammoth.browser.js",
+    },
   },
   test: {
     include: ["tests/unit/**/*.test.{ts,tsx}"],

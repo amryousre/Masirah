@@ -9,6 +9,7 @@ import { cx } from "@/components/cx";
 import { ScoreBreakdown } from "@/components/score/score";
 import { Tabs } from "@/components/tabs/tabs";
 import tabStyles from "@/components/tabs/tabs.module.css";
+import { DocxPreview } from "@/components/document-pane/docx-preview";
 import { direction } from "@/i18n/routing";
 import type { ProfileRow, ScorePart } from "@/lib/domain/candidate";
 
@@ -35,6 +36,8 @@ interface CandidateScreenProps {
   /** Where the member corrects the profile, or null when it cannot be corrected. */
   correctHref: { pathname: string; query: Record<string, string> } | null;
   document: {
+    /** The CV file shown, which names it whatever link it is fetched by. */
+    id: string;
     fileName: string;
     mimeType: string;
     /** A signed link for showing the file in the page. */
@@ -277,7 +280,10 @@ function Profile({
   );
 }
 
-const SHOWN_INLINE = new Set(["application/pdf", "image/jpeg", "image/png"]);
+const DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+// Shown in the pane: PDFs in the browser's own viewer, pictures as images, Word converted to a
+// page. A legacy .doc has no converter that runs in a browser, so it is only opened.
+const SHOWN_INLINE = new Set(["application/pdf", "image/jpeg", "image/png", DOCX]);
 
 /** The retained original beside the reasoning (T067, FR-012). */
 function DocumentPane({
@@ -305,6 +311,8 @@ function DocumentPane({
           </div>
           {document.url === null || !SHOWN_INLINE.has(document.mimeType) ? (
             <p className={styles.quiet}>{t("noPreview")}</p>
+          ) : document.mimeType === DOCX ? (
+            <DocxPreview url={document.url} fileKey={document.id} fileName={document.fileName} />
           ) : document.mimeType === "application/pdf" ? (
             // The browser's own viewer, opened at page width without its thumbnail rail.
             <iframe

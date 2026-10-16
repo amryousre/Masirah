@@ -207,6 +207,7 @@ export default async function CandidatePage({
           page.document === null
             ? null
             : {
+                id: page.document.id,
                 fileName: page.document.fileName,
                 mimeType: page.document.mimeType,
                 url: documentUrl,

@@ -155,6 +155,35 @@ test("on a laptop both panes show and there are no view tabs", async ({ page }) 
   await expect(page.getByRole("heading", { name: "Why rank 1" })).toBeVisible();
 });
 
+test("a Word CV is shown as a page beside the reasons, with its links made inert", async ({
+  page,
+}) => {
+  const sara = await addRankedCandidate(recruiter, job, {
+    name: "Sara Nabil",
+    total: 70,
+    justification: "Prepared the quarterly IFRS reports at Delta Soft.",
+    confidence: 0.9,
+  });
+  await storeOriginal(
+    sara,
+    readFileSync(path.resolve(import.meta.dirname, "../fixtures/syn-cv.docx")),
+    {
+      mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      fileName: "Sara Nabil.docx",
+    },
+  );
+  await signIn(page, recruiter);
+  await page.goto(`/en/jobs/${job}/candidates/${sara}`);
+  const pane = page.getByRole("region", { name: "Original document" });
+  const sheet = pane.getByRole("article", { name: "Sara Nabil.docx" });
+  await expect(sheet.getByRole("heading", { level: 3 })).toHaveText("سارة نبيل");
+  await expect(sheet.getByRole("heading", { level: 3 })).toHaveAttribute("dir", "auto");
+  await expect(sheet).toContainText("Senior Accountant, Delta Soft, 2019 to 2026");
+  await expect(sheet).toContainText("my work");
+  await expect(sheet.getByRole("link")).toHaveCount(0);
+  await expectAccessible(page);
+});
+
 test("each job shows the CV sent for it, with that CV's extraction", async ({ page }) => {
   const laterJob = await addJob(recruiter, { title: "Finance Manager" });
   await addCvFile(recruiter, yasmin, laterJob, "Yasmin for finance.pdf");

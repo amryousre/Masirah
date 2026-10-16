@@ -328,19 +328,36 @@ export async function activityAbout(subjectId: string) {
   return data;
 }
 
-/** Stores a candidate's original CV where the worker would have found it, for reading it back. */
-export async function storeOriginal(candidateId: string, pdf: Buffer): Promise<void> {
+/**
+ * Stores a candidate's original CV where the worker would have found it, for reading it back. A
+ * file other than a PDF also changes the CV file's recorded type and name to match.
+ */
+export async function storeOriginal(
+  candidateId: string,
+  file: Buffer,
+  original: { mimeType: string; fileName: string } = {
+    mimeType: "application/pdf",
+    fileName: "cv.pdf",
+  },
+): Promise<void> {
   const client = admin();
   const { data, error } = await client
     .from("cv_file")
-    .select("storage_path")
+    .select("id, storage_path")
     .eq("candidate_id", candidateId)
     .limit(1)
     .single();
   if (error) throw new Error(error.message);
+  if (original.mimeType !== "application/pdf") {
+    const update = await client
+      .from("cv_file")
+      .update({ mime_type: original.mimeType, original_filename: original.fileName })
+      .eq("id", data.id);
+    if (update.error) throw new Error(update.error.message);
+  }
   const upload = await client.storage
     .from("cv-originals")
-    .upload(data.storage_path, pdf, { contentType: "application/pdf", upsert: true });
+    .upload(data.storage_path, file, { contentType: original.mimeType, upsert: true });
   if (upload.error) throw new Error(upload.error.message);
 }
 
