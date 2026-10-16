@@ -19,15 +19,30 @@ const ALLOWED_TAGS = [
 ];
 const ALLOWED_ATTR = ["src", "alt", "colspan", "rowspan"];
 
-export async function docxToSafeHtml(file: ArrayBuffer): Promise<string> {
+// Pictures come embedded in the file, as data: URIs, and only in the formats every browser shows
+// safely; anything else, an SVG or a link to elsewhere included, is dropped. DOMPurify lets any
+// data: URI through on an image, so this is checked after cleaning.
+const SHOWN_PICTURE = /^data:image\/(?:png|jpeg|gif);base64,/i;
+
+export interface DocxOptions {
+  /** Said of a picture the CV does not describe itself, often a headshot. */
+  pictureAlt: string;
+}
+
+export async function docxToSafeHtml(file: ArrayBuffer, options: DocxOptions): Promise<string> {
   const { value } = await mammoth.convertToHtml({ arrayBuffer: file });
   const fragment = DOMPurify.sanitize(value, {
     ALLOWED_TAGS,
     ALLOWED_ATTR,
-    // Pictures come embedded in the file, as data: URIs; nothing is fetched from elsewhere.
-    ALLOWED_URI_REGEXP: /^data:image\/(?:png|jpe?g|gif);base64,/i,
     RETURN_DOM_FRAGMENT: true,
   });
+  for (const picture of fragment.querySelectorAll("img")) {
+    if (!SHOWN_PICTURE.test(picture.getAttribute("src") ?? "")) {
+      picture.remove();
+    } else if (!picture.getAttribute("alt")?.trim()) {
+      picture.setAttribute("alt", options.pictureAlt);
+    }
+  }
   for (const block of fragment.querySelectorAll(BLOCKS)) block.setAttribute("dir", "auto");
   const host = document.createElement("div");
   host.append(fragment);

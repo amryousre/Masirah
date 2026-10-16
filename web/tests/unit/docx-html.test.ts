@@ -20,6 +20,8 @@ function fixture(): ArrayBuffer {
   return file;
 }
 
+const OPTIONS = { pictureAlt: "A picture in the CV" };
+
 function rendered(html: string): HTMLElement {
   const host = document.createElement("div");
   host.innerHTML = html;
@@ -28,7 +30,7 @@ function rendered(html: string): HTMLElement {
 
 describe("docxToSafeHtml", () => {
   it("keeps the CV's headings, paragraphs and lists", async () => {
-    const page = rendered(await docxToSafeHtml(fixture()));
+    const page = rendered(await docxToSafeHtml(fixture(), OPTIONS));
     expect(page.querySelector("h1")?.textContent).toBe("سارة نبيل");
     expect(page.querySelector("h2")?.textContent).toBe("Experience");
     expect(page.querySelector("li")?.textContent).toBe("Prepared the quarterly IFRS reports.");
@@ -36,20 +38,39 @@ describe("docxToSafeHtml", () => {
   });
 
   it("lets every block find its own direction", async () => {
-    const page = rendered(await docxToSafeHtml(fixture()));
+    const page = rendered(await docxToSafeHtml(fixture(), OPTIONS));
     const blocks = [...page.querySelectorAll("h1, h2, p, li")];
     expect(blocks.length).toBeGreaterThan(0);
     for (const block of blocks) expect(block.getAttribute("dir")).toBe("auto");
   });
 
   it("keeps a link's words and drops where it leads", async () => {
-    const page = rendered(await docxToSafeHtml(fixture()));
+    const page = rendered(await docxToSafeHtml(fixture(), OPTIONS));
     expect(page.querySelector("a")).toBeNull();
     expect(page.textContent).toContain("my work");
     expect(page.innerHTML).not.toContain("javascript:");
   });
 
+  it("keeps a table, each cell finding its own direction", async () => {
+    const page = rendered(await docxToSafeHtml(fixture(), OPTIONS));
+    const cells = [...page.querySelectorAll("td")].map((cell) => cell.textContent);
+    expect(cells).toEqual(["اللغة", "Level", "English", "Fluent"]);
+    for (const cell of page.querySelectorAll("td")) expect(cell.getAttribute("dir")).toBe("auto");
+  });
+
+  it("shows an embedded picture, described when the CV does not describe it", async () => {
+    const [picture, ...others] = rendered(
+      await docxToSafeHtml(fixture(), OPTIONS),
+    ).querySelectorAll("img");
+    expect(picture?.getAttribute("src")).toMatch(/^data:image\/png;base64,/);
+    expect(picture?.getAttribute("alt")).toBe("A picture in the CV");
+    // The fixture's second picture is a TIFF, a format the preview does not show.
+    expect(others).toHaveLength(0);
+  });
+
   it("refuses a file that is not a Word document", async () => {
-    await expect(docxToSafeHtml(new TextEncoder().encode("not a docx").buffer)).rejects.toThrow();
+    await expect(
+      docxToSafeHtml(new TextEncoder().encode("not a docx").buffer, OPTIONS),
+    ).rejects.toThrow();
   });
 });

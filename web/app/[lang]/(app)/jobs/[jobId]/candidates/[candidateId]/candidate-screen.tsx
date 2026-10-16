@@ -310,7 +310,11 @@ function DocumentPane({
           {document.url === null || !SHOWN_INLINE.has(document.mimeType) ? (
             <p className={styles.quiet}>{t("noPreview")}</p>
           ) : document.mimeType === DOCX ? (
-            <DocxPreview url={document.url} fileName={document.fileName} />
+            <DocxPreview
+              url={document.url}
+              fileKey={document.downloadHref}
+              fileName={document.fileName}
+            />
           ) : document.mimeType === "application/pdf" ? (
             // The browser's own viewer, opened at page width without its thumbnail rail.
             <iframe
