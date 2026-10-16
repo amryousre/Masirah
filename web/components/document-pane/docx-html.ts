@@ -6,6 +6,8 @@ import mammoth from "mammoth";
  * company, so the conversion is cleaned to an allowlist: text structure, tables and embedded
  * pictures only. A link keeps its words and loses where it leads, so a crafted CV cannot send a
  * recruiter anywhere. Every block takes dir="auto", since one CV often mixes Arabic and English.
+ * The CV's headings move down two levels, below the page's own h1 and h2, so moving by heading
+ * through the page does not run from the page's outline into the CV's.
  * Runs in the browser: DOMPurify needs a DOM.
  */
 
@@ -18,6 +20,9 @@ const ALLOWED_TAGS = [
   "img",
 ];
 const ALLOWED_ATTR = ["src", "alt", "colspan", "rowspan"];
+
+const HEADINGS = "h1, h2, h3, h4, h5, h6";
+const HEADING_SHIFT = 2;
 
 // Pictures come embedded in the file, as data: URIs, and only in the formats every browser shows
 // safely; anything else, an SVG or a link to elsewhere included, is dropped. DOMPurify lets any
@@ -42,6 +47,12 @@ export async function docxToSafeHtml(file: ArrayBuffer, options: DocxOptions): P
     } else if (!picture.getAttribute("alt")?.trim()) {
       picture.setAttribute("alt", options.pictureAlt);
     }
+  }
+  for (const heading of fragment.querySelectorAll(HEADINGS)) {
+    const level = Math.min(6, Number(heading.tagName.slice(1)) + HEADING_SHIFT);
+    const lower = document.createElement(`h${String(level)}`);
+    lower.append(...heading.childNodes);
+    heading.replaceWith(lower);
   }
   for (const block of fragment.querySelectorAll(BLOCKS)) block.setAttribute("dir", "auto");
   const host = document.createElement("div");

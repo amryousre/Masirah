@@ -74,7 +74,10 @@ test("a member asks for a candidate's data to be removed, after being told what 
   );
   const refreshed = page.waitForResponse(
     (response) =>
-      response.request().headers()["rsc"] === "1" && response.request().method() === "GET",
+      response.request().headers()["rsc"] === "1" &&
+      response.request().method() === "GET" &&
+      // A link's prefetch carries rsc too; only the refresh does not say it is one.
+      response.request().headers()["next-router-prefetch"] === undefined,
   );
   await dialog.getByRole("button", { name: "Delete data permanently" }).click();
   expect((await deleted).ok()).toBe(true);

@@ -176,8 +176,8 @@ test("a Word CV is shown as a page beside the reasons, with its links made inert
   await page.goto(`/en/jobs/${job}/candidates/${sara}`);
   const pane = page.getByRole("region", { name: "Original document" });
   const sheet = pane.getByRole("article", { name: "Sara Nabil.docx" });
-  await expect(sheet.getByRole("heading", { level: 1 })).toHaveText("سارة نبيل");
-  await expect(sheet.getByRole("heading", { level: 1 })).toHaveAttribute("dir", "auto");
+  await expect(sheet.getByRole("heading", { level: 3 })).toHaveText("سارة نبيل");
+  await expect(sheet.getByRole("heading", { level: 3 })).toHaveAttribute("dir", "auto");
   await expect(sheet).toContainText("Senior Accountant, Delta Soft, 2019 to 2026");
   await expect(sheet).toContainText("my work");
   await expect(sheet.getByRole("link")).toHaveCount(0);

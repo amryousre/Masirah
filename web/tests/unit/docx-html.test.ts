@@ -31,10 +31,15 @@ function rendered(html: string): HTMLElement {
 describe("docxToSafeHtml", () => {
   it("keeps the CV's headings, paragraphs and lists", async () => {
     const page = rendered(await docxToSafeHtml(fixture(), OPTIONS));
-    expect(page.querySelector("h1")?.textContent).toBe("سارة نبيل");
-    expect(page.querySelector("h2")?.textContent).toBe("Experience");
+    expect(page.querySelector("h3")?.textContent).toBe("سارة نبيل");
+    expect(page.querySelector("h4")?.textContent).toBe("Experience");
     expect(page.querySelector("li")?.textContent).toBe("Prepared the quarterly IFRS reports.");
     expect(page.textContent).toContain("Senior Accountant, Delta Soft, 2019 to 2026");
+  });
+
+  it("sits its headings below the page's own, so the page's outline stays the page's", async () => {
+    const page = rendered(await docxToSafeHtml(fixture(), OPTIONS));
+    expect(page.querySelectorAll("h1, h2")).toHaveLength(0);
   });
 
   it("lets every block find its own direction", async () => {
