@@ -1,7 +1,8 @@
 """Daily encrypted backups of the hosted project, and opening one to restore it (T110, NFR-15).
 
 The project is on Supabase's Free plan, which takes no backups of its own. Run from pipeline/ with
-the settings in .env (see .env.example), once a day by Windows Task Scheduler:
+the settings in .env (see .env.example), once a day by Windows Task Scheduler
+(tools/schedule_backup.ps1):
 
     uv run --env-file .env python -m tools.backup run
     uv run python -m tools.backup keygen <private-key-file>
@@ -9,14 +10,17 @@ the settings in .env (see .env.example), once a day by Windows Task Scheduler:
 
 A backup is the data of our own schemas (public, private, and auth for the accounts), dumped by
 the pinned Supabase CLI, which needs Docker, and every CV original in Storage, with a manifest of
-SHA-256 digests and of the migrations the schema came from, in one tar archive encrypted to an age
-public key. The machine that makes backups holds
-only the public key. The private key is kept offline, so a copied backup folder reveals nothing.
+SHA-256 digests and of the migrations the database was at, in one tar archive encrypted to an age
+public key. The machine that makes backups holds only the public key. The private key is kept
+offline, so a copied backup folder reveals nothing.
 
 The unencrypted work happens in a scratch folder on the local disk, never in the backup folder,
-which may sync to the cloud, and is removed whatever happens. The newest KEPT backups are kept. A
-failure is posted to the operators' Slack channel when MASIRAH_SLACK_WEBHOOK_URL is set, and the
-command exits non-zero, which Task Scheduler records.
+which may sync to the cloud. It is removed when the run ends, and a run cut short is cleared by
+the next. The newest KEPT backups are kept. A failure, and a last backup more than a day old, are
+posted to the operators' Slack channel when MASIRAH_SLACK_WEBHOOK_URL is set; a failure also exits
+non-zero, which Task Scheduler records. No message carries a credential: the database URL holds
+the password, so a failed command's own output goes to the log only, with the URL and password
+removed.
 
 The restore procedure, and the drill that tested it, are in Docs/runbooks/backup-recovery.md.
 """
@@ -24,37 +28,52 @@ The restore procedure, and the drill that tested it, are in Docs/runbooks/backup
 import argparse
 import hashlib
 import json
-import mimetypes
+import os
 import shlex
 import shutil
 import subprocess
 import sys
 import tarfile
 import tempfile
+import time
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from pathlib import Path, PurePath, PurePosixPath
+from pathlib import Path, PurePosixPath
 from typing import Protocol
-from urllib.parse import quote
+from urllib.parse import quote, unquote, urlsplit
 
 import httpx2
+import psycopg
 import pyrage
 
 from masirah_pipeline.adapters.slack_webhook import SlackWebhook
 from masirah_pipeline.adapters.supabase_storage import BUCKET, SupabaseStorage
+from masirah_pipeline.ports.cv_store import MissingCvError
 
-KEPT = 30
+# FR-076: a candidate's data goes within 30 days of the request. The purge runs within the hour, so
+# the last backup holding a deleted candidate is pruned KEPT days later, inside the 30.
+KEPT = 28
 PATTERN = "masirah-backup-*.tar.age"
+SCRATCH_PREFIX = "masirah-backup-"
 SUPABASE_CLI = ["npx", "--yes", "supabase@2.117.0"]
 TIMEOUT = 60
+STALE_HOURS = 26
+# npx is a batch file, so cmd reads its arguments again, and these would cut or change the URL.
+CMD_SPECIAL = set('&|^<>%!"')
+STDERR_LINES = 20
 
 Runner = Callable[[Sequence[str]], None]
 Alert = Callable[[str], None]
 
 
 class BackupError(Exception):
-    """A backup or a restore could not be completed. The message never holds a credential."""
+    """A backup or a restore could not be completed. The message never holds a credential and
+    may go to Slack; `detail` is for the log only, with credentials already removed."""
+
+    def __init__(self, message: str, detail: str = "") -> None:
+        super().__init__(message)
+        self.detail = detail
 
 
 @dataclass(frozen=True)
@@ -77,10 +96,21 @@ REQUIRED = {
 
 
 def settings_from(environment: Mapping[str, str]) -> BackupSettings:
+    """The backup's settings, each checked before any work starts. A message names the setting,
+    never its value."""
     missing = [name for name in REQUIRED if not environment.get(name, "").strip()]
     if missing:
         raise BackupError(f"the backup needs {', '.join(missing)}")
     read = {field: environment[name].strip() for name, field in REQUIRED.items()}
+    if CMD_SPECIAL & set(read["db_url"]):
+        raise BackupError(
+            'MASIRAH_BACKUP_DB_URL holds one of & | ^ < > % ! ", which the Windows command line '
+            "changes: choose a database password without them"
+        )
+    try:
+        pyrage.x25519.Recipient.from_str(read["recipient"])
+    except pyrage.RecipientError:
+        raise BackupError("MASIRAH_BACKUP_RECIPIENT is not an age public key (age1...)") from None
     return BackupSettings(
         db_url=read["db_url"],
         storage_url=read["storage_url"],
@@ -97,7 +127,6 @@ def settings_from(environment: Mapping[str, str]) -> BackupSettings:
 # come back when the originals are uploaded again.
 DUMPED_SCHEMAS = "auth,public,private"
 NOT_DUMPED = "auth.schema_migrations"
-MIGRATIONS = Path(__file__).resolve().parents[2] / "supabase" / "migrations"
 
 
 def dump_commands(cli: Sequence[str], db_url: str, folder: Path) -> list[list[str]]:
@@ -112,17 +141,26 @@ def dump_commands(cli: Sequence[str], db_url: str, folder: Path) -> list[list[st
     ]
 
 
-def restore_commands(psql: Sequence[str], db_url: str, folder: PurePath) -> list[list[str]]:
-    """Loads the data into a database already migrated to the manifest's migrations: one
-    transaction, stopping at the first error, with triggers off while the data loads."""
+def restore_command(psql: Sequence[str], db_url: str) -> list[str]:
+    """Loads data.sql, given on stdin, into a database already migrated to the manifest's
+    migrations: one transaction, stopping at the first error, with triggers off while it loads."""
     return [
-        [
-            *psql,
-            *["--single-transaction", "--variable", "ON_ERROR_STOP=1"],
-            *["--command", "SET session_replication_role = replica"],
-            *["--file", str(folder / "data.sql"), "--dbname", db_url],
-        ]
+        *psql,
+        *["--single-transaction", "--variable", "ON_ERROR_STOP=1"],
+        *["--command", "SET session_replication_role = replica"],
+        *["--file", "-", "--dbname", db_url],
     ]
+
+
+def applied_migrations(db_url: str) -> list[str]:
+    """The migrations the database itself records as applied, not those of whatever branch this
+    checkout is on: a restore rebuilds the schema at exactly these."""
+    with psycopg.connect(db_url) as connection:
+        rows = connection.execute(
+            "select version, coalesce(name, '') from supabase_migrations.schema_migrations"
+            " order by version"
+        ).fetchall()
+    return [f"{version}_{name}" if name else str(version) for version, name in rows]
 
 
 def list_originals(
@@ -130,33 +168,33 @@ def list_originals(
 ) -> list[str]:
     """Every object in the originals bucket. Storage lists one folder at a time, and an entry
     without an id is a folder."""
-    http = client or httpx2.Client(timeout=TIMEOUT)
-    url = f"{base_url.rstrip('/')}/storage/v1/object/list/{BUCKET}"
-    found: list[str] = []
-    folders = [""]
-    while folders:
-        prefix = folders.pop()
-        offset = 0
-        while True:
-            try:
-                response = http.post(
-                    url,
-                    headers={"apikey": secret_key, "authorization": f"Bearer {secret_key}"},
-                    json={"prefix": prefix, "limit": page, "offset": offset},
-                )
-            except httpx2.HTTPError as error:
-                raise BackupError(
-                    f"storage could not be reached ({type(error).__name__})"
-                ) from None
-            if response.status_code != 200:
-                raise BackupError(f"storage answered {response.status_code} when listing")
-            entries = response.json()
-            for entry in entries:
-                path = f"{prefix}/{entry['name']}" if prefix else str(entry["name"])
-                (folders if entry.get("id") is None else found).append(path)
-            if len(entries) < page:
-                break
-            offset += page
+    with client or httpx2.Client(timeout=TIMEOUT) as http:
+        url = f"{base_url.rstrip('/')}/storage/v1/object/list/{BUCKET}"
+        found: list[str] = []
+        folders = [""]
+        while folders:
+            prefix = folders.pop()
+            offset = 0
+            while True:
+                try:
+                    response = http.post(
+                        url,
+                        headers={"apikey": secret_key, "authorization": f"Bearer {secret_key}"},
+                        json={"prefix": prefix, "limit": page, "offset": offset},
+                    )
+                except httpx2.HTTPError as error:
+                    raise BackupError(
+                        f"storage could not be reached ({type(error).__name__})"
+                    ) from None
+                if response.status_code != 200:
+                    raise BackupError(f"storage answered {response.status_code} when listing")
+                entries = response.json()
+                for entry in entries:
+                    path = f"{prefix}/{entry['name']}" if prefix else str(entry["name"])
+                    (folders if entry.get("id") is None else found).append(path)
+                if len(entries) < page:
+                    break
+                offset += page
     return found
 
 
@@ -180,15 +218,62 @@ class StorageOriginals:
         return self._storage.fetch(storage_path)
 
 
-def run_command(command: Sequence[str]) -> None:
-    """Runs a command, reporting a failure by exit code only: the command holds the database URL.
-    The program is found on PATH as the shell would find it, so npx.cmd runs on Windows."""
+def _redacted(text: str, secrets: Sequence[str]) -> str:
+    for secret in sorted((s for s in secrets if s), key=len, reverse=True):
+        text = text.replace(secret, "[redacted]")
+    return text
+
+
+def secrets_of(db_url: str) -> list[str]:
+    """The URL and its password, in the forms a tool's output may repeat them."""
+    password = urlsplit(db_url).password or ""
+    return [db_url, password, unquote(password)]
+
+
+def run_command(
+    command: Sequence[str], *, stdin: Path | None = None, secrets: Sequence[str] = ()
+) -> None:
+    """Runs a command. A failure is reported by exit code; the last lines it wrote go to the log
+    only, with every secret removed. The program is found on PATH as the shell would find it, so
+    npx.cmd runs on Windows."""
     program = shutil.which(command[0])
     if program is None:
         raise BackupError(f"{command[0]} was not found on PATH")
-    completed = subprocess.run([program, *command[1:]], check=False, capture_output=True)  # noqa: S603
+    with (stdin if stdin is not None else Path(os.devnull)).open("rb") as given:
+        completed = subprocess.run(  # noqa: S603
+            [program, *command[1:]], check=False, capture_output=True, stdin=given
+        )
     if completed.returncode != 0:
-        raise BackupError(f"{PurePosixPath(command[0]).name} exited with {completed.returncode}")
+        said = (completed.stderr or completed.stdout).decode("utf-8", errors="replace")
+        tail = "\n".join(said.strip().splitlines()[-STDERR_LINES:])
+        raise BackupError(
+            f"{PurePosixPath(command[0]).name} exited with {completed.returncode}",
+            detail=_redacted(tail, secrets),
+        )
+
+
+def docker_running() -> bool:
+    docker = shutil.which("docker")
+    if docker is None:
+        return False
+    return subprocess.run([docker, "info"], check=False, capture_output=True).returncode == 0  # noqa: S603
+
+
+def wait_for_docker(
+    check: Callable[[], bool] = docker_running,
+    *,
+    attempts: int = 40,
+    pause: float = 15,
+    sleep: Callable[[float], None] = time.sleep,
+) -> None:
+    """Waits for Docker, which the dump needs: a run missed overnight starts at sign-in, while
+    Docker Desktop is still starting. Ten minutes by default."""
+    for attempt in range(attempts):
+        if check():
+            return
+        if attempt < attempts - 1:
+            sleep(pause)
+    raise BackupError("Docker is not running, and the database dump needs it")
 
 
 def _inside(root: Path, relative: str) -> Path:
@@ -202,38 +287,87 @@ def _digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def _clear_stale_scratch(scratch_root: Path) -> None:
+    """Removes the work of a run cut short by power loss, sleep or a time limit, which `finally`
+    never reached: it holds the data and every CV, unencrypted."""
+    for left in scratch_root.glob(f"{SCRATCH_PREFIX}*"):
+        if left.is_dir():
+            shutil.rmtree(left, ignore_errors=True)
+
+
+def _age_hours(destination: Path, now: datetime) -> int | None:
+    newest = max(destination.glob(PATTERN), default=None)
+    if newest is None:
+        return None
+    stamp = newest.name.removeprefix("masirah-backup-").removesuffix(".tar.age")
+    try:
+        made = datetime.strptime(stamp, "%Y%m%dT%H%M%SZ").replace(tzinfo=UTC)
+    except ValueError:
+        return None
+    return int((now - made).total_seconds() // 3600)
+
+
+def _tell(alert: Alert | None, text: str) -> None:
+    """Posts to the operators. Slack being down must never hide what it was told."""
+    if alert is None:
+        return
+    try:
+        alert(text)
+    except Exception as error:  # any failure to post is only logged
+        print(f"backup: the alert could not be posted ({type(error).__name__})", file=sys.stderr)
+
+
 def run_backup(
     settings: BackupSettings,
     *,
-    run: Runner = run_command,
+    run: Runner | None = None,
     originals: Originals | None = None,
     now: datetime | None = None,
     scratch: Path | None = None,
     alert: Alert | None = None,
     cli: Sequence[str] = SUPABASE_CLI,
-    migrations: Path = MIGRATIONS,
+    ready: Callable[[], None] = wait_for_docker,
+    read_migrations: Callable[[], list[str]] | None = None,
 ) -> Path:
     """Makes one backup in the destination folder and returns it."""
-    stamp = (now or datetime.now(UTC)).strftime("%Y%m%dT%H%M%SZ")
+    moment = now or datetime.now(UTC)
+    stamp = moment.strftime("%Y%m%dT%H%M%SZ")
+    dump = run or (lambda command: run_command(command, secrets=secrets_of(settings.db_url)))
+    migrations = read_migrations or (lambda: applied_migrations(settings.db_url))
     store = originals or StorageOriginals(settings.storage_url, settings.secret_key)
     scratch_root = scratch or Path(tempfile.gettempdir())
     scratch_root.mkdir(parents=True, exist_ok=True)
-    work = Path(tempfile.mkdtemp(prefix="masirah-backup-", dir=scratch_root))
+    _clear_stale_scratch(scratch_root)
+
+    age = _age_hours(settings.destination, moment)
+    if age is not None and age > STALE_HOURS:
+        _tell(alert, f"Masirah backup: the last backup is {age} hours old; making one now.")
+
+    work = Path(tempfile.mkdtemp(prefix=SCRATCH_PREFIX, dir=scratch_root))
     try:
+        ready()
         content = work / "content"
         database = content / "database"
         database.mkdir(parents=True)
         for command in dump_commands(cli, settings.db_url, database):
-            run(command)
+            dump(command)
         stored = content / "originals"
+        gone: list[str] = []
         for storage_path in store.paths():
             target = _inside(stored, storage_path)
+            try:
+                data = store.fetch(storage_path)
+            except MissingCvError:
+                # Deleted between listing and reading, as a purge does: its rows go with it.
+                gone.append(storage_path)
+                continue
             target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_bytes(store.fetch(storage_path))
+            target.write_bytes(data)
         files = sorted(p for p in content.rglob("*") if p.is_file())
         manifest = {
             "made_at": stamp,
-            "migrations": sorted(m.name for m in migrations.glob("*.sql")),
+            "migrations": migrations(),
+            "gone_during_backup": sorted(gone),
             "files": {p.relative_to(content).as_posix(): _digest(p) for p in files},
         }
         (content / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
@@ -246,16 +380,18 @@ def run_backup(
         recipient = pyrage.x25519.Recipient.from_str(settings.recipient)
         pyrage.encrypt_file(str(archive), str(sealed), [recipient])
 
-        # Only the sealed file reaches the destination, moved in whole.
+        # Only the sealed file reaches the destination. It is copied under a name no backup has
+        # and then renamed, so a copy cut short never passes for a backup.
         settings.destination.mkdir(parents=True, exist_ok=True)
         made = settings.destination / f"masirah-backup-{stamp}.tar.age"
-        shutil.move(sealed, made)
+        partial = settings.destination / f".{made.name}.partial"
+        shutil.copyfile(sealed, partial)
+        partial.replace(made)
         prune(settings.destination, KEPT)
         return made
     except Exception as error:
         reason = str(error) if isinstance(error, BackupError) else type(error).__name__
-        if alert is not None:
-            alert(f"Masirah backup failed: {reason}")
+        _tell(alert, f"Masirah backup failed: {reason}")
         if isinstance(error, BackupError):
             raise
         raise BackupError(reason) from None
@@ -281,10 +417,10 @@ def open_backup(backup: Path, identity: str, into: Path) -> Path:
         pyrage.decrypt_file(str(backup), str(archive), [pyrage.x25519.Identity.from_str(identity)])
         with tarfile.open(archive) as tar:
             tar.extractall(into, filter="data")
-    except (pyrage.DecryptError, pyrage.IdentityError) as error:
-        raise BackupError(f"the backup could not be opened ({type(error).__name__})") from None
     except tarfile.FilterError as error:
         raise BackupError(f"the backup holds an unsafe path ({type(error).__name__})") from None
+    except (pyrage.DecryptError, pyrage.IdentityError, tarfile.TarError, OSError) as error:
+        raise BackupError(f"the backup could not be opened ({type(error).__name__})") from None
     finally:
         archive.unlink(missing_ok=True)
     return into
@@ -303,32 +439,45 @@ def verify(folder: Path) -> list[str]:
     return problems
 
 
+# The types the bucket accepts (migration 0009), by suffix: Windows' own table may not know .docx.
+CONTENT_TYPES = {
+    ".pdf": "application/pdf",
+    ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ".doc": "application/msword",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".png": "image/png",
+}
+
+
 def upload_originals(
     folder: Path, base_url: str, secret_key: str, *, client: httpx2.Client | None = None
 ) -> int:
     """Puts every original under `folder` back in the bucket at the same path, replacing any
     there; returns how many. The database's own rows for them come back with data.sql."""
-    http = client or httpx2.Client(timeout=TIMEOUT)
     files = sorted(p for p in folder.rglob("*") if p.is_file())
-    for path in files:
-        relative = path.relative_to(folder).as_posix()
-        url = f"{base_url.rstrip('/')}/storage/v1/object/{BUCKET}/{quote(relative)}"
-        media_type = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
-        try:
-            response = http.post(
-                url,
-                content=path.read_bytes(),
-                headers={
-                    "apikey": secret_key,
-                    "authorization": f"Bearer {secret_key}",
-                    "content-type": media_type,
-                    "x-upsert": "true",
-                },
-            )
-        except httpx2.HTTPError as error:
-            raise BackupError(f"storage could not be reached ({type(error).__name__})") from None
-        if response.status_code != 200:
-            raise BackupError(f"storage answered {response.status_code} for {relative}")
+    with client or httpx2.Client(timeout=TIMEOUT) as http:
+        for path in files:
+            relative = path.relative_to(folder).as_posix()
+            url = f"{base_url.rstrip('/')}/storage/v1/object/{BUCKET}/{quote(relative)}"
+            media_type = CONTENT_TYPES.get(path.suffix.lower(), "application/octet-stream")
+            try:
+                response = http.post(
+                    url,
+                    content=path.read_bytes(),
+                    headers={
+                        "apikey": secret_key,
+                        "authorization": f"Bearer {secret_key}",
+                        "content-type": media_type,
+                        "x-upsert": "true",
+                    },
+                )
+            except httpx2.HTTPError as error:
+                raise BackupError(
+                    f"storage could not be reached ({type(error).__name__})"
+                ) from None
+            if response.status_code != 200:
+                raise BackupError(f"storage answered {response.status_code} for {relative}")
     return len(files)
 
 
@@ -341,9 +490,13 @@ def keygen(private_key_file: Path) -> str:
     return str(identity.to_public())
 
 
-def main(argv: Sequence[str] | None = None, environment: Mapping[str, str] | None = None) -> int:
-    import os
+def psql_from(environment: Mapping[str, str]) -> list[str]:
+    """MASIRAH_PSQL, read the way Windows quotes a command, so C:\\pg\\bin\\psql.exe survives."""
+    parts = shlex.split(environment.get("MASIRAH_PSQL", "psql"), posix=False)
+    return [part.strip('"') for part in parts]
 
+
+def main(argv: Sequence[str] | None = None, environment: Mapping[str, str] | None = None) -> int:
     env = os.environ if environment is None else environment
     parser = argparse.ArgumentParser(prog="python -m tools.backup")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -354,13 +507,19 @@ def main(argv: Sequence[str] | None = None, environment: Mapping[str, str] | Non
     opened.add_argument("backup", type=Path)
     opened.add_argument("--identity", type=Path, required=True)
     opened.add_argument("--into", type=Path, required=True)
-    opened.add_argument("--restore-to", help="also replay the dumps into this database URL")
+    opened.add_argument(
+        "--restore-database",
+        action="store_true",
+        help="also load the data into MASIRAH_RESTORE_DB_URL, already migrated",
+    )
     opened.add_argument(
         "--restore-originals",
         action="store_true",
         help="also upload the originals to MASIRAH_RESTORE_SUPABASE_URL",
     )
     args = parser.parse_args(argv)
+    webhook = env.get("MASIRAH_SLACK_WEBHOOK_URL", "").strip()
+    alert = SlackWebhook(webhook).send if webhook else None
 
     try:
         if args.command == "keygen":
@@ -369,25 +528,33 @@ def main(argv: Sequence[str] | None = None, environment: Mapping[str, str] | Non
             print(f"Move {args.private_key_file} somewhere offline. Without it, no backup opens.")
             return 0
         if args.command == "run":
-            settings = settings_from(env)
-            webhook = settings.slack_webhook
-            made = run_backup(
-                settings, alert=None if webhook is None else SlackWebhook(webhook).send
-            )
-            print(f"backup written: {made}")
+            try:
+                settings = settings_from(env)
+            except BackupError as error:
+                _tell(alert, f"Masirah backup failed: {error}")
+                raise
+            made = run_backup(settings, alert=alert)
+            print(f"{datetime.now(UTC).isoformat()} backup written: {made}")
             return 0
-        folder = open_backup(
-            args.backup, args.identity.read_text(encoding="utf-8").strip(), args.into
-        )
+        try:
+            identity = args.identity.read_text(encoding="utf-8").strip()
+        except OSError:
+            raise BackupError(f"the private key file could not be read: {args.identity}") from None
+        folder = open_backup(args.backup, identity, args.into)
         problems = verify(folder)
         if problems:
             print("\n".join(problems), file=sys.stderr)
             return 1
         print(f"opened and verified: {folder}")
-        if args.restore_to:
-            psql = shlex.split(env.get("MASIRAH_PSQL", "psql"))
-            for command in restore_commands(psql, args.restore_to, folder / "database"):
-                run_command(command)
+        if args.restore_database:
+            target_db = env.get("MASIRAH_RESTORE_DB_URL", "").strip()
+            if not target_db:
+                raise BackupError("restoring the database needs MASIRAH_RESTORE_DB_URL")
+            run_command(
+                restore_command(psql_from(env), target_db),
+                stdin=folder / "database" / "data.sql",
+                secrets=secrets_of(target_db),
+            )
             print("database restored")
         if args.restore_originals:
             target = env.get("MASIRAH_RESTORE_SUPABASE_URL", "").strip()
@@ -401,7 +568,9 @@ def main(argv: Sequence[str] | None = None, environment: Mapping[str, str] | Non
             print(f"originals restored: {count}")
         return 0
     except BackupError as error:
-        print(f"backup: {error}", file=sys.stderr)
+        print(f"{datetime.now(UTC).isoformat()} backup: {error}", file=sys.stderr)
+        if error.detail:
+            print(error.detail, file=sys.stderr)
         return 1
 
 

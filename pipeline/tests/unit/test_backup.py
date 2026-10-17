@@ -12,6 +12,8 @@ the newest KEPT backups are kept, and a failure is posted to the operators' Slac
 
 import io
 import json
+import shutil
+import sys
 import tarfile
 from collections.abc import Sequence
 from datetime import UTC, datetime
@@ -30,7 +32,7 @@ from tools.backup import (
     list_originals,
     open_backup,
     prune,
-    restore_commands,
+    restore_command,
     run_backup,
     settings_from,
     verify,
@@ -62,7 +64,7 @@ COMPLETE = {
     "MASIRAH_BACKUP_DB_URL": DB_URL,
     "MASIRAH_BACKUP_SUPABASE_URL": STORAGE_URL,
     "MASIRAH_BACKUP_SUPABASE_SECRET_KEY": "sb_secret_x",
-    "MASIRAH_BACKUP_RECIPIENT": "age1example",
+    "MASIRAH_BACKUP_RECIPIENT": str(pyrage.x25519.Identity.generate().to_public()),
     "MASIRAH_BACKUP_DIR": "D:/backups",
 }
 
@@ -101,15 +103,14 @@ def test_only_our_own_data_is_dumped(tmp_path: Path) -> None:
     ]
 
 
-def test_a_restore_loads_the_data_into_the_migrated_schema(tmp_path: Path) -> None:
-    """One transaction, stopping at the first error, with triggers off while the data loads."""
-    assert restore_commands(["psql"], "postgresql://local", tmp_path) == [
-        [
-            "psql",
-            *["--single-transaction", "--variable", "ON_ERROR_STOP=1"],
-            *["--command", "SET session_replication_role = replica"],
-            *["--file", str(tmp_path / "data.sql"), "--dbname", "postgresql://local"],
-        ]
+def test_a_restore_loads_the_data_into_the_migrated_schema() -> None:
+    """One transaction, stopping at the first error, with triggers off while the data loads. The
+    data arrives on stdin, so a psql inside a container reads the host's file."""
+    assert restore_command(["psql"], "postgresql://local") == [
+        "psql",
+        *["--single-transaction", "--variable", "ON_ERROR_STOP=1"],
+        *["--command", "SET session_replication_role = replica"],
+        *["--file", "-", "--dbname", "postgresql://local"],
     ]
 
 
@@ -181,6 +182,15 @@ def dumping(fail: bool = False) -> tuple[list[list[str]], Runner]:
 
 FILES = {"organisations/o/cv/f/cv.pdf": b"%PDF-1.7 a CV", "organisations/o/cv/g/cv.docx": b"PK.."}
 NOW = datetime(2026, 10, 16, 2, 0, tzinfo=UTC)
+APPLIED = ["0001_tenancy", "0028_parse_outcomes"]
+
+
+def READY() -> None:  # noqa: N802 - a stand-in for the Docker check
+    """Docker is up."""
+
+
+def MIGRATED() -> list[str]:  # noqa: N802 - a stand-in for the database's migration record
+    return list(APPLIED)
 
 
 def backups_in(folder: Path) -> list[Path]:
@@ -198,6 +208,8 @@ class TestRunBackup:
             originals=Originals(FILES),
             now=NOW,
             scratch=tmp_path / "scratch",
+            ready=READY,
+            read_migrations=MIGRATED,
         )
         assert made == tmp_path / "backups" / "masirah-backup-20261016T020000Z.tar.age"
         assert backups_in(tmp_path / "backups") == [made]
@@ -209,15 +221,11 @@ class TestRunBackup:
         ).read_bytes() == b"%PDF-1.7 a CV"
         assert verify(opened) == []
 
-    def test_the_manifest_names_the_migrations_the_schema_came_from(
+    def test_the_manifest_names_the_migrations_the_database_was_at(
         self, tmp_path: Path, identity: pyrage.x25519.Identity
     ) -> None:
-        """A restore must rebuild the schema from these exact migrations before the data loads."""
-        migrations = tmp_path / "migrations"
-        migrations.mkdir()
-        for name in ("0002_job.sql", "0001_tenancy.sql"):
-            (migrations / name).write_text("-- ddl", encoding="utf-8")
-        (migrations / "README.md").write_text("not a migration", encoding="utf-8")
+        """Read from the database itself, not the checkout, which may be on another branch: a
+        restore must rebuild the schema at exactly these migrations before the data loads."""
         _, run = dumping()
         made = run_backup(
             settings(tmp_path, identity),
@@ -225,11 +233,12 @@ class TestRunBackup:
             originals=Originals(FILES),
             now=NOW,
             scratch=tmp_path / "scratch",
-            migrations=migrations,
+            ready=READY,
+            read_migrations=MIGRATED,
         )
         opened = open_backup(made, str(identity), tmp_path / "opened")
         manifest = json.loads((opened / "manifest.json").read_text(encoding="utf-8"))
-        assert manifest["migrations"] == ["0001_tenancy.sql", "0002_job.sql"]
+        assert manifest["migrations"] == APPLIED
 
     def test_the_backup_reveals_nothing_without_the_private_key(
         self, tmp_path: Path, identity: pyrage.x25519.Identity
@@ -241,6 +250,8 @@ class TestRunBackup:
             originals=Originals(FILES),
             now=NOW,
             scratch=tmp_path / "scratch",
+            ready=READY,
+            read_migrations=MIGRATED,
         )
         sealed = made.read_bytes()
         assert sealed.startswith(b"age-encryption.org/v1")
@@ -266,6 +277,8 @@ class TestRunBackup:
             originals=Originals(FILES),
             now=NOW,
             scratch=tmp_path / "scratch",
+            ready=READY,
+            read_migrations=MIGRATED,
         )
         assert seen == []
 
@@ -279,6 +292,8 @@ class TestRunBackup:
             originals=Originals(FILES),
             now=NOW,
             scratch=tmp_path / "scratch",
+            ready=READY,
+            read_migrations=MIGRATED,
         )
         left = [p for p in tmp_path.rglob("*") if p.is_file() and not p.name.endswith(".tar.age")]
         assert left == []
@@ -295,6 +310,8 @@ class TestRunBackup:
                 originals=Originals(FILES),
                 now=NOW,
                 scratch=tmp_path / "scratch",
+                ready=READY,
+                read_migrations=MIGRATED,
                 alert=posted.append,
             )
         assert backups_in(tmp_path / "backups") == []
@@ -318,6 +335,8 @@ class TestRunBackup:
             originals=Originals(FILES),
             now=NOW,
             scratch=tmp_path / "scratch",
+            ready=READY,
+            read_migrations=MIGRATED,
         )
         kept = backups_in(folder)
         assert len(kept) == KEPT
@@ -404,6 +423,8 @@ def test_the_command_line_opens_and_verifies_a_backup(
         originals=Originals(FILES),
         now=NOW,
         scratch=tmp_path / "scratch",
+        ready=READY,
+        read_migrations=MIGRATED,
     )
     key = tmp_path / "key.txt"
     key.write_text(f"{identity}\n", encoding="utf-8")
@@ -442,6 +463,7 @@ def test_a_refused_upload_stops_the_restore(tmp_path: Path) -> None:
         upload_originals(tmp_path, STORAGE_URL, STORAGE_KEY, client=client)
 
 
+@pytest.mark.skipif(shutil.which("npx") is None, reason="needs Node, as the dump does")
 def test_a_command_is_found_on_the_path_as_the_shell_would_find_it() -> None:
     """On Windows npx is npx.cmd, which a bare subprocess call cannot start."""
     from tools.backup import run_command
@@ -454,3 +476,304 @@ def test_a_missing_program_is_named() -> None:
 
     with pytest.raises(BackupError, match="no-such-program-masirah"):
         run_command(["no-such-program-masirah", "--db-url", DB_URL])
+
+
+# --- review findings (PR #50) ---
+
+SCHEDULER = Path(__file__).parents[2] / "tools" / "schedule_backup.ps1"
+
+
+def test_the_scheduled_task_sets_utf8_mode_without_a_trailing_space() -> None:
+    """cmd keeps the space in `set X=1 && ...`, and Python refuses PYTHONUTF8="1 " outright, so
+    the nightly run would die before any of this tool ran."""
+    script = SCHEDULER.read_text(encoding="utf-8")
+    assert 'set `"PYTHONUTF8=1`"' in script
+    assert "set PYTHONUTF8=1 " not in script
+
+
+def test_the_scheduled_task_runs_on_battery() -> None:
+    """Task Scheduler's defaults skip a laptop on battery, silently."""
+    script = SCHEDULER.read_text(encoding="utf-8")
+    assert "-AllowStartIfOnBatteries" in script
+    assert "-DontStopIfGoingOnBatteries" in script
+
+
+@pytest.mark.parametrize("character", ["&", "|", "^", "<", ">", "%", "!", '"'])
+def test_a_database_url_cmd_would_mangle_is_refused_without_showing_it(character: str) -> None:
+    """npx is a batch file, so cmd re-reads its arguments: these would cut or change the URL."""
+    url = f"postgresql://postgres.ref:pa{character}ss@pooler.supabase.com:5432/postgres"
+    with pytest.raises(BackupError) as raised:
+        settings_from(COMPLETE | {"MASIRAH_BACKUP_DB_URL": url})
+    assert "MASIRAH_BACKUP_DB_URL" in str(raised.value)
+    assert "pa" + character not in str(raised.value)
+
+
+def test_a_recipient_that_is_not_an_age_key_is_refused_before_any_work() -> None:
+    with pytest.raises(BackupError, match="MASIRAH_BACKUP_RECIPIENT"):
+        settings_from(COMPLETE | {"MASIRAH_BACKUP_RECIPIENT": "not-a-key"})
+
+
+def test_docker_is_waited_for_while_it_starts() -> None:
+    """A run missed overnight starts at sign-in, while Docker Desktop is still starting."""
+    from tools.backup import wait_for_docker
+
+    answers = iter([False, False, True])
+    pauses: list[float] = []
+    wait_for_docker(lambda: next(answers), attempts=5, pause=10, sleep=pauses.append)
+    assert pauses == [10, 10]
+
+
+def test_docker_that_never_starts_fails_the_backup_by_name() -> None:
+    from tools.backup import wait_for_docker
+
+    with pytest.raises(BackupError, match="Docker"):
+        wait_for_docker(lambda: False, attempts=3, pause=1, sleep=lambda _: None)
+
+
+def test_a_failed_command_keeps_its_last_words_for_the_log_without_secrets(tmp_path: Path) -> None:
+    """The log needs the reason; neither the URL nor the password may be in it."""
+    from tools.backup import run_command
+
+    script = tmp_path / "fail.py"
+    script.write_text(
+        "import sys\n"
+        "print('connecting to', sys.argv[1], file=sys.stderr)\n"
+        "print('password authentication failed for pw', file=sys.stderr)\n"
+        "sys.exit(3)\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(BackupError) as raised:
+        run_command([sys.executable, str(script), DB_URL], secrets=[DB_URL, "pw"])
+    assert "exited with 3" in str(raised.value)
+    assert "password authentication failed" in raised.value.detail
+    assert DB_URL not in raised.value.detail
+    assert " pw" not in raised.value.detail
+
+
+def test_stale_scratch_from_an_interrupted_run_is_removed(
+    tmp_path: Path, identity: pyrage.x25519.Identity
+) -> None:
+    """A run cut off by power loss or a time limit leaves CVs in scratch; the next run clears it."""
+    left = tmp_path / "scratch" / "masirah-backup-abc123"
+    (left / "content").mkdir(parents=True)
+    (left / "content" / "cv.pdf").write_bytes(b"a CV")
+    (tmp_path / "scratch" / "unrelated.txt").write_text("kept", encoding="utf-8")
+    _, run = dumping()
+    run_backup(
+        settings(tmp_path, identity),
+        run=run,
+        originals=Originals(FILES),
+        now=NOW,
+        scratch=tmp_path / "scratch",
+        ready=READY,
+        read_migrations=MIGRATED,
+    )
+    assert not left.exists()
+    assert (tmp_path / "scratch" / "unrelated.txt").exists()
+
+
+def test_a_backup_more_than_a_day_old_is_reported(
+    tmp_path: Path, identity: pyrage.x25519.Identity
+) -> None:
+    """The PC was off or away: the run says how old the last backup is, then makes a new one."""
+    folder = tmp_path / "backups"
+    folder.mkdir()
+    (folder / "masirah-backup-20261013T020000Z.tar.age").write_bytes(b"old")
+    posted: list[str] = []
+    _, run = dumping()
+    made = run_backup(
+        settings(tmp_path, identity),
+        run=run,
+        originals=Originals(FILES),
+        now=NOW,
+        scratch=tmp_path / "scratch",
+        ready=READY,
+        read_migrations=MIGRATED,
+        alert=posted.append,
+    )
+    assert made.exists()
+    assert len(posted) == 1
+    assert "72 hours" in posted[0]
+
+
+def test_a_backup_from_last_night_is_not_reported(
+    tmp_path: Path, identity: pyrage.x25519.Identity
+) -> None:
+    folder = tmp_path / "backups"
+    folder.mkdir()
+    (folder / "masirah-backup-20261015T020000Z.tar.age").write_bytes(b"recent")
+    posted: list[str] = []
+    _, run = dumping()
+    run_backup(
+        settings(tmp_path, identity),
+        run=run,
+        originals=Originals(FILES),
+        now=NOW,
+        scratch=tmp_path / "scratch",
+        ready=READY,
+        read_migrations=MIGRATED,
+        alert=posted.append,
+    )
+    assert posted == []
+
+
+def test_slack_being_down_does_not_hide_why_the_backup_failed(
+    tmp_path: Path, identity: pyrage.x25519.Identity
+) -> None:
+    def unreachable(text: str) -> None:
+        raise ConnectionError("slack down")
+
+    _, run = dumping(fail=True)
+    with pytest.raises(BackupError, match="supabase db dump exited with 1"):
+        run_backup(
+            settings(tmp_path, identity),
+            run=run,
+            originals=Originals(FILES),
+            now=NOW,
+            scratch=tmp_path / "scratch",
+            ready=READY,
+            read_migrations=MIGRATED,
+            alert=unreachable,
+        )
+
+
+def test_an_original_deleted_during_the_run_is_noted_not_fatal(
+    tmp_path: Path, identity: pyrage.x25519.Identity
+) -> None:
+    """A purge can remove a CV between listing and reading it; that day still gets a backup."""
+    from masirah_pipeline.ports.cv_store import MissingCvError
+
+    class Purged(Originals):
+        def fetch(self, storage_path: str) -> bytes:
+            if storage_path.endswith(".docx"):
+                raise MissingCvError(storage_path)
+            return super().fetch(storage_path)
+
+    _, run = dumping()
+    made = run_backup(
+        settings(tmp_path, identity),
+        run=run,
+        originals=Purged(FILES),
+        now=NOW,
+        scratch=tmp_path / "scratch",
+        ready=READY,
+        read_migrations=MIGRATED,
+    )
+    opened = open_backup(made, str(identity), tmp_path / "opened")
+    manifest = json.loads((opened / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["gone_during_backup"] == ["organisations/o/cv/g/cv.docx"]
+    assert verify(opened) == []
+
+
+def test_no_partial_file_is_left_beside_the_backups(
+    tmp_path: Path, identity: pyrage.x25519.Identity
+) -> None:
+    _, run = dumping()
+    run_backup(
+        settings(tmp_path, identity),
+        run=run,
+        originals=Originals(FILES),
+        now=NOW,
+        scratch=tmp_path / "scratch",
+        ready=READY,
+        read_migrations=MIGRATED,
+    )
+    assert [p.name for p in (tmp_path / "backups").iterdir() if p.suffix != ".age"] == []
+
+
+def test_backups_are_gone_within_thirty_days_of_a_deletion_request() -> None:
+    """FR-076: removed within 30 days of the request. The purge runs within the hour, so a
+    deleted candidate's last backup is pruned KEPT days later."""
+    assert KEPT + 1 <= 30
+
+
+@pytest.mark.parametrize(
+    ("name", "media_type"),
+    [
+        ("cv.pdf", "application/pdf"),
+        ("cv.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
+        ("cv.doc", "application/msword"),
+        ("p.jpg", "image/jpeg"),
+        ("p.JPEG", "image/jpeg"),
+        ("p.png", "image/png"),
+    ],
+)
+def test_an_original_goes_back_with_a_type_the_bucket_accepts(
+    tmp_path: Path, name: str, media_type: str
+) -> None:
+    """The bucket accepts only these five types (migration 0009); the Windows registry may not
+    know .docx at all."""
+    from tools.backup import upload_originals
+
+    (tmp_path / name).write_bytes(b"x")
+    sent: list[str] = []
+
+    def answer(request: httpx2.Request) -> httpx2.Response:
+        sent.append(request.headers["content-type"])
+        return httpx2.Response(200)
+
+    client = httpx2.Client(transport=httpx2.MockTransport(answer))
+    upload_originals(tmp_path, STORAGE_URL, STORAGE_KEY, client=client)
+    assert sent == [media_type]
+
+
+def test_opening_with_a_missing_key_file_says_so(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from tools.backup import main
+
+    (tmp_path / "b.tar.age").write_bytes(b"x")
+    arguments = ["open", str(tmp_path / "b.tar.age"), "--identity", str(tmp_path / "nokey")]
+    assert main([*arguments, "--into", str(tmp_path / "o")], {}) == 1
+    assert "key" in capsys.readouterr().err
+
+
+def test_opening_a_file_that_is_not_a_backup_says_so(
+    tmp_path: Path, identity: pyrage.x25519.Identity
+) -> None:
+    (tmp_path / "b.tar.age").write_bytes(b"not an age file")
+    with pytest.raises(BackupError, match="could not be opened"):
+        open_backup(tmp_path / "b.tar.age", str(identity), tmp_path / "o")
+
+
+def test_missing_settings_are_posted_to_slack_when_it_is_set(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A run that cannot even start is still a failed backup someone must hear about."""
+    import tools.backup as backup
+
+    posted: list[str] = []
+
+    class Webhook:
+        def __init__(self, url: str) -> None:
+            pass
+
+        def send(self, text: str) -> None:
+            posted.append(text)
+
+    monkeypatch.setattr(backup, "SlackWebhook", Webhook)
+    assert backup.main(["run"], {"MASIRAH_SLACK_WEBHOOK_URL": "https://hooks.slack.com/x"}) == 1
+    assert len(posted) == 1
+    assert "MASIRAH_BACKUP_DB_URL" in posted[0]
+
+
+def test_restoring_originals_without_a_target_is_refused_by_name(
+    tmp_path: Path, identity: pyrage.x25519.Identity, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from tools.backup import main
+
+    _, run = dumping()
+    made = run_backup(
+        settings(tmp_path, identity),
+        run=run,
+        originals=Originals(FILES),
+        now=NOW,
+        scratch=tmp_path / "scratch",
+        ready=READY,
+        read_migrations=MIGRATED,
+    )
+    key = tmp_path / "key.txt"
+    key.write_text(f"{identity}\n", encoding="utf-8")
+    arguments = ["open", str(made), "--identity", str(key), "--into", str(tmp_path / "o")]
+    assert main([*arguments, "--restore-originals"], {}) == 1
+    assert "MASIRAH_RESTORE_SUPABASE_URL" in capsys.readouterr().err
